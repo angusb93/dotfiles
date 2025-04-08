@@ -6,9 +6,14 @@
     nix-darwin.url = "github:LnL7/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     mac-app-util.url = "github:hraban/mac-app-util";
+    nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
+    homebrew-cask = {
+      url = "github:homebrew/homebrew-cask";
+      flake = false;
+    };
   };
 
-  outputs = inputs@{ self, nix-darwin, nixpkgs, mac-app-util}:
+  outputs = inputs@{ self, nix-darwin, nixpkgs, mac-app-util, nix-homebrew, homebrew-cask, ... }:
   let
     configuration = { pkgs, config, ... }: {
       # List packages installed in system profile. To search by name, run:
@@ -20,6 +25,9 @@
 	  pkgs.google-chrome
 	  pkgs.gh
 	  pkgs.stow
+	  pkgs.bun
+	  pkgs.nodejs_23
+	  pkgs.aerospace
         ];
 
       # Necessary for using flakes on this system.
@@ -49,7 +57,20 @@
       modules = [
 		  configuration
 	          mac-app-util.darwinModules.default
-		];
+		  nix-homebrew.darwinModules.nix-homebrew
+        {
+          nix-homebrew = {
+            # Install Homebrew under the default prefix
+            enable = true;
+
+            # Apple Silicon Only: Also install Homebrew under the default Intel prefix for Rosetta 2
+            enableRosetta = true;
+
+            # User owning the Homebrew prefix
+            user = "angusbuick";
+
+          };
+        }		];
     };
   };
 }
