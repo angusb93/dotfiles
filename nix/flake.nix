@@ -29,6 +29,7 @@
 	  pkgs.nodejs_23
 	  pkgs.aerospace
 	  pkgs.obsidian
+	  pkgs.spotify
         ];
 	
 
@@ -36,9 +37,20 @@
 		enable = true;
 		casks = [
 			 "ghostty"
+			 "chatgpt"
 			];
 		};
-	
+	system.defaults = {
+    		dock.autohide = true;
+		dock.persistent-apps = [ 
+			"/Applications/Finder.app"
+			"${pkgs.google-chrome}/Applications/Google Chrome.app"
+			"${pkgs.obsidian}/Applications/Obsidian.app"
+			];
+		NSGlobalDomain.KeyRepeat = 2;
+		NSGlobalDomain.AppleInterfaceStyle = "Dark";
+
+	};
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
@@ -81,5 +93,7 @@
           };
         }		];
     };
+
+
   };
 }
