@@ -28,8 +28,17 @@
 	  pkgs.bun
 	  pkgs.nodejs_23
 	  pkgs.aerospace
+	  pkgs.obsidian
         ];
+	
 
+	homebrew = {
+		enable = true;
+		casks = [
+			 "ghostty"
+			];
+		};
+	
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
