@@ -33,6 +33,8 @@
 	  pkgs.starship
 	  pkgs.fd
 	  pkgs.fzf
+    pkgs.lua
+    pkgs.lazygit
         ];
 	
 
