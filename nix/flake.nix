@@ -20,21 +20,21 @@
       # $ nix-env -qaP | grep wget
       environment.systemPackages =
         [ pkgs.neovim
-	  pkgs.tmux
-	  pkgs.git
-	  pkgs.google-chrome
-	  pkgs.gh
-	  pkgs.stow
-	  pkgs.bun
-	  pkgs.nodejs_23
-	  pkgs.aerospace
-	  pkgs.obsidian
-	  pkgs.spotify
-	  pkgs.starship
-	  pkgs.fd
-	  pkgs.fzf
-    pkgs.lua
-    pkgs.lazygit
+          pkgs.tmux
+          pkgs.git
+          pkgs.google-chrome
+          pkgs.gh
+          pkgs.stow
+          pkgs.bun
+          pkgs.nodejs_23
+          pkgs.aerospace
+          pkgs.obsidian
+          pkgs.spotify
+          pkgs.starship
+          pkgs.fd
+          pkgs.fzf
+          pkgs.lua
+          pkgs.lazygit
         ];
 	
 
@@ -96,9 +96,8 @@
             user = "angusbuick";
 
           };
-        }		];
+        }		
+      ];
     };
-
-
   };
 }
