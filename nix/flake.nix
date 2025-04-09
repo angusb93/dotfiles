@@ -30,6 +30,9 @@
 	  pkgs.aerospace
 	  pkgs.obsidian
 	  pkgs.spotify
+	  pkgs.starship
+	  pkgs.fd
+	  pkgs.fzf
         ];
 	
 
