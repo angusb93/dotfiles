@@ -11,6 +11,7 @@ export PATH="$HOME/.cargo/bin:$HOME/bin:$PATH"
 
 # --- Prompt ---
 eval "$(starship init zsh)"  # Requires starship + ~/.config/starship.toml
+export STARSHIP_CONFIG=~/.config/starship/starship.toml
 
 # --- Aliases ---
 alias ll="ls -lah"
