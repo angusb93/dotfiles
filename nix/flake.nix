@@ -41,8 +41,9 @@
 	homebrew = {
 		enable = true;
 		casks = [
-			 "ghostty"
-			 "chatgpt"
+        "ghostty"
+        "chatgpt"
+        "logitech-options"
 			];
 		};
 	system.defaults = {
