@@ -1,5 +1,11 @@
 # ~/.zshrc
 
+# ZSH="/home/harshith/.oh-my-zsh"
+
+#Plugins
+plugins=(git zsh-autosuggestions)
+source $ZSH/oh-my-zsh.sh
+
 # --- Environment ---
 export EDITOR="nvim"
 export VISUAL="nvim"
@@ -18,6 +24,7 @@ alias ll="ls -lah"
 alias gs="git status"
 alias ..="cd .."
 alias ...="cd ../.."
+alias lg="LazyGit"
 
 # --- Completions ---
 # autoload -Uz compinit && compinit

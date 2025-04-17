@@ -35,6 +35,7 @@
           pkgs.fzf
           pkgs.lua
           pkgs.lazygit
+          pkgs.ngrok
         ];
 	
 
