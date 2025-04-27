@@ -36,6 +36,7 @@
           pkgs.lua
           pkgs.lazygit
           pkgs.ngrok
+          pkgs.ripgrep
         ];
 	
 
