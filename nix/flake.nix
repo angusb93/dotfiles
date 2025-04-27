@@ -37,6 +37,7 @@
           pkgs.lazygit
           pkgs.ngrok
           pkgs.ripgrep
+          pkgs.typescript
         ];
 	
 
