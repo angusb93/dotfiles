@@ -38,6 +38,7 @@
           pkgs.ngrok
           pkgs.ripgrep
           pkgs.typescript
+          pkgs.nodePackages.ts-node
         ];
 	
 
