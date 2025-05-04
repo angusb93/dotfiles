@@ -65,8 +65,14 @@ outer.top = 10
 outer.right = 10
 
 
+# Make finder floating
 [[on-window-detected]]
 if.app-name-regex-substring = 'finder'
+run = 'layout floating'
+
+# Make options floating
+[[on-window-detected]]
+if.app-name-regex-substring = 'options'
 run = 'layout floating'
 
 # 'main' binding mode declaration
