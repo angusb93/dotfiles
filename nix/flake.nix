@@ -48,14 +48,18 @@
         "ghostty"
         "chatgpt"
         "logitech-options"
+        "figma"
 			];
 		};
 	system.defaults = {
     		dock.autohide = true;
 		dock.persistent-apps = [ 
-			"/Applications/Finder.app"
 			"${pkgs.google-chrome}/Applications/Google Chrome.app"
 			"${pkgs.obsidian}/Applications/Obsidian.app"
+      "${pkgs.spotify}/Applications/spotify.app"
+      "/Applications/Figma.app"
+      "/Applications/ChatGPT.app"
+      "/Applications/Ghostty.app"
 			];
 		NSGlobalDomain.KeyRepeat = 2;
 		NSGlobalDomain.AppleInterfaceStyle = "Dark";
