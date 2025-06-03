@@ -70,15 +70,15 @@ This guide will help you set up your development environment using [Nix](https:/
    git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
    ```
 
-9. **Source the Tmux config**
+9. **Install Tmux Plugins**
 
-   ```bash
-   tmux source-file ~/dotfiles/tmux/.conf
-   ```
+   Press `prefix` (usually `Ctrl + b`), then press `I` to trigger TPM and install plugins.
 
-10. **Install Tmux Plugins**
+10. **Source the Tmux config**
 
-    Press `prefix` (usually `Ctrl + b`), then press `I` to trigger TPM and install plugins.
+```bash
+tmux source-file ~/dotfiles/tmux/.conf
+```
 
 ---
 
