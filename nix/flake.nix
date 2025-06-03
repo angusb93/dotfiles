@@ -39,6 +39,10 @@
           pkgs.ripgrep
           pkgs.typescript
           pkgs.nodePackages.ts-node
+          pkgs.gallery-dl
+          pkgs.vscode
+          pkgs.slack
+          pkgs.docker
         ];
 	
 
@@ -47,7 +51,7 @@
 		casks = [
         "ghostty"
         "chatgpt"
-        "logitech-options"
+        "logi-options+"
         "figma"
 			];
 		};
