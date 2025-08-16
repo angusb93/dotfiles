@@ -26,7 +26,7 @@
           pkgs.gh
           pkgs.stow
           pkgs.bun
-          pkgs.nodejs_23
+          pkgs.nodejs_24
           pkgs.aerospace
           pkgs.obsidian
           pkgs.spotify
@@ -61,15 +61,16 @@
 		dock.persistent-apps = [ 
 			"${pkgs.google-chrome}/Applications/Google Chrome.app"
 			"${pkgs.obsidian}/Applications/Obsidian.app"
-      "${pkgs.spotify}/Applications/spotify.app"
       "/Applications/Figma.app"
       "/Applications/ChatGPT.app"
       "/Applications/Ghostty.app"
 			];
 		NSGlobalDomain.KeyRepeat = 2;
 		NSGlobalDomain.AppleInterfaceStyle = "Dark";
-
 	};
+        
+
+ system.primaryUser = "angusbuick";
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
