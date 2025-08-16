@@ -43,6 +43,7 @@
           pkgs.vscode
           pkgs.slack
           pkgs.docker
+          pkgs.opencode
         ];
 	
 
