@@ -54,6 +54,8 @@
         "chatgpt"
         "logi-options+"
         "figma"
+        "transmission"
+        "vlc"
 			];
 		};
 	system.defaults = {
