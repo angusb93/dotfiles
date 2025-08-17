@@ -22,11 +22,11 @@
         [ pkgs.neovim
           pkgs.tmux
           pkgs.git
-          pkgs.google-chrome
           pkgs.gh
           pkgs.stow
+          pkgs.google-chrome
           pkgs.bun
-          pkgs.nodejs_24
+          pkgs.nodejs_23
           pkgs.aerospace
           pkgs.obsidian
           pkgs.spotify
@@ -43,7 +43,11 @@
           pkgs.vscode
           pkgs.slack
           pkgs.docker
-          pkgs.opencode
+          pkgs.grpcurl
+          pkgs.notion-app
+          pkgs.git-lfs
+          pkgs.code-cursor
+          pkgs.nodenv
         ];
 	
 
@@ -54,25 +58,24 @@
         "chatgpt"
         "logi-options+"
         "figma"
-        "transmission"
-        "vlc"
 			];
 		};
 	system.defaults = {
-    		dock.autohide = true;
+    dock.autohide = true;
+    dock.orientation = "left";
+    trackpad.TrackpadThreeFingerDrag = false;
 		dock.persistent-apps = [ 
 			"${pkgs.google-chrome}/Applications/Google Chrome.app"
 			"${pkgs.obsidian}/Applications/Obsidian.app"
+      "${pkgs.spotify}/Applications/spotify.app"
       "/Applications/Figma.app"
       "/Applications/ChatGPT.app"
       "/Applications/Ghostty.app"
 			];
 		NSGlobalDomain.KeyRepeat = 2;
 		NSGlobalDomain.AppleInterfaceStyle = "Dark";
-	};
-        
 
- system.primaryUser = "angusbuick";
+	};
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
