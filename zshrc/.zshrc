@@ -42,3 +42,7 @@ precmd() { print -Pn "\e]0;%n@%m: %~\a" }  # Set terminal title to user@host: cw
 
 # --- line for direnv ---
 eval "$(direnv hook zsh)"
+
+# --- nvm setup ---
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
