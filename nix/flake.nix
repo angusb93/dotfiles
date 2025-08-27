@@ -43,7 +43,6 @@
           pkgs.gallery-dl
           pkgs.vscode
           pkgs.slack
-          pkgs.docker
           pkgs.grpcurl
           pkgs.notion-app
           pkgs.git-lfs
@@ -57,6 +56,9 @@
 
 	homebrew = {
 		enable = true;
+		brews = [
+			"nvm"
+		];
 		casks = [
         "ghostty"
         "chatgpt"
