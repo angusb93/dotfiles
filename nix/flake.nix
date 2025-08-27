@@ -16,6 +16,8 @@
   outputs = inputs@{ self, nix-darwin, nixpkgs, mac-app-util, nix-homebrew, homebrew-cask, ... }:
   let
     configuration = { pkgs, config, ... }: {
+      
+      system.primaryUser = "angusbuick";
       # List packages installed in system profile. To search by name, run:
       # $ nix-env -qaP | grep wget
       environment.systemPackages =
@@ -25,7 +27,7 @@
           pkgs.gh
           pkgs.stow
           pkgs.bun
-          pkgs.nodejs_23
+          pkgs.nodejs_24
           pkgs.aerospace
           pkgs.obsidian
           pkgs.spotify
@@ -42,6 +44,14 @@
           pkgs.vscode
           pkgs.slack
           pkgs.docker
+          pkgs.grpcurl
+          pkgs.notion-app
+          pkgs.git-lfs
+          pkgs.code-cursor
+          pkgs.nodenv
+          pkgs.opencode
+          pkgs.go
+          pkgs.direnv
         ];
 	
 
@@ -55,7 +65,9 @@
 			];
 		};
 	system.defaults = {
-    		dock.autohide = true;
+    dock.autohide = true;
+    dock.orientation = "left";
+    trackpad.TrackpadThreeFingerDrag = false;
 		dock.persistent-apps = [ 
 			"${pkgs.google-chrome}/Applications/Google Chrome.app"
 			"${pkgs.obsidian}/Applications/Obsidian.app"

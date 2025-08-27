@@ -39,3 +39,6 @@ setopt share_history             # Share history across terminals
 
 # --- Terminal title (optional) ---
 precmd() { print -Pn "\e]0;%n@%m: %~\a" }  # Set terminal title to user@host: cwd
+
+# --- line for direnv ---
+eval "$(direnv hook zsh)"
