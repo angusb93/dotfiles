@@ -85,3 +85,13 @@ tmux source-file ~/dotfiles/tmux/.conf
 ✅ You’re all set! Enjoy your fully configured development environment.
 
 ## Docs
+
+** Updating nix flake **
+run these commands to update your system with the latest from nix packages
+```bash
+nix flake update
+sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook
+```
+
+
+
