@@ -26,10 +26,9 @@
           pkgs.stow
           pkgs.google-chrome
           pkgs.bun
-          pkgs.nodejs_23
+          pkgs.nodejs_24
           pkgs.aerospace
           pkgs.obsidian
-          pkgs.spotify
           pkgs.starship
           pkgs.fd
           pkgs.fzf
@@ -48,16 +47,21 @@
           pkgs.git-lfs
           pkgs.code-cursor
           pkgs.nodenv
+          pkgs.opencode
         ];
 	
 
 	homebrew = {
 		enable = true;
+     brews = [
+            "tree-sitter-cli"
+          ]; 
 		casks = [
         "ghostty"
         "chatgpt"
         "logi-options+"
         "figma"
+        "spotify"
 			];
 		};
 	system.defaults = {
@@ -67,7 +71,7 @@
 		dock.persistent-apps = [ 
 			"${pkgs.google-chrome}/Applications/Google Chrome.app"
 			"${pkgs.obsidian}/Applications/Obsidian.app"
-      "${pkgs.spotify}/Applications/spotify.app"
+      "/Applications/Spotify.app"
       "/Applications/Figma.app"
       "/Applications/ChatGPT.app"
       "/Applications/Ghostty.app"
@@ -76,6 +80,7 @@
 		NSGlobalDomain.AppleInterfaceStyle = "Dark";
 
 	};
+      system.primaryUser = "angusbuick";
       # Necessary for using flakes on this system.
       nix.settings.experimental-features = "nix-command flakes";
 
