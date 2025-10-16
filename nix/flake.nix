@@ -63,6 +63,8 @@
             pkgs.google-cloud-sdk
             pkgs.devbox
             pkgs.nixfmt-rfc-style
+            pkgs.redis
+            pkgs.bore-cli
           ];
 
           homebrew = {
