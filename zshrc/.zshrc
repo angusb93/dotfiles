@@ -39,3 +39,10 @@ setopt share_history             # Share history across terminals
 
 # --- Terminal title (optional) ---
 precmd() { print -Pn "\e]0;%n@%m: %~\a" }  # Set terminal title to user@host: cwd
+
+# --- direnv config ---
+eval "$(direnv hook zsh)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" ] && \. "$HOMEBREW_PREFIX/opt/nvm/nvm.sh" # This loads nvm
+[ -s "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" ] && \. "$HOMEBREW_PREFIX/opt/nvm/etc/bash_completion.d/nvm" # This loads nvm bash_completion
