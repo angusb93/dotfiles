@@ -65,6 +65,7 @@
             pkgs.nixfmt-rfc-style
             pkgs.redis
             pkgs.bore-cli
+            pkgs.bash
           ];
 
           homebrew = {
