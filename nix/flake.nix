@@ -68,6 +68,8 @@
             pkgs.bash
             pkgs.nil # Nix LSP
             pkgs.stylua # Lua formatter
+            pkgs.terraform-ls # Terraform LSP
+            pkgs.statix # Nix linter
           ];
 
           homebrew = {
