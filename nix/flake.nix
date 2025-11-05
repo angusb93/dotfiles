@@ -66,6 +66,8 @@
             pkgs.redis
             pkgs.bore-cli
             pkgs.bash
+            pkgs.nil # Nix LSP
+            pkgs.stylua # Lua formatter
           ];
 
           homebrew = {
