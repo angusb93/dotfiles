@@ -1,7 +1,7 @@
 return {
   -- Disable Mason auto-install for LSPs we manage via Nix
   {
-    "williamboman/mason-lspconfig.nvim",
+    "mason-org/mason-lspconfig.nvim",
     opts = {
       automatic_installation = false,
     },
