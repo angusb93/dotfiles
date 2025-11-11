@@ -72,11 +72,23 @@
             pkgs.statix # Nix linter
           ];
 
+          # Set up environment variables for pkg-config
+          # environment.variables = {
+          #   PKG_CONFIG_PATH = "${pkgs.pixman}/lib/pkgconfig:${pkgs.cairo}/lib/pkgconfig:${pkgs.pango}/lib/pkgconfig";
+          # };
+
           homebrew = {
             enable = true;
             brews = [
               "tree-sitter-cli"
               "nvm"
+              "pkg-config"
+              "cairo"
+              "pango"
+              "libpng"
+              "jpeg"
+              "giflib"
+              "librsvg"
             ];
             casks = [
               "ghostty"
