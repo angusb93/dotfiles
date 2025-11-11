@@ -88,10 +88,13 @@ tmux source-file ~/dotfiles/tmux/.conf
 
 ** Updating nix flake **
 run these commands to update your system with the latest from nix packages
+
 ```bash
 nix flake update
 sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook
 ```
 
+## TODO
 
-
+- Fix the prompt
+- Have new tmux windows start in current directory
