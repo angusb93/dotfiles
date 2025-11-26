@@ -48,7 +48,6 @@
             pkgs.ngrok
             pkgs.ripgrep
             pkgs.typescript
-            pkgs.nodePackages.ts-node
             pkgs.gallery-dl
             pkgs.vscode
             pkgs.slack
@@ -70,6 +69,8 @@
             pkgs.stylua # Lua formatter
             pkgs.terraform-ls # Terraform LSP
             pkgs.statix # Nix linter
+            pkgs.postman
+            pkgs.tflint
           ];
 
           # Set up environment variables for pkg-config

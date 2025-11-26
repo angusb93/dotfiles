@@ -1,6 +1,8 @@
 {
   "extras": [
     "lazyvim.plugins.extras.ai.copilot",
+    "lazyvim.plugins.extras.coding.mini-surround",
+    "lazyvim.plugins.extras.coding.yanky",
     "lazyvim.plugins.extras.editor.harpoon2",
     "lazyvim.plugins.extras.formatting.biome",
     "lazyvim.plugins.extras.formatting.prettier",
@@ -13,7 +15,8 @@
     "lazyvim.plugins.extras.lang.toml",
     "lazyvim.plugins.extras.lang.typescript",
     "lazyvim.plugins.extras.lang.yaml",
-    "lazyvim.plugins.extras.linting.eslint"
+    "lazyvim.plugins.extras.linting.eslint",
+    "lazyvim.plugins.extras.util.dot"
   ],
   "install_version": 8,
   "news": {
