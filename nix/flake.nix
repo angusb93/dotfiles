@@ -7,20 +7,15 @@
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     mac-app-util.url = "github:hraban/mac-app-util";
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
-    homebrew-cask = {
-      url = "github:homebrew/homebrew-cask";
-      flake = false;
-    };
   };
 
   outputs =
-    inputs@{
+    {
       self,
       nix-darwin,
       nixpkgs,
       mac-app-util,
       nix-homebrew,
-      homebrew-cask,
       ...
     }:
     let
@@ -99,35 +94,39 @@
               "spotify"
             ];
           };
-          system.defaults = {
-            dock.autohide = true;
-            dock.orientation = "left";
-            trackpad.TrackpadThreeFingerDrag = false;
-            dock.persistent-apps = [
-              "${pkgs.google-chrome}/Applications/Google Chrome.app"
-              "${pkgs.obsidian}/Applications/Obsidian.app"
-              "/Applications/Spotify.app"
-              "/Applications/Figma.app"
-              "/Applications/ChatGPT.app"
-              "/Applications/Ghostty.app"
-            ];
-            NSGlobalDomain.KeyRepeat = 2;
-            NSGlobalDomain.AppleInterfaceStyle = "Dark";
-
+          system = {
+            defaults = {
+              dock = {
+                autohide = true;
+                orientation = "left";
+                persistent-apps = [
+                  "${pkgs.google-chrome}/Applications/Google Chrome.app"
+                  "${pkgs.obsidian}/Applications/Obsidian.app"
+                  "/Applications/Spotify.app"
+                  "/Applications/Figma.app"
+                  "/Applications/ChatGPT.app"
+                  "/Applications/Ghostty.app"
+                ];
+              };
+              trackpad.TrackpadThreeFingerDrag = false;
+              NSGlobalDomain = {
+                KeyRepeat = 2;
+                AppleInterfaceStyle = "Dark";
+              };
+            };
+            primaryUser = "angusbuick";
+            # Set Git commit hash for darwin-version.
+            configurationRevision = self.rev or self.dirtyRev or null;
+            # Used for backwards compatibility, please read the changelog before changing.
+            # $ darwin-rebuild changelog
+            stateVersion = 6;
           };
-          system.primaryUser = "angusbuick";
+
           # Necessary for using flakes on this system.
           nix.settings.experimental-features = "nix-command flakes";
 
           # Enable alternative shell support in nix-darwin.
           # programs.fish.enable = true;
-
-          # Set Git commit hash for darwin-version.
-          system.configurationRevision = self.rev or self.dirtyRev or null;
-
-          # Used for backwards compatibility, please read the changelog before changing.
-          # $ darwin-rebuild changelog
-          system.stateVersion = 6;
 
           # The platform the configuration will be used on.
           nixpkgs.hostPlatform = "aarch64-darwin";
