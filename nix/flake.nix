@@ -66,6 +66,8 @@
             pkgs.statix # Nix linter
             pkgs.postman
             pkgs.tflint
+            pkgs.ffmpeg
+            pkgs.pnpm
           ];
 
           # Set up environment variables for pkg-config
