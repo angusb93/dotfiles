@@ -87,6 +87,7 @@
               "jpeg"
               "giflib"
               "librsvg"
+              "vercel-cli"
             ];
             casks = [
               "ghostty"
