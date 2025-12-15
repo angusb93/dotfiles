@@ -4,3 +4,6 @@
 
 -- Disable swap files to avoid E325 ATTENTION errors
 vim.opt.swapfile = false
+
+-- Always use current working directory as root
+vim.g.root_spec = { "cwd" }
