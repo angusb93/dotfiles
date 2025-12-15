@@ -32,7 +32,6 @@
             pkgs.stow
             pkgs.google-chrome
             pkgs.bun
-            pkgs.nodejs_24
             pkgs.aerospace
             pkgs.obsidian
             pkgs.starship
@@ -50,7 +49,6 @@
             pkgs.notion-app
             pkgs.git-lfs
             pkgs.code-cursor
-            pkgs.nodenv
             pkgs.opencode
             pkgs.go
             pkgs.direnv
@@ -68,6 +66,7 @@
             pkgs.tflint
             pkgs.ffmpeg
             pkgs.pnpm
+            pkgs.yarn
           ];
 
           # Set up environment variables for pkg-config
