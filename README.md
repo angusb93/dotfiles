@@ -97,7 +97,6 @@ sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook
 ## TODO
 
 - Fix the prompt
-- Have new tmux windows start in current directory
 - Disable minimise hotkey (cmd + m)
 - Disable three finger swipe for mission control
 - Disable click to desktop
