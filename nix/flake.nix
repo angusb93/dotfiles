@@ -67,6 +67,7 @@
             pkgs.ffmpeg
             pkgs.pnpm
             pkgs.yarn
+            pkgs.nodePackages.vercel
           ];
 
           # Set up environment variables for pkg-config
@@ -86,7 +87,6 @@
               "jpeg"
               "giflib"
               "librsvg"
-              "vercel-cli"
             ];
             casks = [
               "ghostty"
