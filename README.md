@@ -72,7 +72,7 @@ This guide will help you set up your development environment using [Nix](https:/
 
 9. **Install Tmux Plugins**
 
-   Press `prefix` (usually `Ctrl + b`), then press `I` to trigger TPM and install plugins.
+   Press `prefix` (`Ctrl + A`), then press `I` to trigger TPM and install plugins.
 
 10. **Source the Tmux config**
 
