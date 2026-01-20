@@ -54,7 +54,7 @@
             pkgs.direnv
             pkgs.google-cloud-sdk
             pkgs.devbox
-            pkgs.nixfmt-rfc-style
+            pkgs.nixfmt
             pkgs.redis
             pkgs.bore-cli
             pkgs.bash

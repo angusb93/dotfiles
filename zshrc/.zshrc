@@ -7,7 +7,7 @@ export PAGER="less"
 export LANG="en_US.UTF-8"
 
 # --- PATH ---
-export PATH="$HOME/.cargo/bin:$HOME/bin:$PATH"
+export PATH="/run/current-system/sw/bin:$HOME/.cargo/bin:$HOME/bin:$PATH"
 
 # --- Prompt ---
 eval "$(starship init zsh)"  # Requires starship + ~/.config/starship.toml
