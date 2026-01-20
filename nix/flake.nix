@@ -37,6 +37,8 @@
             pkgs.starship
             pkgs.fd
             pkgs.fzf
+            pkgs.zoxide
+            pkgs.sesh
             pkgs.lua
             pkgs.lazygit
             pkgs.ngrok
