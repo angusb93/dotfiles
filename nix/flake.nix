@@ -30,7 +30,6 @@
             pkgs.git
             pkgs.gh
             pkgs.stow
-            pkgs.google-chrome
             pkgs.bun
             pkgs.aerospace
             pkgs.obsidian
@@ -70,6 +69,7 @@
             pkgs.pnpm
             pkgs.yarn
             pkgs.nodePackages.vercel
+            pkgs.claude-code
           ];
 
           # Set up environment variables for pkg-config
@@ -96,6 +96,7 @@
               "logi-options+"
               "figma"
               "spotify"
+              "google-chrome"
             ];
           };
           system = {
@@ -104,7 +105,7 @@
                 autohide = true;
                 orientation = "left";
                 persistent-apps = [
-                  "${pkgs.google-chrome}/Applications/Google Chrome.app"
+                  "/Applications/Google Chrome.app"
                   "${pkgs.obsidian}/Applications/Obsidian.app"
                   "/Applications/Spotify.app"
                   "/Applications/Figma.app"
