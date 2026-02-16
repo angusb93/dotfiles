@@ -61,6 +61,7 @@
             pkgs.bash
             pkgs.nil # Nix LSP
             pkgs.stylua # Lua formatter
+            pkgs.tenv
             pkgs.terraform-ls # Terraform LSP
             pkgs.statix # Nix linter
             pkgs.postman
