@@ -69,7 +69,6 @@
             pkgs.ffmpeg
             pkgs.pnpm
             pkgs.yarn
-            pkgs.nodePackages.vercel
             pkgs.claude-code
           ];
 
