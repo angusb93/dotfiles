@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# ralph-single — run a single phase of a track
+# Usage: ralph-single [track-slug] [--budget N] [--model MODEL]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_ralph-common
+source "$SCRIPT_DIR/_ralph-common"
+
+# Defaults
+BUDGET="5.00"
+MODEL="sonnet"
+SLUG=""
+
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --budget) BUDGET="$2"; shift 2 ;;
+    --model)  MODEL="$2"; shift 2 ;;
+    -*)       die "unknown flag: $1" ;;
+    *)        SLUG="$1"; shift ;;
+  esac
+done
+
+SLUG="$(resolve_track "$SLUG")"
+TD="$(track_dir "$SLUG")"
+
+STATUS="$(get_track_status "$SLUG")"
+[[ "$STATUS" == "planned" || "$STATUS" == "in_progress" ]] || die "track '$SLUG' is in state '$STATUS', expected 'planned' or 'in_progress'"
+
+TOTAL="$(total_phases "$SLUG")"
+PHASE="$(get_current_phase "$SLUG")"
+
+# Setup worktree if needed
+if [[ "$PHASE" -eq 0 ]]; then
+  ensure_worktree "$SLUG"
+  PHASE=1
+  set_current_phase "$SLUG" "$PHASE"
+  set_track_status "$SLUG" "in_progress"
+else
+  if [[ ! -f "$TD/worktree" ]]; then
+    ensure_worktree "$SLUG"
+  fi
+fi
+
+if [[ "$PHASE" -gt "$TOTAL" ]]; then
+  info "All phases already complete for track '$SLUG'."
+  exit 0
+fi
+
+run_agent_phase "$SLUG" "$MODEL" "$BUDGET"
+
+info "Track '$SLUG' status: $(get_track_status "$SLUG")"
+NEXT="$(get_current_phase "$SLUG")"
+if [[ "$NEXT" -le "$TOTAL" ]]; then
+  info "Next phase: $NEXT/$TOTAL"
+  echo "  ralph-single $SLUG    # run next phase"
+  echo "  ralph-run $SLUG       # run remaining phases"
+fi

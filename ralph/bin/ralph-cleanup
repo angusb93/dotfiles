@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# ralph-cleanup — remove worktree and branch for a completed track
+# Usage: ralph-cleanup [track-slug]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_ralph-common
+source "$SCRIPT_DIR/_ralph-common"
+
+SLUG="$(resolve_track "${1:-}")"
+TD="$(track_dir "$SLUG")"
+STATUS="$(get_track_status "$SLUG")"
+
+[[ "$STATUS" == "complete" ]] || die "track '$SLUG' has status '$STATUS' — only 'complete' tracks can be cleaned up"
+
+ROOT="$(ralph_root)"
+
+# Remove worktree
+if [[ -f "$TD/worktree" ]]; then
+  WT="$(cat "$TD/worktree")"
+  if [[ -d "$WT" ]]; then
+    info "Removing worktree: $WT"
+    git -C "$ROOT" worktree remove "$WT"
+  else
+    warn "Worktree path $WT does not exist (already removed?)"
+  fi
+fi
+
+# Delete branch
+if [[ -f "$TD/branch" ]]; then
+  BRANCH="$(cat "$TD/branch")"
+  if git -C "$ROOT" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+    info "Deleting branch: $BRANCH"
+    git -C "$ROOT" branch -d "$BRANCH"
+  else
+    warn "Branch $BRANCH does not exist (already deleted?)"
+  fi
+fi
+
+# Ask about removing track data
+echo ""
+printf 'Remove track data at %s? [y/N] ' "$TD"
+read -r REPLY
+if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+  rm -rf "$TD"
+  info "Track data removed."
+
+  # Clear active track if it was this one
+  ACTIVE="$(get_active_track 2>/dev/null)" || ACTIVE=""
+  if [[ "$ACTIVE" == "$SLUG" ]]; then
+    rm -f "$(ralph_dir)/active_track"
+  fi
+else
+  info "Track data kept at $TD"
+fi
+
+info "Cleanup complete for track '$SLUG'."

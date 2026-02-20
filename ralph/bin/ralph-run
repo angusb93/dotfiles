@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# ralph-run — continuous agent runner
+# Usage: ralph-run [track-slug] [--budget N] [--model MODEL] [--dry-run]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_ralph-common
+source "$SCRIPT_DIR/_ralph-common"
+
+# Defaults
+BUDGET="5.00"
+MODEL="sonnet"
+DRY_RUN=0
+SLUG=""
+
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --budget)  BUDGET="$2"; shift 2 ;;
+    --model)   MODEL="$2"; shift 2 ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    -*)        die "unknown flag: $1" ;;
+    *)         SLUG="$1"; shift ;;
+  esac
+done
+
+SLUG="$(resolve_track "$SLUG")"
+TD="$(track_dir "$SLUG")"
+
+STATUS="$(get_track_status "$SLUG")"
+[[ "$STATUS" == "planned" || "$STATUS" == "in_progress" ]] || die "track '$SLUG' is in state '$STATUS', expected 'planned' or 'in_progress'"
+
+TOTAL="$(total_phases "$SLUG")"
+PHASE="$(get_current_phase "$SLUG")"
+
+# Setup worktree if needed
+if [[ "$PHASE" -eq 0 ]]; then
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    info "[dry-run] Would create worktree at $(worktree_path "$SLUG")"
+  else
+    ensure_worktree "$SLUG"
+  fi
+  PHASE=1
+  set_current_phase "$SLUG" "$PHASE"
+  set_track_status "$SLUG" "in_progress"
+else
+  # Ensure worktree exists for resumed tracks
+  if [[ ! -f "$TD/worktree" ]]; then
+    ensure_worktree "$SLUG"
+  fi
+fi
+
+info "Running track '$SLUG': phases $PHASE through $TOTAL"
+info "Model: $MODEL | Budget per phase: \$$BUDGET"
+echo ""
+
+while [[ "$(get_current_phase "$SLUG")" -le "$TOTAL" ]]; do
+  PHASE="$(get_current_phase "$SLUG")"
+
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    TITLE="$(get_phase_title "$SLUG" "$PHASE")"
+    info "[dry-run] Would run phase $PHASE/$TOTAL: $TITLE"
+    if [[ "$PHASE" -eq "$TOTAL" ]]; then
+      break
+    fi
+    set_current_phase "$SLUG" "$((PHASE + 1))"
+    continue
+  fi
+
+  run_agent_phase "$SLUG" "$MODEL" "$BUDGET"
+
+  # Check if track is complete
+  STATUS="$(get_track_status "$SLUG")"
+  if [[ "$STATUS" == "complete" ]]; then
+    break
+  elif [[ "$STATUS" == "error" ]]; then
+    exit 1
+  fi
+done
+
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  info "[dry-run] Done. No agents were run."
+else
+  info "Track '$SLUG' finished with status: $(get_track_status "$SLUG")"
+  info "Run 'ralph-cleanup $SLUG' when the PR is merged."
+fi

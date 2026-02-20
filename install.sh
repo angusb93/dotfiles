@@ -2,8 +2,10 @@
 
 cd "$(dirname "$0")" || exit
 
-# Stow everythng using default .stowrc (into ~/.config)
-stow --ignore=zshrc .
+# Stow everything using default .stowrc (into ~/.config)
+stow --ignore=zshrc --ignore=claude --ignore=ralph .
 
-# create symlinks for specific packages that need to be in the home directory
+# Create symlinks for packages that target $HOME
 stow --target "$HOME" zshrc
+stow --target "$HOME" claude
+stow --target "$HOME" ralph

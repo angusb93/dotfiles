@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+# _ralph-common — shared constants and functions for General Ralph
+# Sourced by all ralph-* scripts. Not executable on its own.
+
+set -euo pipefail
+
+# --- Constants ---
+RALPH_DIR=".ralph"
+RALPH_AGENTS_PROMPT="$HOME/.claude/ralph-agents.md"
+SIGNAL_PHASE_COMPLETE="###RALPH_PHASE_COMPLETE###"
+SIGNAL_TRACK_COMPLETE="###RALPH_TRACK_COMPLETE###"
+SIGNAL_PHASE_ERROR="###RALPH_PHASE_ERROR###"
+
+# --- Output helpers ---
+die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+info() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33mwarn:\033[0m %s\n' "$*" >&2; }
+
+# --- Path helpers ---
+ralph_root() {
+  local dir="$PWD"
+  while [[ "$dir" != "/" ]]; do
+    [[ -d "$dir/.git" ]] && { echo "$dir"; return; }
+    dir="$(dirname "$dir")"
+  done
+  die "not inside a git repository"
+}
+
+ralph_dir() {
+  echo "$(ralph_root)/$RALPH_DIR"
+}
+
+ensure_ralph_dir() {
+  local rd
+  rd="$(ralph_dir)"
+  mkdir -p "$rd/tracks"
+  if [[ ! -f "$rd/.gitignore" ]]; then
+    printf '*\n!.gitignore\n' > "$rd/.gitignore"
+  fi
+}
+
+track_dir() {
+  local slug="$1"
+  echo "$(ralph_dir)/tracks/$slug"
+}
+
+slugify() {
+  echo "$*" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/--*/-/g; s/^-//; s/-$//'
+}
+
+repo_name() {
+  basename "$(ralph_root)"
+}
+
+worktree_path() {
+  local slug="$1"
+  echo "$(dirname "$(ralph_root)")/$(repo_name)-$slug"
+}
+
+# --- Track state helpers ---
+get_active_track() {
+  local f
+  f="$(ralph_dir)/active_track"
+  [[ -f "$f" ]] && cat "$f" || return 1
+}
+
+set_active_track() {
+  echo "$1" > "$(ralph_dir)/active_track"
+}
+
+get_track_status() {
+  local f
+  f="$(track_dir "$1")/status"
+  [[ -f "$f" ]] && cat "$f" || echo "unknown"
+}
+
+set_track_status() {
+  echo "$2" > "$(track_dir "$1")/status"
+}
+
+get_current_phase() {
+  local f
+  f="$(track_dir "$1")/current_phase"
+  [[ -f "$f" ]] && cat "$f" || echo "0"
+}
+
+set_current_phase() {
+  echo "$2" > "$(track_dir "$1")/current_phase"
+}
+
+total_phases() {
+  local plan
+  plan="$(track_dir "$1")/plan.md"
+  [[ -f "$plan" ]] || die "plan.md not found for track '$1'"
+  grep -c '^### Phase' "$plan"
+}
+
+# --- Phase extraction ---
+get_phase_title() {
+  local slug="$1" phase="$2"
+  sed -n "s/^### Phase $phase: //p" "$(track_dir "$slug")/plan.md"
+}
+
+get_phase_block() {
+  local slug="$1" phase="$2" plan next
+  plan="$(track_dir "$slug")/plan.md"
+  next=$((phase + 1))
+  # Extract everything between "### Phase N:" and the next "### Phase" or "## Quality Gates"
+  sed -n "/^### Phase $phase:/,/^### Phase $next:\|^## Quality Gates/{ /^### Phase $next:\|^## Quality Gates/d; p; }" "$plan"
+}
+
+get_quality_gates() {
+  local slug="$1" plan
+  plan="$(track_dir "$slug")/plan.md"
+  sed -n '/^## Quality Gates/,$ { /^## Quality Gates/d; p; }' "$plan" | grep '^- ' | sed 's/^- //'
+}
+
+# --- Resolve track slug ---
+resolve_track() {
+  local slug="${1:-}"
+  if [[ -z "$slug" ]]; then
+    slug="$(get_active_track)" || die "no track specified and no active track set"
+  fi
+  local td
+  td="$(track_dir "$slug")"
+  [[ -d "$td" ]] || die "track '$slug' does not exist"
+  echo "$slug"
+}
+
+# --- Worktree setup ---
+ensure_worktree() {
+  local slug="$1"
+  local td wt branch
+  td="$(track_dir "$slug")"
+  wt="$(worktree_path "$slug")"
+  branch="ralph/$slug"
+
+  if [[ -d "$wt" ]]; then
+    return 0
+  fi
+
+  info "Creating worktree at $wt (branch: $branch)"
+  git -C "$(ralph_root)" worktree add -b "$branch" "$wt"
+  echo "$wt" > "$td/worktree"
+  echo "$branch" > "$td/branch"
+}
+
+# --- Run a single agent phase ---
+run_agent_phase() {
+  local slug="$1" model="$2" budget="$3"
+  local td wt phase total title phase_block checks prompt log_file
+  td="$(track_dir "$slug")"
+  wt="$(cat "$td/worktree")"
+  phase="$(get_current_phase "$slug")"
+  total="$(total_phases "$slug")"
+  title="$(get_phase_title "$slug" "$phase")"
+  phase_block="$(get_phase_block "$slug" "$phase")"
+
+  # Build phase checks section
+  checks=""
+  local raw_checks
+  raw_checks=$(echo "$phase_block" | sed -n 's/^\*\*Checks:\*\* //p')
+  if [[ -n "$raw_checks" ]]; then
+    checks="$raw_checks"
+  fi
+
+  # Determine the ralph root relative to the worktree — it's the original repo
+  local rroot
+  rroot="$(ralph_root)"
+
+  prompt="You are working on track \"$slug\", phase $phase of $total: \"$title\"
+
+Track plan: $rroot/$RALPH_DIR/tracks/$slug/plan.md
+Track state: $rroot/$RALPH_DIR/tracks/$slug/state.md
+
+## Your Phase
+$phase_block
+
+## Phase Checks
+${checks:-No phase-specific checks — rely on quality gates.}"
+
+  if [[ "$phase" -eq 1 ]]; then
+    prompt="$prompt
+
+This is the FIRST phase. Create your first commit, push the branch, and open a draft PR."
+  fi
+
+  if [[ "$phase" -eq "$total" ]]; then
+    local gates
+    gates="$(get_quality_gates "$slug")"
+    prompt="$prompt
+
+This is the FINAL phase. After completing it, run ALL quality gates:
+$gates
+
+If all pass, mark the PR as ready for review and output $SIGNAL_TRACK_COMPLETE"
+  fi
+
+  mkdir -p "$td/logs"
+  log_file="$td/logs/phase-${phase}.log"
+
+  info "Running phase $phase/$total: $title"
+  info "Model: $model | Budget: \$$budget | Worktree: $wt"
+
+  local exit_code=0
+  claude -p \
+    --dangerously-skip-permissions \
+    --append-system-prompt "$(cat "$RALPH_AGENTS_PROMPT")" \
+    --model "$model" \
+    --max-budget-usd "$budget" \
+    "$prompt" 2>&1 | tee "$log_file" || exit_code=$?
+
+  # Check signals in log output
+  if grep -qF "$SIGNAL_TRACK_COMPLETE" "$log_file"; then
+    set_track_status "$slug" "complete"
+    info "Track complete! All phases done."
+    return 0
+  elif grep -qF "$SIGNAL_PHASE_COMPLETE" "$log_file"; then
+    local next=$((phase + 1))
+    set_current_phase "$slug" "$next"
+    info "Phase $phase complete. Next: phase $next"
+    return 0
+  elif grep -qF "$SIGNAL_PHASE_ERROR" "$log_file"; then
+    set_track_status "$slug" "error"
+    die "Agent reported an error in phase $phase. Check log: $log_file"
+  else
+    set_track_status "$slug" "error"
+    die "Agent exited without a termination signal. Check log: $log_file"
+  fi
+}

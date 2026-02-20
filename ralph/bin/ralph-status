@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# ralph-status — display track status
+# Usage: ralph-status [track-slug]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_ralph-common
+source "$SCRIPT_DIR/_ralph-common"
+
+show_track() {
+  local slug="$1"
+  local td status phase total branch wt
+
+  td="$(track_dir "$slug")"
+  status="$(get_track_status "$slug")"
+  phase="$(get_current_phase "$slug")"
+
+  echo ""
+  printf '\033[1mTrack:\033[0m %s\n' "$slug"
+  printf '\033[1mStatus:\033[0m %s\n' "$status"
+
+  if [[ -f "$td/branch" ]]; then
+    branch="$(cat "$td/branch")"
+    printf '\033[1mBranch:\033[0m %s\n' "$branch"
+  fi
+
+  if [[ -f "$td/worktree" ]]; then
+    wt="$(cat "$td/worktree")"
+    printf '\033[1mWorktree:\033[0m %s\n' "$wt"
+  fi
+
+  if [[ ! -f "$td/plan.md" ]]; then
+    echo "  (no plan.md yet)"
+    return
+  fi
+
+  total="$(total_phases "$slug")"
+
+  if [[ "$phase" -gt 0 && "$phase" -le "$total" ]]; then
+    local title
+    title="$(get_phase_title "$slug" "$phase")"
+    printf '\033[1mPhase:\033[0m %s/%s — "%s"\n' "$phase" "$total" "$title"
+  elif [[ "$status" == "complete" ]]; then
+    printf '\033[1mPhase:\033[0m %s/%s (all complete)\n' "$total" "$total"
+  else
+    printf '\033[1mPhase:\033[0m %s/%s\n' "$phase" "$total"
+  fi
+
+  echo ""
+  echo "Phase History:"
+  local i title_i
+  for ((i = 1; i <= total; i++)); do
+    title_i="$(get_phase_title "$slug" "$i")"
+    if [[ "$status" == "complete" ]] || grep -q "^## Phase $i:" "$td/state.md" 2>/dev/null; then
+      printf '  \033[32m✓\033[0m Phase %d: %s\n' "$i" "$title_i"
+    elif [[ "$i" -eq "$phase" ]]; then
+      printf '  \033[33m→\033[0m Phase %d: %s (current)\n' "$i" "$title_i"
+    else
+      printf '  \033[90m·\033[0m Phase %d: %s\n' "$i" "$title_i"
+    fi
+  done
+  echo ""
+}
+
+# If a slug is provided, show just that track
+if [[ $# -ge 1 ]]; then
+  SLUG="$(resolve_track "$1")"
+  show_track "$SLUG"
+  exit 0
+fi
+
+# Try active track
+ACTIVE="$(get_active_track 2>/dev/null)" || ACTIVE=""
+
+if [[ -n "$ACTIVE" ]]; then
+  show_track "$ACTIVE"
+  exit 0
+fi
+
+# Show all tracks
+RD="$(ralph_dir)"
+if [[ ! -d "$RD/tracks" ]]; then
+  info "No tracks found."
+  exit 0
+fi
+
+FOUND=0
+for td in "$RD/tracks"/*/; do
+  [[ -d "$td" ]] || continue
+  slug="$(basename "$td")"
+  show_track "$slug"
+  FOUND=1
+done
+
+if [[ "$FOUND" -eq 0 ]]; then
+  info "No tracks found. Run 'ralph-init <description>' to create one."
+fi
