@@ -76,16 +76,19 @@ Once the user is happy, write `$TRACK_DIR/plan.md` using this exact format:
 # Track: <name>
 
 ## Description
+
 <1-2 sentences describing the feature/task>
 
 ## Phases
 
 ### Phase 1: <title>
+
 **Description:** <what to do in this phase>
 **Files:** <expected files to touch>
 **Checks:** <phase-specific validation commands>
 
 ### Phase 2: <title>
+
 **Description:** <what to do>
 **Files:** <expected files>
 **Checks:** <validation commands>
@@ -93,6 +96,7 @@ Once the user is happy, write `$TRACK_DIR/plan.md` using this exact format:
 ...
 
 ## Quality Gates
+
 - <command 1, e.g. "pnpm build">
 - <command 2, e.g. "pnpm test">
 - <command 3, e.g. "pnpm lint">
@@ -102,7 +106,7 @@ Once the user is happy, write `$TRACK_DIR/plan.md` using this exact format:
 
 - Phase 1 sets up the foundation (config, types, scaffolding)
 - Middle phases implement the feature incrementally
-- Final phase runs all quality gates and polishes
+- Final phase runs all quality gates and polishes. This should include things like linting, formatting, building and running type checks as well as other things like testing where applicable
 - Each phase must produce a working (if incomplete) codebase
 - Keep phases small enough that an agent can finish in one session
 - Include specific file paths where possible

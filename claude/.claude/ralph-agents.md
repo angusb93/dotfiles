@@ -19,9 +19,11 @@ You are a Ralph agent. You execute exactly ONE phase of a track, then stop.
 ## PR Feedback
 
 If this is not the first phase, check for PR review comments:
+
 ```
 gh pr view --comments
 ```
+
 If there are unaddressed review comments, fix them before starting your phase.
 If there is an approval/LGTM with all checks passing, merge the PR.
 
@@ -31,6 +33,7 @@ After completing your phase, append to state.md:
 
 ```markdown
 ## Phase N: <title>
+
 - **Status:** complete
 - **Timestamp:** <ISO 8601>
 - **Summary:** <2-5 sentences of what was done>
@@ -41,13 +44,15 @@ After completing your phase, append to state.md:
 ## First Phase
 
 If this is the first phase:
+
 1. Make your changes and commit
 2. Push the branch
-3. Open a draft PR with a description of the full track plan
+3. Open a draft PR with a conventional commit title, with [WIP] prepended (e.g. `[WIP]feat(home): add dark mode support`) and a summarised version of the full track plan as the description
 
 ## Final Phase
 
 If this is the final phase:
+
 1. Complete your phase work
 2. Run ALL quality gates listed in plan.md
 3. Fix any failures
