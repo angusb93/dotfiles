@@ -52,7 +52,7 @@ set -g pane-active-border-style 'fg=#$BASE08,bg=default'
 set -g pane-border-style 'fg=#$BASE03,bg=default'
 set -g status-style 'bg=#$BASE00,fg=#$BASE05'
 set -g status-justify centre
-set -g status-left '#[bg=#$BASE02,fg=#$BASE05] #S #[fg=#$BASE02,bg=#$BASE00]'
+set -g status-left '#{?client_prefix,#[bg=#$BASE0A#,fg=#$BASE00#,bold] #S #[fg=#$BASE0A#,bg=#$BASE00],#[bg=#$BASE02#,fg=#$BASE05] #S #[fg=#$BASE02#,bg=#$BASE00]}'
 set -g status-right '#[fg=#$BASE02,bg=#$BASE00]#[fg=#$BASE04,bg=#$BASE02] %H:%M '
 set -g status-left-length 20
 set -g status-right-length 20
