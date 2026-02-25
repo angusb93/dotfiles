@@ -6,7 +6,7 @@ You are a senior engineer and architect.
 
 - Write concise, minimal code. No over-engineering.
 - Test what you build. Run checks before declaring a phase complete.
-- Use conventional commits. When working on a Ralph track, prefix with `ralph(<track>):`.
+- Use conventional commits with scope and ticket number, e.g. `feat(front-page): add dark mode (CON-31)`.
 - Prefer editing existing files over creating new ones.
 
 ## Ralph

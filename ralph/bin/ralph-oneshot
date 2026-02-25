@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# ralph-oneshot — one-shot agent: worktree → fix → PR → cleanup
+# Usage: ralph-oneshot [ticket] <task description> [--budget N] [--model MODEL]
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_ralph-common
+source "$SCRIPT_DIR/_ralph-common"
+
+SIGNAL_COMPLETE="###RALPH_ONESHOT_COMPLETE###"
+SIGNAL_ERROR="###RALPH_ONESHOT_ERROR###"
+
+# Defaults
+BUDGET="5.00"
+MODEL="sonnet"
+TICKET=""
+TASK=""
+# Parse args
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --budget)
+    BUDGET="$2"
+    shift 2
+    ;;
+  --model)
+    MODEL="$2"
+    shift 2
+    ;;
+  -*) die "unknown flag: $1" ;;
+  *)
+    if [[ -z "$TICKET" ]]; then
+      TICKET="$1"
+    else
+      TASK="${TASK:+$TASK }$1"
+    fi
+    shift
+    ;;
+  esac
+done
+
+# Prompt interactively if missing
+if [[ -z "$TICKET" ]]; then
+  printf 'Ticket number (optional, press Enter to skip): '
+  read -r TICKET
+fi
+
+if [[ -z "$TASK" ]]; then
+  printf 'Task description (paste text, then Ctrl-D to finish):\n'
+  TASK="$(cat)"
+  [[ -n "$TASK" ]] || die "task description is required"
+elif [[ "$TASK" == @* ]]; then
+  TASKFILE="${TASK#@}"
+  [[ -f "$TASKFILE" ]] || die "file not found: $TASKFILE"
+  TASK="$(cat "$TASKFILE")"
+fi
+
+# Derive branch name via LLM
+BRANCH_NAME="$(claude -p --model haiku \
+  "Generate a git branch name for this task. Format: <type>/<scope>/<short-description>
+Types: feat, fix, refactor, chore, docs, test, perf, ci
+Scope: the area of the codebase affected (e.g. auth, home-page, api)
+Description: 2-4 hyphenated words summarizing the change
+
+Output ONLY the branch name, nothing else. Example: feat/home-page/implement-darkmode
+
+Task: $TASK")"
+BRANCH="$(echo "$BRANCH_NAME" | tr -d '[:space:]')"
+WT="$(worktree_path "$(echo "$BRANCH" | tr '/' '-')")"
+ROOT="$(ralph_root)"
+
+# Create worktree
+info "Creating worktree at $WT (branch: $BRANCH)"
+git -C "$ROOT" worktree add -b "$BRANCH" "$WT" main
+
+# Build agent prompt
+PROMPT="You are a one-shot Ralph agent. Complete this task in a single pass.
+
+## Task
+$TASK
+$(if [[ -n "$TICKET" ]]; then echo "
+## Ticket
+$TICKET"; fi)
+
+## Working Directory
+You are working in a git worktree at: $WT
+cd into it before doing anything.
+
+## Instructions
+1. Read the relevant code and understand the problem
+2. Make focused, minimal changes to fix/implement the task
+3. Run any relevant checks (build, lint, test) to verify your changes work
+4. Commit with conventional commits: \`<type>(<scope>): <description>$(if [[ -n "$TICKET" ]]; then echo " ($TICKET)"; fi)\`
+   - Use multiple commits if logically distinct changes are needed
+5. Push the branch
+6. Open a draft PR with:
+- Title: conventional commit style with [WIP] prepended, e.g. \`[WIP]fix(auth): resolve login timeout$(if [[ -n "$TICKET" ]]; then echo " ($TICKET)"; fi)\`
+   - Body: a short summary of what was changed and why
+
+## Coding Standards
+- Write concise, minimal code. No over-engineering.
+- Test what you build. Run checks before declaring complete.
+- Prefer editing existing files over creating new ones.
+- Check the repo for local coding standards in the form of AGENTS.MD, CLAUDE.MD or Cursor rules.
+- Please verify your work works via formatting, linting and building with the commands found in the package.json
+
+## Termination
+When done, output exactly on its own line: $SIGNAL_COMPLETE
+If you hit an unrecoverable error, output exactly: $SIGNAL_ERROR"
+
+info "Running one-shot agent for: $TASK${TICKET:+ ($TICKET)}"
+info "Model: $MODEL | Budget: \$$BUDGET | Worktree: $WT"
+echo ""
+
+LOG_FILE="$(mktemp)"
+EXIT_CODE=0
+claude -p \
+  --dangerously-skip-permissions \
+  --model "$MODEL" \
+  --max-budget-usd "$BUDGET" \
+  "$PROMPT" 2>&1 | tee "$LOG_FILE" || EXIT_CODE=$?
+
+# Check result
+if grep -qF "$SIGNAL_COMPLETE" "$LOG_FILE"; then
+  info "One-shot complete!"
+  PR_URL=$(grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' "$LOG_FILE" | tail -1)
+  if [[ -n "$PR_URL" ]]; then
+    info "PR: $PR_URL"
+  fi
+elif grep -qF "$SIGNAL_ERROR" "$LOG_FILE"; then
+  warn "Agent reported an error. Worktree preserved at: $WT"
+  warn "Log: $LOG_FILE"
+  exit 1
+else
+  warn "Agent exited without signal (exit code: $EXIT_CODE). Worktree preserved at: $WT"
+  warn "Log: $LOG_FILE"
+  exit 1
+fi
+
+# Cleanup worktree
+info "Cleaning up worktree..."
+git -C "$ROOT" worktree remove "$WT"
+info "Done. Branch '$BRANCH' preserved for the PR."
+
+rm -f "$LOG_FILE"

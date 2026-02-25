@@ -12,7 +12,10 @@ SIGNAL_TRACK_COMPLETE="###RALPH_TRACK_COMPLETE###"
 SIGNAL_PHASE_ERROR="###RALPH_PHASE_ERROR###"
 
 # --- Output helpers ---
-die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+die() {
+  printf '\033[1;31merror:\033[0m %s\n' "$*" >&2
+  exit 1
+}
 info() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mwarn:\033[0m %s\n' "$*" >&2; }
 
@@ -20,7 +23,10 @@ warn() { printf '\033[1;33mwarn:\033[0m %s\n' "$*" >&2; }
 ralph_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    [[ -d "$dir/.git" ]] && { echo "$dir"; return; }
+    [[ -d "$dir/.git" ]] && {
+      echo "$dir"
+      return
+    }
     dir="$(dirname "$dir")"
   done
   die "not inside a git repository"
@@ -35,7 +41,7 @@ ensure_ralph_dir() {
   rd="$(ralph_dir)"
   mkdir -p "$rd/tracks"
   if [[ ! -f "$rd/.gitignore" ]]; then
-    printf '*\n!.gitignore\n' > "$rd/.gitignore"
+    printf '*\n!.gitignore\n' >"$rd/.gitignore"
   fi
 }
 
@@ -65,7 +71,7 @@ get_active_track() {
 }
 
 set_active_track() {
-  echo "$1" > "$(ralph_dir)/active_track"
+  echo "$1" >"$(ralph_dir)/active_track"
 }
 
 get_track_status() {
@@ -75,7 +81,7 @@ get_track_status() {
 }
 
 set_track_status() {
-  echo "$2" > "$(track_dir "$1")/status"
+  echo "$2" >"$(track_dir "$1")/status"
 }
 
 get_current_phase() {
@@ -85,7 +91,7 @@ get_current_phase() {
 }
 
 set_current_phase() {
-  echo "$2" > "$(track_dir "$1")/current_phase"
+  echo "$2" >"$(track_dir "$1")/current_phase"
 }
 
 total_phases() {
@@ -130,19 +136,32 @@ resolve_track() {
 # --- Worktree setup ---
 ensure_worktree() {
   local slug="$1"
-  local td wt branch
+  local td wt branch plan_desc branch_name
   td="$(track_dir "$slug")"
-  wt="$(worktree_path "$slug")"
-  branch="ralph/$slug"
 
-  if [[ -d "$wt" ]]; then
+  # Check if worktree already exists (stored path from previous run)
+  if [[ -f "$td/worktree" ]] && [[ -d "$(cat "$td/worktree")" ]]; then
     return 0
   fi
 
+  # Derive branch name from plan description via LLM
+  plan_desc="$(sed -n '/^## Description/,/^##/{ /^##/d; p; }' "$td/plan.md" | tr '\n' ' ')"
+  branch_name="$(claude -p --model haiku \
+    "Generate a git branch name for this task. Format: <type>/<scope>/<short-description>
+Types: feat, fix, refactor, chore, docs, test, perf, ci
+Scope: the area of the codebase affected (e.g. auth, home-page, api)
+Description: 2-4 hyphenated words summarizing the change
+
+Output ONLY the branch name, nothing else. Example: feat/home-page/implement-darkmode
+
+Task: $plan_desc")"
+  branch="$(echo "$branch_name" | tr -d '[:space:]')"
+  wt="$(worktree_path "$(echo "$branch" | tr '/' '-')")"
+
   info "Creating worktree at $wt (branch: $branch)"
-  git -C "$(ralph_root)" worktree add -b "$branch" "$wt"
-  echo "$wt" > "$td/worktree"
-  echo "$branch" > "$td/branch"
+  git -C "$(ralph_root)" worktree add -b "$branch" "$wt" main
+  echo "$wt" >"$td/worktree"
+  echo "$branch" >"$td/branch"
 }
 
 # --- Run a single agent phase ---
@@ -182,7 +201,7 @@ ${checks:-No phase-specific checks — rely on quality gates.}"
   if [[ "$phase" -eq 1 ]]; then
     prompt="$prompt
 
-This is the FIRST phase. Create your first commit, push the branch, and open a draft PR."
+    This is the FIRST phase. Create your first commit, push the branch, and open a draft PR, with conventional commit style and [WIP] prepended like '[WIP]feat(home): added dark mode (CON-2)'."
   fi
 
   if [[ "$phase" -eq "$total" ]]; then
@@ -193,7 +212,7 @@ This is the FIRST phase. Create your first commit, push the branch, and open a d
 This is the FINAL phase. After completing it, run ALL quality gates:
 $gates
 
-If all pass, mark the PR as ready for review and output $SIGNAL_TRACK_COMPLETE"
+If all pass $SIGNAL_TRACK_COMPLETE"
   fi
 
   mkdir -p "$td/logs"
@@ -203,12 +222,12 @@ If all pass, mark the PR as ready for review and output $SIGNAL_TRACK_COMPLETE"
   info "Model: $model | Budget: \$$budget | Worktree: $wt"
 
   local exit_code=0
-  claude -p \
+  (cd "$wt" && claude -p \
     --dangerously-skip-permissions \
     --append-system-prompt "$(cat "$RALPH_AGENTS_PROMPT")" \
     --model "$model" \
     --max-budget-usd "$budget" \
-    "$prompt" 2>&1 | tee "$log_file" || exit_code=$?
+    "$prompt") 2>&1 | tee "$log_file" || exit_code=$?
 
   # Check signals in log output
   if grep -qF "$SIGNAL_TRACK_COMPLETE" "$log_file"; then

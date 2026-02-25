@@ -37,7 +37,9 @@ if [[ "$PHASE" -eq 0 ]]; then
   set_current_phase "$SLUG" "$PHASE"
   set_track_status "$SLUG" "in_progress"
 else
-  if [[ ! -f "$TD/worktree" ]]; then
+  stored_wt=""
+  [[ -f "$TD/worktree" ]] && stored_wt="$(cat "$TD/worktree")"
+  if [[ -z "$stored_wt" || ! -d "$stored_wt" ]]; then
     ensure_worktree "$SLUG"
   fi
 fi

@@ -65,6 +65,8 @@ Now analyze the codebase and discuss the plan with the user:
 
 - Read key project files (package.json, Cargo.toml, Makefile, etc.) to understand the stack
 - Explore relevant source code
+- Ask the user for the **ticket number** (e.g. CON-31, DEX-120) if not already provided in `$ARGUMENTS`
+- Ask the user for the **scope** (app or sub-area, e.g. `home`, `dex-web`, `web3`) if not obvious from the feature
 - Propose an approach and iterate with the user
 - Break the feature into 3–8 small sequential phases
 
@@ -74,6 +76,9 @@ Once the user is happy, write `$TRACK_DIR/plan.md` using this exact format:
 
 ```markdown
 # Track: <name>
+
+**Ticket:** <TICKET-123>
+**Scope:** <app or sub-area, e.g. home, dex-web, web3>
 
 ## Description
 

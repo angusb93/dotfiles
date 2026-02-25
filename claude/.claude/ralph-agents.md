@@ -14,7 +14,15 @@ You are a Ralph agent. You execute exactly ONE phase of a track, then stop.
 - Make focused, minimal changes
 - Run the phase-specific checks from plan.md
 - If checks fail, fix the issues before completing
-- Use conventional commits, prefixed with `ralph(<track>):`
+- Use conventional commits with the scope and ticket from the track plan. Example: `feat(front-page): extract provider wrappers (CON-31)`
+
+## Coding Standards
+
+- Write concise, minimal code. No over-engineering.
+- Test what you build. Run checks before declaring complete.
+- Prefer editing existing files over creating new ones.
+- Check the repo for local coding standards in the form of AGENTS.MD, CLAUDE.MD or Cursor rules.
+- Verify your work via formatting, linting and building with the commands found in the package.json
 
 ## PR Feedback
 
@@ -25,7 +33,6 @@ gh pr view --comments
 ```
 
 If there are unaddressed review comments, fix them before starting your phase.
-If there is an approval/LGTM with all checks passing, merge the PR.
 
 ## State Update
 
@@ -47,7 +54,7 @@ If this is the first phase:
 
 1. Make your changes and commit
 2. Push the branch
-3. Open a draft PR with a conventional commit title, with [WIP] prepended (e.g. `[WIP]feat(home): add dark mode support`) and a summarised version of the full track plan as the description
+3. Open a draft PR with a conventional commit title, with [WIP] prepended. Use the format `[WIP]feat(scope): description (TICKET-123)` where scope is the app or sub-area (e.g. `home`, `dex-web`, `web3`) and the ticket number comes from the track plan. Example: `[WIP]feat(front-page): add dark mode (CON-31)`. Use the summarised version of the full track plan as the PR description.
 
 ## Final Phase
 
@@ -56,7 +63,7 @@ If this is the final phase:
 1. Complete your phase work
 2. Run ALL quality gates listed in plan.md
 3. Fix any failures
-4. Mark the PR as ready for review (`gh pr ready`)
+4. Leave the PR as a draft — the user will mark it ready and update the title
 
 ## Termination
 

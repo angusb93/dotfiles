@@ -8,18 +8,30 @@ source "$SCRIPT_DIR/_ralph-common"
 
 # Defaults
 BUDGET="5.00"
-MODEL="sonnet"
+MODEL="opus"
 DRY_RUN=0
 SLUG=""
 
 # Parse args
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --budget)  BUDGET="$2"; shift 2 ;;
-    --model)   MODEL="$2"; shift 2 ;;
-    --dry-run) DRY_RUN=1; shift ;;
-    -*)        die "unknown flag: $1" ;;
-    *)         SLUG="$1"; shift ;;
+  --budget)
+    BUDGET="$2"
+    shift 2
+    ;;
+  --model)
+    MODEL="$2"
+    shift 2
+    ;;
+  --dry-run)
+    DRY_RUN=1
+    shift
+    ;;
+  -*) die "unknown flag: $1" ;;
+  *)
+    SLUG="$1"
+    shift
+    ;;
   esac
 done
 
@@ -35,7 +47,7 @@ PHASE="$(get_current_phase "$SLUG")"
 # Setup worktree if needed
 if [[ "$PHASE" -eq 0 ]]; then
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    info "[dry-run] Would create worktree at $(worktree_path "$SLUG")"
+    info "[dry-run] Would create worktree for track '$SLUG'"
   else
     ensure_worktree "$SLUG"
   fi
@@ -44,7 +56,9 @@ if [[ "$PHASE" -eq 0 ]]; then
   set_track_status "$SLUG" "in_progress"
 else
   # Ensure worktree exists for resumed tracks
-  if [[ ! -f "$TD/worktree" ]]; then
+  stored_wt=""
+  [[ -f "$TD/worktree" ]] && stored_wt="$(cat "$TD/worktree")"
+  if [[ -z "$stored_wt" || ! -d "$stored_wt" ]]; then
     ensure_worktree "$SLUG"
   fi
 fi
