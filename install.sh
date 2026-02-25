@@ -9,3 +9,6 @@ stow --ignore=zshrc --ignore=claude --ignore=ralph .
 stow --target "$HOME" zshrc
 stow --target "$HOME" claude
 stow --target "$HOME" ralph
+
+# Generate theme configs from centralized palette
+./theme/apply.sh
