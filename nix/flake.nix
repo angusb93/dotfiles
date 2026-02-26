@@ -43,7 +43,6 @@
             pkgs.ngrok
             pkgs.ripgrep
             pkgs.typescript
-            pkgs.gallery-dl
             pkgs.vscode
             pkgs.slack
             pkgs.grpcurl
@@ -104,6 +103,7 @@
               dock = {
                 autohide = true;
                 orientation = "left";
+                showMissionControlGestureEnabled = false;
                 persistent-apps = [
                   "/Applications/Google Chrome.app"
                   "${pkgs.obsidian}/Applications/Obsidian.app"
@@ -114,6 +114,8 @@
                 ];
               };
               trackpad.TrackpadThreeFingerDrag = false;
+              trackpad.TrackpadThreeFingerVertSwipeGesture = 0;
+              WindowManager.EnableStandardClickToShowDesktop = false;
               NSGlobalDomain = {
                 KeyRepeat = 2;
                 AppleInterfaceStyle = "Dark";
