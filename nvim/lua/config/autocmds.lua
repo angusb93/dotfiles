@@ -6,3 +6,15 @@
 --
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
+
+vim.api.nvim_create_user_command("ReloadTheme", function()
+  vim.fn.system("bash ~/dotfiles/theme/apply.sh")
+  local spec = dofile(vim.fn.expand("~/dotfiles/nvim/lua/plugins/colorscheme.lua"))
+  for _, entry in ipairs(spec) do
+    if entry[1] == "RRethy/base16-nvim" and entry.config then
+      entry.config()
+      break
+    end
+  end
+  vim.notify("Theme reloaded")
+end, {})

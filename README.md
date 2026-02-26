@@ -94,6 +94,59 @@ nix flake update
 sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook
 ```
 
+## Theme System
+
+Centralized theming across Ghostty, tmux, Neovim, lazygit, and Starship. All configs are generated from a single base16 palette.
+
+### How it works
+
+`theme/colors.sh` sources the active palette from `theme/palettes/`. Running `theme/apply.sh` regenerates configs for all tools from that palette.
+
+Generated files (do not edit directly):
+- `ghostty/config` (theme block)
+- `tmux/theme.conf`
+- `nvim/lua/plugins/colorscheme.lua`
+- `~/Library/Application Support/lazygit/config.yml`
+- `starship/starship.toml`
+
+### Commands
+
+```bash
+# Apply the default palette (set in colors.sh)
+bash ~/dotfiles/theme/apply.sh
+
+# Test a different palette without changing the default
+PALETTE=dark-funeral bash ~/dotfiles/theme/apply.sh
+
+# Change the default palette permanently
+# Edit theme/colors.sh → PALETTE="${PALETTE:-dark-funeral}"
+
+# Reload theme inside Neovim (after apply.sh has run)
+:ReloadTheme
+```
+
+tmux reloads automatically when apply.sh runs inside a tmux session. Ghostty requires a restart.
+
+### Available palettes
+
+All from [base16-black-metal-scheme](https://github.com/metalelf0/base16-black-metal-scheme), plus a customized `bathory`:
+
+`bathory` (default), `black-metal`, `burzum`, `dark-funeral`, `gorgoroth`, `immortal`, `khold`, `marduk`, `mayhem`, `nile`, `venom`
+
+### Creating a new palette
+
+```bash
+cp theme/palettes/bathory.sh theme/palettes/mypalette.sh
+# Edit BASE00–BASE0F values
+PALETTE=mypalette bash ~/dotfiles/theme/apply.sh
+```
+
+### Notes
+
+- Neovim and tmux use hex colors from the palette directly, so they're unaffected by terminal palette changes.
+- Ghostty and Neovim terminal override ANSI red/green (slots 1/2/9/10) with `#cc6666`/`#66cc66` for clear staging/diff colors in lazygit and git CLI.
+- Lazygit theme is configured both via its config.yml and via Snacks.lazygit in Neovim (which generates `~/.cache/nvim/lazygit-theme.yml` from Neovim highlight groups).
+
 ## TODO
 
 - Fix the prompt

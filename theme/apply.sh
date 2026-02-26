@@ -22,16 +22,16 @@ cursor-text = $BASE00
 selection-background = $BASE02
 selection-foreground = $BASE05
 palette = 0=#$BASE00
-palette = 1=#$BASE08
-palette = 2=#$BASE0B
+palette = 1=#cc6666
+palette = 2=#66cc66
 palette = 3=#$BASE0A
 palette = 4=#$BASE0D
 palette = 5=#$BASE0E
 palette = 6=#$BASE0C
 palette = 7=#$BASE05
 palette = 8=#$BASE03
-palette = 9=#$BASE08
-palette = 10=#$BASE0B
+palette = 9=#cc6666
+palette = 10=#66cc66
 palette = 11=#$BASE0A
 palette = 12=#$BASE0D
 palette = 13=#$BASE0E
@@ -64,6 +64,9 @@ set -g mode-style 'bg=#$BASE02,fg=#$BASE05'
 # [/theme:generated]
 EOF
 echo "✓ Tmux theme.conf generated"
+if [ -n "${TMUX:-}" ]; then
+  tmux source-file "$REPO_DIR/tmux/theme.conf" 2>/dev/null && echo "✓ Tmux reloaded"
+fi
 
 # --- Neovim colorscheme ---
 nvim_colorscheme="$REPO_DIR/nvim/lua/plugins/colorscheme.lua"
@@ -105,12 +108,95 @@ return {
       hl(0, "SnacksDashboardKey", { fg = "#$BASE0A" })
       hl(0, "SnacksDashboardDesc", { fg = "#$BASE04" })
       hl(0, "SnacksDashboardFooter", { fg = "#$BASE03" })
+
+      -- Picker
+      hl(0, "SnacksPickerMatch", { fg = "#$BASE0A", bold = true })
+      hl(0, "SnacksPickerBorder", { fg = "#$BASE03" })
+      hl(0, "SnacksPickerInputBorder", { fg = "#$BASE03" })
+      hl(0, "SnacksPickerListBorder", { fg = "#$BASE03" })
+      hl(0, "SnacksPickerPreviewBorder", { fg = "#$BASE03" })
+      hl(0, "SnacksPickerTitle", { fg = "#$BASE08", bold = true })
+      hl(0, "SnacksPickerInputTitle", { fg = "#$BASE08", bold = true })
+      hl(0, "SnacksPickerListTitle", { fg = "#$BASE08", bold = true })
+      hl(0, "SnacksPickerPreviewTitle", { fg = "#$BASE08", bold = true })
+      hl(0, "SnacksPickerListCursorLine", { bg = "#$BASE02", bold = true })
+      hl(0, "SnacksPickerPrompt", { fg = "#$BASE0A" })
+      hl(0, "SnacksPickerDir", { fg = "#$BASE03" })
+
+      -- Floating windows (general)
+      hl(0, "FloatTitle", { fg = "#$BASE08", bold = true })
+      hl(0, "FloatBorder", { fg = "#$BASE03" })
+
+      -- Lazygit (used by Snacks.lazygit theme mapping)
+      hl(0, "LazyGitActiveBorder", { fg = "#$BASE08" })
+      hl(0, "LazyGitUnstaged", { fg = "#cc6666" })
+      hl(0, "LazyGitSelectedLine", { bg = "#$BASE01" })
+
+      -- Override terminal ANSI red/green for lazygit staging & diffs
+      vim.g.terminal_color_1  = "#cc6666"  -- red
+      vim.g.terminal_color_2  = "#66cc66"  -- green
+      vim.g.terminal_color_9  = "#cc6666"  -- bright red
+      vim.g.terminal_color_10 = "#66cc66"  -- bright green
+
+      -- Completion popup
+      hl(0, "BlinkCmpMenuBorder", { fg = "#$BASE03" })
+      hl(0, "BlinkCmpDocBorder", { fg = "#$BASE03" })
+      hl(0, "BlinkCmpLabelMatch", { fg = "#$BASE0A", bold = true })
+      hl(0, "BlinkCmpMenuSelection", { bg = "#$BASE02" })
     end,
+  },
+
+  -- Snacks lazygit theme overrides
+  {
+    "folke/snacks.nvim",
+    opts = {
+      lazygit = {
+        theme = {
+          activeBorderColor          = { fg = "LazyGitActiveBorder", bold = true },
+          inactiveBorderColor        = { fg = "FloatBorder" },
+          selectedLineBgColor        = { bg = "LazyGitSelectedLine", bold = true },
+          unstagedChangesColor       = { fg = "LazyGitUnstaged" },
+          defaultFgColor             = { fg = "Normal" },
+          searchingActiveBorderColor = { fg = "LazyGitActiveBorder", bold = true },
+        },
+      },
+    },
   },
 }
 -- [/theme:generated]
 EOF
 echo "✓ Neovim colorscheme.lua generated"
+
+# --- Lazygit ---
+lazygit_config="$HOME/Library/Application Support/lazygit/config.yml"
+mkdir -p "$(dirname "$lazygit_config")"
+cat > "$lazygit_config" <<EOF
+# [theme:generated] — do not edit, run theme/apply.sh
+gui:
+  theme:
+    activeBorderColor:
+      - "#$BASE08"
+      - bold
+    inactiveBorderColor:
+      - "#$BASE03"
+    optionsTextColor:
+      - "#$BASE04"
+    selectedLineBgColor:
+      - "#$BASE01"
+      - bold
+    selectedRangeBgColor:
+      - "#$BASE01"
+    unstagedChangesColor:
+      - "#cc6666"
+    defaultFgColor:
+      - "#$BASE05"
+git:
+  paging:
+    colorArg: always
+    pager: "perl -pe 's/\\\\e\\\\[31m/\\\\e[38;2;204;102;102m/g; s/\\\\e\\\\[32m/\\\\e[38;2;102;204;102m/g'"
+# [/theme:generated]
+EOF
+echo "✓ Lazygit config generated"
 
 # --- Starship ---
 starship_config="$REPO_DIR/starship/starship.toml"
