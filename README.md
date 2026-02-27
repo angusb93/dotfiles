@@ -129,9 +129,13 @@ tmux reloads automatically when apply.sh runs inside a tmux session. Ghostty req
 
 ### Available palettes
 
-All from [base16-black-metal-scheme](https://github.com/metalelf0/base16-black-metal-scheme), plus a customized `bathory`:
+**Black Metal** ([source](https://github.com/metalelf0/base16-black-metal-scheme)) — plus a customized `bathory`:
 
 `bathory` (default), `black-metal`, `burzum`, `dark-funeral`, `gorgoroth`, `immortal`, `khold`, `marduk`, `mayhem`, `nile`, `venom`
+
+**Popular themes** ([source](https://github.com/tinted-theming/schemes)):
+
+`tokyonight`, `tokyonight-storm`, `catppuccin-mocha`, `catppuccin-frappe`, `catppuccin-macchiato`, `catppuccin-latte` (light), `gruvbox-dark`, `rose-pine`, `rose-pine-moon`, `nord`, `kanagawa`
 
 ### Creating a new palette
 
