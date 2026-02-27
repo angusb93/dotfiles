@@ -9,3 +9,4 @@ foo.*
 node_modules
 tt.*
 tmux/plugins/
+gh/hosts.yml

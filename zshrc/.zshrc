@@ -1,5 +1,8 @@
 # ~/.zshrc
 
+# --- Machine-local env (not tracked) ---
+[[ -f ~/.env.local ]] && source ~/.env.local
+
 # --- Environment ---
 export EDITOR="nvim"
 export VISUAL="nvim"

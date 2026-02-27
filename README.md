@@ -151,6 +151,22 @@ PALETTE=mypalette bash ~/dotfiles/theme/apply.sh
 - Ghostty and Neovim terminal override ANSI red/green (slots 1/2/9/10) with `#cc6666`/`#66cc66` for clear staging/diff colors in lazygit and git CLI.
 - Lazygit theme is configured both via its config.yml and via Snacks.lazygit in Neovim (which generates `~/.cache/nvim/lazygit-theme.yml` from Neovim highlight groups).
 
+## Machine-local Config
+
+Machine-specific values (GitHub user, palette overrides, etc.) live in `~/.env.local`, which is sourced by `.zshrc` but never tracked.
+
+Create it before running `install.sh`:
+
+```sh
+# Personal machine
+echo 'export GH_DEFAULT_USER=angusb93' >> ~/.env.local
+
+# Work machine
+echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/.env.local
+```
+
+`install.sh` reads `GH_DEFAULT_USER` and runs `gh config set -h github.com user "$GH_DEFAULT_USER"` automatically.
+
 ## TODO
 
 - Fix the prompt
