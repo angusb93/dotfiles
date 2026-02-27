@@ -10,3 +10,4 @@ node_modules
 tt.*
 tmux/plugins/
 gh/hosts.yml
+.env.local

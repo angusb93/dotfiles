@@ -153,16 +153,16 @@ PALETTE=mypalette bash ~/dotfiles/theme/apply.sh
 
 ## Machine-local Config
 
-Machine-specific values (GitHub user, palette overrides, etc.) live in `~/.env.local`, which is sourced by `.zshrc` but never tracked.
+Machine-specific values (GitHub user, palette overrides, etc.) live in `~/dotfiles/.env.local`, which is sourced by `.zshrc` but never tracked.
 
 Create it before running `install.sh`:
 
 ```sh
 # Personal machine
-echo 'export GH_DEFAULT_USER=angusb93' >> ~/.env.local
+echo 'export GH_DEFAULT_USER=angusb93' >> ~/dotfiles/.env.local
 
 # Work machine
-echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/.env.local
+echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/dotfiles/.env.local
 ```
 
 `install.sh` reads `GH_DEFAULT_USER` and runs `gh config set -h github.com user "$GH_DEFAULT_USER"` automatically.

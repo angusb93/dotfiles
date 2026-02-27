@@ -1,7 +1,7 @@
 # ~/.zshrc
 
 # --- Machine-local env (not tracked) ---
-[[ -f ~/.env.local ]] && source ~/.env.local
+[[ -f ~/dotfiles/.env.local ]] && source ~/dotfiles/.env.local
 
 # --- Environment ---
 export EDITOR="nvim"
