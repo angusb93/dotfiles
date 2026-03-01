@@ -69,6 +69,7 @@
             pkgs.pnpm
             pkgs.yarn
             pkgs.claude-code
+            pkgs.desktoppr
           ];
 
           # Set up environment variables for pkg-config
@@ -99,6 +100,9 @@
             ];
           };
           system = {
+            activationScripts.postActivation.text = ''
+              sudo -u angusbuick ${pkgs.desktoppr}/bin/desktoppr /Users/angusbuick/dotfiles/wallpapers/1.png
+            '';
             defaults = {
               dock = {
                 autohide = true;
