@@ -29,32 +29,16 @@ This guide will help you set up your development environment using [Nix](https:/
 
 ---
 
-## 🔗 Configure Symlinks with Stow
-
-4. **Create Symlinks**
-
-   ```bash
-   cd ~/dotfiles
-   stow .
-   ```
-
-   > 💡 You may need to manually create the `~/.config` directory first.
-
----
-
 ## 🚀 Run Installation Script
 
-5. **Make the script executable**
+4. **Run the install script**
 
    ```bash
    chmod +x ~/dotfiles/install.sh
-   ```
-
-6. **Run the script**
-
-   ```bash
    ~/dotfiles/install.sh
    ```
+
+   This runs stow, applies themes, and sets your GH user from `$GH_DEFAULT_USER`.
 
 7. **Restart your computer**
 
@@ -103,6 +87,7 @@ Centralized theming across Ghostty, tmux, Neovim, lazygit, and Starship. All con
 `theme/colors.sh` sources the active palette from `theme/palettes/`. Running `theme/apply.sh` regenerates configs for all tools from that palette.
 
 Generated files (do not edit directly):
+
 - `ghostty/config` (theme block)
 - `tmux/theme.conf`
 - `nvim/lua/plugins/colorscheme.lua`
@@ -169,7 +154,5 @@ echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/dotfiles/.env.local
 
 ## TODO
 
-- Fix the prompt
-- Disable minimise hotkey (cmd + m)
-- Disable three finger swipe for mission control
-- Disable click to desktop
+- [ ] Fix the prompt
+- [ ] Disable minimise hotkey (cmd + m)
