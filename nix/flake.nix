@@ -101,7 +101,7 @@
           };
           system = {
             activationScripts.postActivation.text = ''
-              sudo -u angusbuick ${pkgs.desktoppr}/bin/desktoppr /Users/angusbuick/dotfiles/wallpapers/1.png
+              sudo -u angusbuick ${pkgs.desktoppr}/bin/desktoppr /Users/angusbuick/dotfiles/wallpapers/9.png
             '';
             defaults = {
               dock = {
