@@ -38,7 +38,7 @@ This guide will help you set up your development environment using [Nix](https:/
    ~/dotfiles/install.sh
    ```
 
-   This runs stow, applies themes, and sets your GH user from `$GH_DEFAULT_USER`.
+   This runs stow, applies themes, and sets your GH user from `$GH_DEFAULT_USER`. Safe to re-run at any time.
 
 7. **Restart your computer**
 
