@@ -1,82 +1,114 @@
-# 🛠️ Dotfiles Setup Guide (macOS with Nix)
+# Dotfiles
 
-This guide will help you set up your development environment using [Nix](https://nixos.org/), `nix-darwin`, and your custom dotfiles.
+macOS development environment managed with Nix, nix-darwin, and GNU Stow.
 
----
+## Stack
 
-## ✅ Prerequisites
+| Layer | Tool |
+|---|---|
+| System config & packages | [nix-darwin](https://github.com/LnL7/nix-darwin) + [nixpkgs](https://nixos.org/) |
+| GUI apps | Homebrew casks (via nix-darwin) |
+| Dotfile symlinks | [GNU Stow](https://www.gnu.org/software/stow/) |
+| Terminal | [Ghostty](https://ghostty.org/) |
+| Shell | zsh |
+| Multiplexer | tmux |
+| Editor | Neovim |
+| Window manager | [Aerospace](https://github.com/nikitabobko/AeroSpace) |
+| Prompt | Starship |
+| Git UI | lazygit |
+| Fuzzy finder | fzf |
 
-1. **Install Nix**  
-   Follow the instructions at [https://nixos.org/](https://nixos.org/)
+## How it works
 
----
+### Nix manages the system
 
-## 📁 Set Up Dotfiles
+`nix/flake.nix` declares everything installed on the machine — CLI tools, GUI apps, and macOS system defaults (dock, trackpad, key repeat, etc.). Running `darwin-rebuild switch` applies the full system state.
 
-2. **Clone Your Dotfiles Repository**
+### Stow manages dotfiles
 
-   ```bash
-   git clone <your-dotfiles-repo-url> ~/dotfiles
-   ```
+Each top-level directory (e.g. `nvim/`, `tmux/`, `zshrc/`) is a stow package. `install.sh` symlinks them into `~/.config` or `$HOME` as appropriate. The repo lives at `~/dotfiles` and `install.sh` is safe to re-run at any time.
 
-3. **Apply System Configuration**
+### Theme system
 
-   ```bash
-   nix run nix-darwin --extra-experimental-features "nix-command flakes" -- switch --flake ~/dotfiles/nix#macbook
-   ```
+Centralized theming across Ghostty, tmux, Neovim, lazygit, and Starship via a single base16 palette. See [Theme System](#theme-system) below.
 
-   This will install your system config and necessary programs (including `stow`).
+### Machine-local config
 
----
-
-## 🚀 Run Installation Script
-
-4. **Run the install script**
-
-   ```bash
-   chmod +x ~/dotfiles/install.sh
-   ~/dotfiles/install.sh
-   ```
-
-   This runs stow, applies themes, and sets your GH user from `$GH_DEFAULT_USER`. Safe to re-run at any time.
-
-5. **Restart your computer**
-
-   This ensures all changes are applied properly.
+Machine-specific values live in `~/dotfiles/.env.local` (gitignored). `.zshrc` sources it automatically. See [Machine-local Config](#machine-local-config) below.
 
 ---
 
-## 🧰 Set Up Tmux Plugins
+## Fresh machine setup
 
-8. **Install TPM (Tmux Plugin Manager)**
+### 1. Install Nix
 
-   ```bash
-   git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
-   ```
+Follow the instructions at [https://nixos.org/](https://nixos.org/)
 
-9. **Install Tmux Plugins**
-
-   Press `prefix` (`Ctrl + A`), then press `I` to trigger TPM and install plugins.
-
-10. **Source the Tmux config**
+### 2. Clone dotfiles
 
 ```bash
-tmux source-file ~/dotfiles/tmux/.conf
+git clone <your-dotfiles-repo-url> ~/dotfiles
 ```
+
+### 3. Create machine-local config
+
+```bash
+# Personal machine
+echo 'export GH_DEFAULT_USER=angusb93' >> ~/dotfiles/.env.local
+
+# Work machine
+echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/dotfiles/.env.local
+```
+
+See `.env.local.example` for all available vars.
+
+### 4. Apply system configuration
+
+```bash
+nix run nix-darwin --extra-experimental-features "nix-command flakes" -- switch --flake ~/dotfiles/nix#macbook
+```
+
+Installs all packages (including `stow`) and applies macOS system defaults.
+
+### 5. Run the install script
+
+```bash
+chmod +x ~/dotfiles/install.sh
+~/dotfiles/install.sh
+```
+
+Symlinks dotfiles, applies themes, and sets GH user from `$GH_DEFAULT_USER`. Safe to re-run.
+
+### 6. Set up Tmux plugins
+
+```bash
+git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
+```
+
+Then inside tmux: press `prefix` (`Ctrl+A`), then `I` to install plugins.
+
+### 7. Restart
+
+Ensures all system changes (dock, trackpad, etc.) take effect.
 
 ---
 
-✅ You’re all set! Enjoy your fully configured development environment.
+## Updating
 
-## Docs
-
-**Updating nix flake**
-run these commands to update your system with the latest from nix packages
+**Update nix packages:**
 
 ```bash
 nix flake update
 sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook
 ```
+
+**Re-apply dotfiles after changes:**
+
+```bash
+~/dotfiles/install.sh
+```
+
+---
 
 ## Theme System
 
@@ -136,21 +168,15 @@ PALETTE=mypalette bash ~/dotfiles/theme/apply.sh
 - Ghostty and Neovim terminal override ANSI red/green (slots 1/2/9/10) with `#cc6666`/`#66cc66` for clear staging/diff colors in lazygit and git CLI.
 - Lazygit theme is configured both via its config.yml and via Snacks.lazygit in Neovim (which generates `~/.cache/nvim/lazygit-theme.yml` from Neovim highlight groups).
 
+---
+
 ## Machine-local Config
 
 Machine-specific values (GitHub user, palette overrides, etc.) live in `~/dotfiles/.env.local`, which is sourced by `.zshrc` but never tracked.
 
-Create it before running `install.sh`:
+See `.env.local.example` for available variables. `install.sh` reads `GH_DEFAULT_USER` and runs `gh config set -h github.com user "$GH_DEFAULT_USER"` automatically.
 
-```sh
-# Personal machine
-echo 'export GH_DEFAULT_USER=angusb93' >> ~/dotfiles/.env.local
-
-# Work machine
-echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/dotfiles/.env.local
-```
-
-`install.sh` reads `GH_DEFAULT_USER` and runs `gh config set -h github.com user "$GH_DEFAULT_USER"` automatically.
+---
 
 ## TODO
 
