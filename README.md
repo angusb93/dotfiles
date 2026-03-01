@@ -40,7 +40,7 @@ This guide will help you set up your development environment using [Nix](https:/
 
    This runs stow, applies themes, and sets your GH user from `$GH_DEFAULT_USER`. Safe to re-run at any time.
 
-7. **Restart your computer**
+5. **Restart your computer**
 
    This ensures all changes are applied properly.
 
@@ -154,5 +154,5 @@ echo 'export GH_DEFAULT_USER=angus-msquared' >> ~/dotfiles/.env.local
 
 ## TODO
 
-- [ ] Fix the prompt
+- [ ] change the prompt to something else that might run faster than starship (or at least benchmark it)
 - [ ] Disable minimise hotkey (cmd + m)
