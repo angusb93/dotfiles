@@ -4,19 +4,19 @@ macOS development environment managed with Nix, nix-darwin, and GNU Stow.
 
 ## Stack
 
-| Layer | Tool |
-|---|---|
+| Layer                    | Tool                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------- |
 | System config & packages | [nix-darwin](https://github.com/LnL7/nix-darwin) + [nixpkgs](https://nixos.org/) |
-| GUI apps | Homebrew casks (via nix-darwin) |
-| Dotfile symlinks | [GNU Stow](https://www.gnu.org/software/stow/) |
-| Terminal | [Ghostty](https://ghostty.org/) |
-| Shell | zsh |
-| Multiplexer | tmux |
-| Editor | Neovim |
-| Window manager | [Aerospace](https://github.com/nikitabobko/AeroSpace) |
-| Prompt | Starship |
-| Git UI | lazygit |
-| Fuzzy finder | fzf |
+| GUI apps                 | Homebrew casks (via nix-darwin)                                                  |
+| Dotfile symlinks         | [GNU Stow](https://www.gnu.org/software/stow/)                                   |
+| Terminal                 | [Ghostty](https://ghostty.org/)                                                  |
+| Shell                    | zsh                                                                              |
+| Multiplexer              | tmux                                                                             |
+| Editor                   | Neovim                                                                           |
+| Window manager           | [Aerospace](https://github.com/nikitabobko/AeroSpace)                            |
+| Prompt                   | Starship                                                                         |
+| Git UI                   | lazygit                                                                          |
+| Fuzzy finder             | fzf                                                                              |
 
 ## How it works
 
@@ -182,3 +182,5 @@ See `.env.local.example` for available variables. `install.sh` reads `GH_DEFAULT
 
 - [ ] change the prompt to something else that might run faster than starship (or at least benchmark it)
 - [ ] Disable minimise hotkey (cmd + m)
+- [ ] Integrate [sketchybar](https://github.com/FelixKratz/SketchyBar)
+- [ ] Add gcal to sketchybar so i dont miss meetings
