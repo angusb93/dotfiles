@@ -59,7 +59,21 @@ Write `$TRACK_DIR/state.md`:
 Phase history will be appended below by agents.
 ```
 
-## Step 4: Analyze & Discuss
+## Step 4: Select Base Branch
+
+Ask the user which branch to base this track on. Show the available local branches:
+
+```bash
+git branch --format='%(refname:short)'
+```
+
+Default to `main` if the user doesn't have a preference. Store the chosen branch:
+
+```bash
+echo "<chosen-branch>" > "$TRACK_DIR/base_branch"
+```
+
+## Step 5: Analyze & Discuss
 
 Now analyze the codebase and discuss the plan with the user:
 
@@ -70,7 +84,7 @@ Now analyze the codebase and discuss the plan with the user:
 - Propose an approach and iterate with the user
 - Break the feature into 3–8 small sequential phases
 
-## Step 5: Write plan.md
+## Step 6: Write plan.md
 
 Once the user is happy, write `$TRACK_DIR/plan.md` using this exact format:
 
@@ -117,7 +131,7 @@ Once the user is happy, write `$TRACK_DIR/plan.md` using this exact format:
 - Include specific file paths where possible
 - Phase checks should be fast, deterministic commands
 
-## Step 6: Finalize
+## Step 7: Finalize
 
 After writing plan.md:
 

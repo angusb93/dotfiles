@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ralph-oneshot — one-shot agent: worktree → fix → PR → cleanup
-# Usage: ralph-oneshot [ticket] <task description> [--budget N] [--model MODEL]
+# Usage: ralph-oneshot [ticket] <task description> [--budget N] [--model MODEL] [--base BRANCH]
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=_ralph-common
@@ -14,6 +14,7 @@ BUDGET="5.00"
 MODEL="sonnet"
 TICKET=""
 TASK=""
+BASE=""
 # Parse args
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -23,6 +24,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   --model)
     MODEL="$2"
+    shift 2
+    ;;
+  --base)
+    BASE="$2"
     shift 2
     ;;
   -*) die "unknown flag: $1" ;;
@@ -54,6 +59,7 @@ elif [[ "$TASK" == @* ]]; then
 fi
 
 # Derive branch name via LLM
+info "Generating branch name..."
 BRANCH_NAME="$(claude -p --model haiku \
   "Generate a git branch name for this task. Format: <type>/<scope>/<short-description>
 Types: feat, fix, refactor, chore, docs, test, perf, ci
@@ -67,9 +73,12 @@ BRANCH="$(echo "$BRANCH_NAME" | tr -d '[:space:]')"
 WT="$(worktree_path "$(echo "$BRANCH" | tr '/' '-')")"
 ROOT="$(ralph_root)"
 
+# Select base branch
+BASE_BRANCH="$(select_base_branch "$BASE")"
+
 # Create worktree
-info "Creating worktree at $WT (branch: $BRANCH)"
-git -C "$ROOT" worktree add -b "$BRANCH" "$WT" main
+info "Creating worktree at $WT (branch: $BRANCH) from $BASE_BRANCH"
+git -C "$ROOT" worktree add -b "$BRANCH" "$WT" "$BASE_BRANCH"
 
 # Build agent prompt
 PROMPT="You are a one-shot Ralph agent. Complete this task in a single pass.
