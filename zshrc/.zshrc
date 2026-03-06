@@ -35,6 +35,7 @@ if [[ $- == *i* ]]; then
   export STARSHIP_CONFIG=~/.config/starship/starship.toml
 
   load_hook "direnv" "direnv hook zsh"
+  load_hook "mise" "mise activate zsh"
   load_hook "fzf" "fzf --zsh"
 
   export NVM_DIR="$HOME/.nvm"

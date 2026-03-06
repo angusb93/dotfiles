@@ -13,7 +13,6 @@
     {
       self,
       nix-darwin,
-      nixpkgs,
       mac-app-util,
       nix-homebrew,
       ...
@@ -70,6 +69,7 @@
             pkgs.yarn
             pkgs.claude-code
             pkgs.desktoppr
+            pkgs.mise
           ];
 
           # Set up environment variables for pkg-config
