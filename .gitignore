@@ -11,3 +11,13 @@ tt.*
 tmux/plugins/
 gh/hosts.yml
 .env.local
+claude/.claude/.credentials.json
+claude/.claude/backups/
+claude/.claude/cache/
+claude/.claude/debug/
+claude/.claude/file-history/
+claude/.claude/history.jsonl
+claude/.claude/plugins/
+claude/.claude/projects/
+claude/.claude/shell-snapshots/
+claude/.claude/mcp-needs-auth-cache.json
