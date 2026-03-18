@@ -70,7 +70,20 @@
             pkgs.claude-code
             pkgs.desktoppr
             pkgs.mise
+            pkgs.sketchybar
           ];
+
+          launchd.user.agents.sketchybar = {
+            serviceConfig = {
+              Label = "sketchybar";
+              ProgramArguments = [ "${pkgs.sketchybar}/bin/sketchybar" ];
+              KeepAlive = true;
+              RunAtLoad = true;
+              EnvironmentVariables.PATH = "/run/current-system/sw/bin:/usr/bin:/bin:/opt/homebrew/bin";
+              StandardOutPath = "/tmp/sketchybar.log";
+              StandardErrorPath = "/tmp/sketchybar.log";
+            };
+          };
 
           # Set up environment variables for pkg-config
           # environment.variables = {

@@ -11,6 +11,11 @@ after-login-command = []
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
 after-startup-command = []
 
+exec-on-workspace-change = [
+  '/bin/bash', '-c',
+  '/run/current-system/sw/bin/sketchybar --trigger aerospace_workspace_change WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+]
+
 # Start AeroSpace at login
 start-at-login = true
 
@@ -61,7 +66,7 @@ inner.horizontal = 10
 inner.vertical = 10
 outer.left = 10
 outer.bottom = 10
-outer.top = 10
+outer.top = 40
 outer.right = 10
 
 

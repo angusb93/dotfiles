@@ -274,5 +274,22 @@ format = '[[ $symbol ($version) ](fg:{ACCENT} bg:{LANG_BG})]($style)'
 EOF
 echo "✓ Starship config generated"
 
+# --- Sketchybar ---
+sketchybar_colors="$REPO_DIR/sketchybar/colors.sh"
+cat > "$sketchybar_colors" <<EOF
+# [theme:generated] — do not edit, run theme/apply.sh
+export BAR_BG="0xff$BASE00"
+export BAR_FG="0xff$BASE05"
+export ACCENT="0xff$BASE08"
+export ACCENT_ORANGE="0xff$BASE0A"
+export INACTIVE="0xff$BASE02"
+export MUTED="0xff$BASE03"
+export SUBTEXT="0xff$BASE04"
+EOF
+echo "✓ Sketchybar colors generated"
+if pgrep -x sketchybar >/dev/null 2>&1; then
+  sketchybar --reload && echo "✓ Sketchybar reloaded"
+fi
+
 echo ""
 echo "Theme applied. Restart apps or reload configs to see changes."
