@@ -19,5 +19,9 @@ claude/.claude/file-history/
 claude/.claude/history.jsonl
 claude/.claude/plugins/
 claude/.claude/projects/
+claude/.claude/plans/
+claude/.claude/session-env/
 claude/.claude/shell-snapshots/
+claude/.claude/tasks/
+claude/.claude/telemetry/
 claude/.claude/mcp-needs-auth-cache.json
