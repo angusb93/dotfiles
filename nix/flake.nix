@@ -136,6 +136,12 @@
               NSGlobalDomain = {
                 KeyRepeat = 2;
                 AppleInterfaceStyle = "Dark";
+                _HIHideMenuBar = true;
+              };
+              CustomUserPreferences = {
+                NSGlobalDomain = {
+                  AppleReduceDesktopTinting = true;
+                };
               };
             };
             primaryUser = "angusbuick";
