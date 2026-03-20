@@ -1,3 +1,5 @@
+command_timeout = 1000
+
 format = """
 [░▒▓](#5f8787)\
 [  ](bg:#5f8787 fg:#000000)\
