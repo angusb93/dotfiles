@@ -141,6 +141,9 @@
               CustomUserPreferences = {
                 NSGlobalDomain = {
                   AppleReduceDesktopTinting = true;
+                  NSUserKeyEquivalents = {
+                    Minimize = "\\0";
+                  };
                 };
               };
             };
