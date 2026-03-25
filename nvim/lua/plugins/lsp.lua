@@ -16,6 +16,9 @@ return {
         nil_ls = {
           mason = false, -- Don't use Mason for nil_ls
         },
+        gopls = {
+          mason = false, -- Don't use Mason for gopls
+        },
         terraformls = {
           mason = false, -- Don't use Mason for terraform-ls
           -- Disable LSP formatting in favor of conform.nvim

@@ -138,6 +138,16 @@ return {
       vim.g.terminal_color_9  = "#cc6666"  -- bright red
       vim.g.terminal_color_10 = "#66cc66"  -- bright green
 
+      -- Diagnostics
+      hl(0, "DiagnosticError", { fg = "#cc6666" })
+      hl(0, "DiagnosticWarn", { fg = "#$BASE0A" })
+      hl(0, "DiagnosticInfo", { fg = "#$BASE0D" })
+      hl(0, "DiagnosticHint", { fg = "#$BASE03" })
+      hl(0, "DiagnosticUnderlineError", { undercurl = true, sp = "#cc6666" })
+      hl(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = "#$BASE0A" })
+      hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = "#$BASE0D" })
+      hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = "#$BASE03" })
+
       -- Completion popup
       hl(0, "BlinkCmpMenuBorder", { fg = "#$BASE03" })
       hl(0, "BlinkCmpDocBorder", { fg = "#$BASE03" })
@@ -209,6 +219,8 @@ sed \
   -e "s/{LANG_BG}/#$BASE01/g" \
   -e "s/{DARK_FG}/#$BASE04/g" \
   <<'EOF' > "$starship_config"
+command_timeout = 1000
+
 format = """
 [░▒▓]({ACCENT})\
 [  ](bg:{ACCENT} fg:{BG})\

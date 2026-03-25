@@ -5,7 +5,6 @@ window-decoration = true
 # keybind = global:cmd+/=toggle_quick_terminal
 macos-option-as-alt = true
 background-opacity = 1.0
-# background-blur-radius = 20 
 # [theme:generated] — do not edit, run theme/apply.sh
 background = 000000
 foreground = c1c1c1

@@ -50,6 +50,7 @@
             pkgs.code-cursor
             pkgs.opencode
             pkgs.go
+            pkgs.gopls
             pkgs.direnv
             pkgs.google-cloud-sdk
             pkgs.devbox

@@ -65,6 +65,16 @@ return {
       vim.g.terminal_color_9  = "#cc6666"  -- bright red
       vim.g.terminal_color_10 = "#66cc66"  -- bright green
 
+      -- Diagnostics
+      hl(0, "DiagnosticError", { fg = "#cc6666" })
+      hl(0, "DiagnosticWarn", { fg = "#e78a43" })
+      hl(0, "DiagnosticInfo", { fg = "#888888" })
+      hl(0, "DiagnosticHint", { fg = "#505050" })
+      hl(0, "DiagnosticUnderlineError", { undercurl = true, sp = "#cc6666" })
+      hl(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = "#e78a43" })
+      hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = "#888888" })
+      hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = "#505050" })
+
       -- Completion popup
       hl(0, "BlinkCmpMenuBorder", { fg = "#505050" })
       hl(0, "BlinkCmpDocBorder", { fg = "#505050" })
