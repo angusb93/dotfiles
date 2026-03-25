@@ -62,6 +62,7 @@
             pkgs.tenv
             pkgs.terraform-ls # Terraform LSP
             pkgs.statix # Nix linter
+            pkgs.shellcheck
             pkgs.postman
             pkgs.tflint
             pkgs.ffmpeg
@@ -93,9 +94,9 @@
 
           homebrew = {
             enable = true;
+            onActivation.cleanup = "zap";
             brews = [
               "tree-sitter-cli"
-              "nvm"
               "pkg-config"
               "cairo"
               "pango"

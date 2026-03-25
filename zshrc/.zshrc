@@ -24,8 +24,9 @@ if [[ $- == *i* ]]; then
     local name="$1"
     local cmd="$2"
     local cache_file="$ZSH_CACHE/$name.zsh"
-    
-    if [[ ! -f "$cache_file" ]]; then
+    local bin_path="$(command -v "${cmd%% *}" 2>/dev/null)"
+
+    if [[ ! -f "$cache_file" ]] || [[ -n "$bin_path" && "$bin_path" -nt "$cache_file" ]]; then
       eval "$cmd" > "$cache_file" 2>/dev/null
     fi
     source "$cache_file"
@@ -38,8 +39,6 @@ if [[ $- == *i* ]]; then
   load_hook "mise" "mise activate zsh"
   load_hook "fzf" "fzf --zsh"
 
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 fi
 
 # --- Aliases ---
@@ -51,10 +50,12 @@ alias lg="lazygit"
 
 # --- History ---
 HISTFILE=~/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
+HISTSIZE=100000
+SAVEHIST=100000
 setopt inc_append_history
 setopt share_history
+setopt hist_ignore_dups
+setopt hist_ignore_space
 
 # --- Terminal title ---
 precmd() { print -Pn "\e]0;%n@%m: %~\a" }
