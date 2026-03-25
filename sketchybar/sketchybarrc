@@ -46,6 +46,14 @@ sketchybar --add item aerospace_listener left \
     script="$PLUGIN_DIR/aerospace.sh" \
   --subscribe aerospace_listener aerospace_workspace_change
 
+# Right side: meeting
+sketchybar --add item meeting right \
+  --set meeting \
+    drawing=off \
+    update_freq=30 \
+    script="$PLUGIN_DIR/meeting.sh" \
+  --subscribe meeting system_woke
+
 # Right side: battery
 sketchybar --add item battery right \
   --set battery \

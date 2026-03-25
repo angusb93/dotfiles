@@ -71,6 +71,7 @@
             pkgs.desktoppr
             pkgs.mise
             pkgs.sketchybar
+            pkgs.gcalcli
           ];
 
           launchd.user.agents.sketchybar = {
