@@ -10,7 +10,8 @@ export PAGER="less"
 export LANG="en_US.UTF-8"
 
 # --- PATH ---
-export PATH="/run/current-system/sw/bin:$HOME/.cargo/bin:$HOME/bin:$PATH"
+export PNPM_HOME="$HOME/Library/pnpm"
+export PATH="/run/current-system/sw/bin:$PNPM_HOME:$HOME/.cargo/bin:$HOME/bin:$PATH"
 
 # --- Prompt & Heavy Plugins ---
 # Only load these in interactive shells to keep scripts/tmux fast
