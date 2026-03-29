@@ -31,48 +31,55 @@ WORKSPACES=(1 A B C D E F G I M N O P Q R S T U V W X Y Z)
 for ws in "${WORKSPACES[@]}"; do
   sketchybar --add item space.$ws center \
     --set space.$ws \
-      label="$ws" \
-      background.color=$ACCENT \
-      background.drawing=off \
-      label.color=$MUTED \
-      drawing=off \
-      click_script="aerospace workspace $ws"
+    label="$ws" \
+    background.color=$ACCENT \
+    background.drawing=off \
+    label.color=$MUTED \
+    drawing=off \
+    click_script="aerospace workspace $ws"
 done
 
 # Hidden listener — updates all space items on workspace change
 sketchybar --add item aerospace_listener left \
   --set aerospace_listener \
-    drawing=off \
-    script="$PLUGIN_DIR/aerospace.sh" \
+  drawing=off \
+  script="$PLUGIN_DIR/aerospace.sh" \
   --subscribe aerospace_listener aerospace_workspace_change
 
+# Left side: focused app
+sketchybar --add item front_app left \
+  --set front_app \
+  label.color=$BAR_FG \
+  script="$PLUGIN_DIR/front_app.sh" \
+  --subscribe front_app front_app_switched
+#
 # Right side: meeting
 sketchybar --add item meeting right \
   --set meeting \
-    drawing=off \
-    update_freq=30 \
-    script="$PLUGIN_DIR/meeting.sh" \
+  drawing=off \
+  update_freq=30 \
+  script="$PLUGIN_DIR/meeting.sh" \
   --subscribe meeting system_woke
 
 # Right side: battery
 sketchybar --add item battery right \
   --set battery \
-    update_freq=60 \
-    script="$PLUGIN_DIR/battery.sh" \
+  update_freq=60 \
+  script="$PLUGIN_DIR/battery.sh" \
   --subscribe battery system_woke power_source_change
 
 # Right side: volume
 sketchybar --add item volume right \
   --set volume \
-    update_freq=30 \
-    script="$PLUGIN_DIR/volume.sh" \
+  update_freq=30 \
+  script="$PLUGIN_DIR/volume.sh" \
   --subscribe volume volume_change
 
 # Right side: clock
 sketchybar --add item clock right \
   --set clock \
-    update_freq=10 \
-    script="$PLUGIN_DIR/clock.sh"
+  update_freq=10 \
+  script="$PLUGIN_DIR/clock.sh"
 
 sketchybar --update
 
