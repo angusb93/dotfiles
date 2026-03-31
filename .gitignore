@@ -24,5 +24,7 @@ claude/.claude/session-env/
 claude/.claude/shell-snapshots/
 claude/.claude/tasks/
 claude/.claude/telemetry/
+claude/.claude/paste-cache/
+claude/.claude/sessions/
 claude/.claude/mcp-needs-auth-cache.json
 result
