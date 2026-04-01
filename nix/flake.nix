@@ -145,7 +145,7 @@
                 NSGlobalDomain = {
                   AppleReduceDesktopTinting = true;
                   NSUserKeyEquivalents = {
-                    Minimize = "\\0";
+                    Minimize = "\\~\\$\\^\\@m";
                   };
                 };
               };
