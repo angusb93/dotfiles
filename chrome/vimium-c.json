@@ -1,0 +1,13 @@
+{
+	"name": "Vimium C",
+	"@time": "01/04/2026, 13:58:16",
+	"time": 1775048296821,
+	"environment": {
+		"extension": "2.12.2",
+		"platform": "mac",
+		"chromium": 146
+	},
+	"keyLayout": 2,
+	"keyMappings": "# Unmap all alt-based bindings that conflict with Aerospace\nunmap <a-f>\nunmap <a-r>\nunmap <a-n>\nunmap <a-s-r>\nunmap <a-s-c>\nunmap <a-v>\nunmap <a-c>\nunmap <a-t>\nunmap <a-p>\nunmap <a-m>\n\n# Remap unique alt bindings to g-prefixed alternatives\nmap qf LinkHints.activateWithQueue\nmap gp togglePinTab\nmap gm toggleMuteTab\nmap g/ performAnotherFind",
+	"vimSync": true
+}
