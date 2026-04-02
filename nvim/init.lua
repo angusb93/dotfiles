@@ -1,10 +1,4 @@
--- Detect .env files as dotenv before anything else loads
-vim.filetype.add({
-  pattern = {
-    ["%.env"] = "dotenv",
-    ["%.env%..*"] = "dotenv",
-  },
-})
+require("config.filetypes")
 
 -- bootstrap lazy.nvim, LazyVim and your plugins
 require("config.lazy")
