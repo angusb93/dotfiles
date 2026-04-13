@@ -31,7 +31,17 @@ fi
 mkdir -p "$HOME/.claude"
 
 # Stow everything using default .stowrc (into ~/.config)
-stow -R --ignore=zshrc --ignore=claude --ignore=ralph .
+# Ignore packages that target $HOME (handled below) and non-stow directories
+stow -R \
+  --ignore=zshrc \
+  --ignore=claude \
+  --ignore=ralph \
+  --ignore='glove80.*' \
+  --ignore=chrome \
+  --ignore=wallpapers \
+  --ignore=theme \
+  --ignore=result \
+  .
 
 # Create symlinks for packages that target $HOME
 stow -R --target "$HOME" zshrc
@@ -42,6 +52,6 @@ stow -R --target "$HOME" ralph
 ./theme/apply.sh
 
 # Set GH default user if specified
-if command -v gh &>/dev/null && [[ -n "$GH_DEFAULT_USER" ]]; then
+if command -v gh &>/dev/null && [[ -n "${GH_DEFAULT_USER:-}" ]]; then
   gh config set -h github.com user "$GH_DEFAULT_USER"
 fi
