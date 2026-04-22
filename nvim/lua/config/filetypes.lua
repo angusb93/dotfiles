@@ -1,11 +1,9 @@
 vim.filetype.add({
-  extension = {
-    env = "dotenv",
-  },
   filename = {
     [".env"] = "dotenv",
   },
   pattern = {
-    ["%.env%.[%w_.-]+"] = "dotenv",
+    ["%.env"] = { "dotenv", { priority = 10 } },
+    ["%.env%..*"] = { "dotenv", { priority = 10 } },
   },
 })

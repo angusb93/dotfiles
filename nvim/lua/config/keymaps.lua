@@ -3,9 +3,9 @@
 -- Add any additional keymaps here
 
 vim.keymap.set("n", "<leader>fa", function()
-  Snacks.picker.files({ hidden = true, ignored = true })
-end, { desc = "Find All Files" })
-
-vim.keymap.set("n", "<leader>fA", function()
   Snacks.picker.files({ hidden = true, ignored = true, exclude = { "node_modules" } })
 end, { desc = "Find All Files (no node_modules)" })
+
+vim.keymap.set("n", "<leader>fA", function()
+  Snacks.picker.files({ hidden = true, ignored = true })
+end, { desc = "Find All Files" })
