@@ -157,7 +157,7 @@ ensure_worktree() {
   # Derive branch name from plan description via LLM
   info "Generating branch name..."
   plan_desc="$(sed -n '/^## Description/,/^##/{ /^##/d; p; }' "$td/plan.md" | tr '\n' ' ')"
-  branch_name="$(claude -p --model haiku \
+  branch_name="$(claude -p --model haiku --tools "" --strict-mcp-config \
     "Generate a git branch name for this task. Format: <type>/<scope>/<short-description>
 Types: feat, fix, refactor, chore, docs, test, perf, ci
 Scope: the area of the codebase affected (e.g. auth, home-page, api)
