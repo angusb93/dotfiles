@@ -63,6 +63,19 @@ worktree_path() {
   echo "$(dirname "$(ralph_root)")/$(repo_name)-$slug"
 }
 
+# Clean up a stale branch/worktree so we can reuse the name
+cleanup_stale_branch() {
+  local root="$1" branch="$2" wt="$3"
+  if [[ -d "$wt" ]]; then
+    warn "Removing stale worktree at $wt"
+    git -C "$root" worktree remove --force "$wt" 2>/dev/null || rm -rf "$wt"
+  fi
+  if git -C "$root" show-ref --verify --quiet "refs/heads/$branch"; then
+    warn "Deleting stale branch $branch"
+    git -C "$root" branch -D "$branch"
+  fi
+}
+
 select_base_branch() {
   local base="${1:-}"
   if [[ -n "$base" ]]; then
@@ -174,6 +187,7 @@ Task: $plan_desc")"
     base="$(cat "$td/base_branch")"
   fi
 
+  cleanup_stale_branch "$(ralph_root)" "$branch" "$wt"
   info "Creating worktree at $wt (branch: $branch) from $base"
   git -C "$(ralph_root)" worktree add -b "$branch" "$wt" "$base"
   echo "$wt" >"$td/worktree"

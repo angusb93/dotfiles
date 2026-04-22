@@ -85,7 +85,8 @@ BRANCH="$(echo "$BRANCH_NAME" | tr -d '[:space:]')"
 WT="$(worktree_path "$(echo "$BRANCH" | tr '/' '-')")"
 ROOT="$(ralph_root)"
 
-# Create worktree
+# Create worktree (clean up stale branch/worktree if name collides)
+cleanup_stale_branch "$ROOT" "$BRANCH" "$WT"
 info "Creating worktree at $WT (branch: $BRANCH) from $BASE_BRANCH"
 git -C "$ROOT" worktree add -b "$BRANCH" "$WT" "$BASE_BRANCH"
 
