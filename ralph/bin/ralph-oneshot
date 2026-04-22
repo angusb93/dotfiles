@@ -72,7 +72,7 @@ BASE_BRANCH="$(select_base_branch "$BASE")"
 
 # Derive branch name via LLM
 info "Generating branch name..."
-BRANCH_NAME="$(claude -p --model haiku \
+BRANCH_NAME="$(claude -p --model haiku --tools "" --strict-mcp-config \
   "Generate a git branch name for this task. Format: <type>/<scope>/<short-description>
 Types: feat, fix, refactor, chore, docs, test, perf, ci
 Scope: the area of the codebase affected (e.g. auth, home-page, api)
@@ -135,7 +135,7 @@ claude -p \
   --output-format stream-json \
   --model "$MODEL" \
   --max-budget-usd "$BUDGET" \
-  "$PROMPT" 2>&1 | tee "$LOG_FILE" | jq -rj '
+  "$PROMPT" 2>/dev/null | tee "$LOG_FILE" | jq -rj '
   if .type == "content_block_start" and .content_block.type == "tool_use" then
     "\n\u001b[2m  ↳ " + .content_block.name + "\u001b[0m\n"
   elif .type == "content_block_delta" and .delta.type == "text_delta" then
