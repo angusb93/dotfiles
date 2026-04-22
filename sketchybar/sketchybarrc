@@ -31,7 +31,7 @@ sketchybar --add event aerospace_workspace_change
 # Workspace items — all hidden until aerospace.sh sets state
 WORKSPACES=(1 A B C D E F G I M N O P Q R S T U V W X Y Z)
 for ws in "${WORKSPACES[@]}"; do
-  sketchybar --add item space.$ws q \
+  sketchybar --add item space.$ws center \
     --set space.$ws \
     label="$ws" \
     background.color=$ACCENT \

@@ -20,6 +20,18 @@ app_for_workspace() {
   echo "$app"
 }
 
+# Detect if built-in (notch) display is active (cached for 60s)
+NOTCH_CACHE="/tmp/sketchybar_has_notch"
+if [ -f "$NOTCH_CACHE" ] && [ "$(( $(date +%s) - $(stat -f%m "$NOTCH_CACHE") ))" -lt 60 ]; then
+  HAS_NOTCH=$(cat "$NOTCH_CACHE")
+else
+  HAS_NOTCH=false
+  if /usr/sbin/system_profiler SPDisplaysDataType 2>/dev/null | grep -qi "built-in"; then
+    HAS_NOTCH=true
+  fi
+  echo "$HAS_NOTCH" > "$NOTCH_CACHE"
+fi
+
 # Collect visible workspaces in order
 VISIBLE=()
 for ws in "${WORKSPACES[@]}"; do
@@ -27,10 +39,6 @@ for ws in "${WORKSPACES[@]}"; do
     VISIBLE+=("$ws")
   fi
 done
-
-# Split visible workspaces evenly: first half → q (left of notch), second half → e (right of notch)
-TOTAL=${#VISIBLE[@]}
-HALF=$(( (TOTAL + 1) / 2 ))
 
 for ws in "${WORKSPACES[@]}"; do
   if [ "$ws" = "$FOCUSED" ]; then
@@ -56,12 +64,21 @@ for ws in "${WORKSPACES[@]}"; do
   fi
 done
 
-# Assign positions: first half to q, second half to e
-for i in "${!VISIBLE[@]}"; do
-  ws="${VISIBLE[$i]}"
-  if [ "$i" -lt "$HALF" ]; then
-    sketchybar --set space.$ws position=q
-  else
-    sketchybar --set space.$ws position=e
-  fi
-done
+# Position items: q/e split for notch display, center for external
+if [ "$HAS_NOTCH" = true ]; then
+  TOTAL=${#VISIBLE[@]}
+  HALF=$(( (TOTAL + 1) / 2 ))
+  for i in "${!VISIBLE[@]}"; do
+    ws="${VISIBLE[$i]}"
+    if [ "$i" -lt "$HALF" ]; then
+      sketchybar --set space.$ws position=q
+    else
+      sketchybar --set space.$ws position=e
+    fi
+  done
+else
+  for ws in "${VISIBLE[@]}"; do
+    sketchybar --set space.$ws position=center
+  done
+fi
+
