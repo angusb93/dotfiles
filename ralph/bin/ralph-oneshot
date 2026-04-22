@@ -67,6 +67,9 @@ elif [[ "$TASK" == @* ]]; then
   TASK="$(cat "$TASKFILE")"
 fi
 
+# Select base branch first (interactive — don't block on LLM)
+BASE_BRANCH="$(select_base_branch "$BASE")"
+
 # Derive branch name via LLM
 info "Generating branch name..."
 BRANCH_NAME="$(claude -p --model haiku \
@@ -81,9 +84,6 @@ Task: $TASK")"
 BRANCH="$(echo "$BRANCH_NAME" | tr -d '[:space:]')"
 WT="$(worktree_path "$(echo "$BRANCH" | tr '/' '-')")"
 ROOT="$(ralph_root)"
-
-# Select base branch
-BASE_BRANCH="$(select_base_branch "$BASE")"
 
 # Create worktree
 info "Creating worktree at $WT (branch: $BRANCH) from $BASE_BRANCH"
@@ -132,9 +132,18 @@ LOG_FILE="$(mktemp)"
 EXIT_CODE=0
 claude -p \
   --dangerously-skip-permissions \
+  --output-format stream-json \
   --model "$MODEL" \
   --max-budget-usd "$BUDGET" \
-  "$PROMPT" 2>&1 | tee "$LOG_FILE" || EXIT_CODE=$?
+  "$PROMPT" 2>&1 | tee "$LOG_FILE" | jq -rj '
+  if .type == "content_block_start" and .content_block.type == "tool_use" then
+    "\n\u001b[2m  ↳ " + .content_block.name + "\u001b[0m\n"
+  elif .type == "content_block_delta" and .delta.type == "text_delta" then
+    .delta.text
+  else
+    empty
+  end
+' || EXIT_CODE=$?
 
 # Check result
 if grep -qF "$SIGNAL_COMPLETE" "$LOG_FILE"; then
