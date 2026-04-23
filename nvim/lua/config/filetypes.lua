@@ -1,9 +1,7 @@
-vim.filetype.add({
-  filename = {
-    [".env"] = "dotenv",
-  },
-  pattern = {
-    ["%.env"] = { "dotenv", { priority = 10 } },
-    ["%.env%..*"] = { "dotenv", { priority = 10 } },
-  },
+vim.api.nvim_create_autocmd({ "BufNewFile", "BufReadPost" }, {
+  group = vim.api.nvim_create_augroup("EnvNoDiagnostics", { clear = true }),
+  pattern = ".env*",
+  callback = function(e)
+    vim.diagnostic.enable(false, { bufnr = e.buf })
+  end,
 })
