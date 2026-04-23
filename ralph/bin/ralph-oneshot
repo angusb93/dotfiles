@@ -134,6 +134,7 @@ ERR_FILE="$(mktemp)"
 EXIT_CODE=0
 claude -p \
   --dangerously-skip-permissions \
+  --verbose \
   --output-format stream-json \
   --model "$MODEL" \
   --max-budget-usd "$BUDGET" \
