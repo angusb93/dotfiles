@@ -7,6 +7,15 @@
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
 
+-- Re-enter terminal mode when regaining focus (fixes lazygit after AeroSpace switch)
+vim.api.nvim_create_autocmd("FocusGained", {
+  callback = function()
+    if vim.bo.buftype == "terminal" and vim.fn.mode() == "n" then
+      vim.cmd("startinsert")
+    end
+  end,
+})
+
 vim.api.nvim_create_user_command("ReloadTheme", function()
   vim.fn.system("bash ~/dotfiles/theme/apply.sh")
   local spec = dofile(vim.fn.expand("~/dotfiles/nvim/lua/plugins/colorscheme.lua"))
