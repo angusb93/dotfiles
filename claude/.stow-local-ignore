@@ -1,0 +1,23 @@
+# Standard VCS ignores
+\CVS
+\.svn
+\.git
+\.gitignore
+\.gitmodules
+
+# Claude Code runtime data — do not stow these
+\.claude/backups
+\.claude/cache
+\.claude/debug
+\.claude/file-history
+\.claude/history\.jsonl
+\.claude/ide
+\.claude/paste-cache
+\.claude/plans
+\.claude/plugins
+\.claude/projects
+\.claude/sessions
+\.claude/session-env
+\.claude/shell-snapshots
+\.claude/tasks
+\.claude/telemetry
