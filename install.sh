@@ -51,7 +51,7 @@ stow -R --target "$HOME" ralph
 # Generate theme configs from centralized palette
 ./theme/apply.sh
 
-# Set GH default user if specified
+# Switch gh account if specified
 if command -v gh &>/dev/null && [[ -n "${GH_DEFAULT_USER:-}" ]]; then
-  gh config set -h github.com user "$GH_DEFAULT_USER"
+  gh auth switch --user "$GH_DEFAULT_USER"
 fi

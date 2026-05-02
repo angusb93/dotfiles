@@ -1,5 +1,5 @@
 # Standard VCS ignores
-\CVS
+CVS
 \.svn
 \.git
 \.gitignore
