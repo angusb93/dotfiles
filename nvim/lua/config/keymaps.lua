@@ -9,3 +9,7 @@ end, { desc = "Find All Files (no node_modules)" })
 vim.keymap.set("n", "<leader>fA", function()
   Snacks.picker.files({ hidden = true, ignored = true })
 end, { desc = "Find All Files" })
+
+vim.keymap.set("n", "<leader>sd", function()
+  Snacks.picker.grep({ dirs = { vim.fn.input("Dir: ", "", "dir") } })
+end, { desc = "Grep in Directory" })
