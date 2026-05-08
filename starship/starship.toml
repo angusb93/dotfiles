@@ -3,21 +3,21 @@ command_timeout = 1000
 format = """
 [░▒▓](#5f8787)\
 [  ](bg:#5f8787 fg:#000000)\
-[](bg:#505050 fg:#5f8787)\
+[](bg:#666666 fg:#5f8787)\
 $directory\
-[](fg:#505050 bg:#333333)\
+[](fg:#666666 bg:#494949)\
 $git_branch\
 $git_status\
-[](fg:#333333 bg:#121212)\
+[](fg:#494949 bg:#282828)\
 $nodejs\
 $rust\
 $golang\
 $php\
-[ ](fg:#121212)\
+[ ](fg:#282828)\
 \n$character"""
 
 [directory]
-style = "fg:#fbcb97 bg:#505050"
+style = "fg:#fbcb97 bg:#666666"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
@@ -30,35 +30,35 @@ truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "bg:#333333"
-format = '[[ $symbol $branch ](fg:#5f8787 bg:#333333)]($style)'
+style = "bg:#494949"
+format = '[[ $symbol $branch ](fg:#5f8787 bg:#494949)]($style)'
 
 [git_status]
-style = "bg:#333333"
-format = '[[($all_status$ahead_behind )](fg:#5f8787 bg:#333333)]($style)'
+style = "bg:#494949"
+format = '[[($all_status$ahead_behind )](fg:#5f8787 bg:#494949)]($style)'
 
 [nodejs]
 symbol = ""
-style = "bg:#121212"
-format = '[[ $symbol ($version) ](fg:#5f8787 bg:#121212)]($style)'
+style = "bg:#282828"
+format = '[[ $symbol ($version) ](fg:#5f8787 bg:#282828)]($style)'
 
 [rust]
 symbol = ""
-style = "bg:#121212"
-format = '[[ $symbol ($version) ](fg:#5f8787 bg:#121212)]($style)'
+style = "bg:#282828"
+format = '[[ $symbol ($version) ](fg:#5f8787 bg:#282828)]($style)'
 
 [golang]
 symbol = ""
-style = "bg:#121212"
-format = '[[ $symbol ($version) ](fg:#5f8787 bg:#121212)]($style)'
+style = "bg:#282828"
+format = '[[ $symbol ($version) ](fg:#5f8787 bg:#282828)]($style)'
 
 [php]
 symbol = ""
-style = "bg:#121212"
-format = '[[ $symbol ($version) ](fg:#5f8787 bg:#121212)]($style)'
+style = "bg:#282828"
+format = '[[ $symbol ($version) ](fg:#5f8787 bg:#282828)]($style)'
 
 # [time]
 # disabled = false
 # time_format = "%R" # Hour:Minute Format
 # style = "bg:#000000"
-# format = '[[  $time ](fg:#999999 bg:#000000)]($style)'
+# format = '[[  $time ](fg:#afafaf bg:#000000)]($style)'

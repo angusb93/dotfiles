@@ -11,21 +11,21 @@ return {
     config = function()
       require("base16-colorscheme").setup({
         base00 = "#000000",
-        base01 = "#121212",
-        base02 = "#333333",
-        base03 = "#505050",
-        base04 = "#999999",
-        base05 = "#c1c1c1",
-        base06 = "#999999",
-        base07 = "#c1c1c1",
+        base01 = "#282828",
+        base02 = "#494949",
+        base03 = "#666666",
+        base04 = "#afafaf",
+        base05 = "#d7d7d7",
+        base06 = "#afafaf",
+        base07 = "#d7d7d7",
         base08 = "#5f8787",
-        base09 = "#aaaaaa",
+        base09 = "#c0c0c0",
         base0A = "#e78a43",
         base0B = "#fbcb97",
-        base0C = "#aaaaaa",
-        base0D = "#888888",
-        base0E = "#999999",
-        base0F = "#444444",
+        base0C = "#c0c0c0",
+        base0D = "#9e9e9e",
+        base0E = "#afafaf",
+        base0F = "#5a5a5a",
       })
 
       -- Override Snacks dashboard highlights
@@ -33,31 +33,31 @@ return {
       hl(0, "SnacksDashboardHeader", { fg = "#5f8787" })
       hl(0, "SnacksDashboardIcon", { fg = "#e78a43" })
       hl(0, "SnacksDashboardKey", { fg = "#e78a43" })
-      hl(0, "SnacksDashboardDesc", { fg = "#999999" })
-      hl(0, "SnacksDashboardFooter", { fg = "#505050" })
+      hl(0, "SnacksDashboardDesc", { fg = "#afafaf" })
+      hl(0, "SnacksDashboardFooter", { fg = "#666666" })
 
       -- Picker
       hl(0, "SnacksPickerMatch", { fg = "#e78a43", bold = true })
-      hl(0, "SnacksPickerBorder", { fg = "#505050" })
-      hl(0, "SnacksPickerInputBorder", { fg = "#505050" })
-      hl(0, "SnacksPickerListBorder", { fg = "#505050" })
-      hl(0, "SnacksPickerPreviewBorder", { fg = "#505050" })
+      hl(0, "SnacksPickerBorder", { fg = "#666666" })
+      hl(0, "SnacksPickerInputBorder", { fg = "#666666" })
+      hl(0, "SnacksPickerListBorder", { fg = "#666666" })
+      hl(0, "SnacksPickerPreviewBorder", { fg = "#666666" })
       hl(0, "SnacksPickerTitle", { fg = "#5f8787", bold = true })
       hl(0, "SnacksPickerInputTitle", { fg = "#5f8787", bold = true })
       hl(0, "SnacksPickerListTitle", { fg = "#5f8787", bold = true })
       hl(0, "SnacksPickerPreviewTitle", { fg = "#5f8787", bold = true })
-      hl(0, "SnacksPickerListCursorLine", { bg = "#333333", bold = true })
+      hl(0, "SnacksPickerListCursorLine", { bg = "#494949", bold = true })
       hl(0, "SnacksPickerPrompt", { fg = "#e78a43" })
-      hl(0, "SnacksPickerDir", { fg = "#505050" })
+      hl(0, "SnacksPickerDir", { fg = "#666666" })
 
       -- Floating windows (general)
       hl(0, "FloatTitle", { fg = "#5f8787", bold = true })
-      hl(0, "FloatBorder", { fg = "#505050" })
+      hl(0, "FloatBorder", { fg = "#666666" })
 
       -- Lazygit (used by Snacks.lazygit theme mapping)
       hl(0, "LazyGitActiveBorder", { fg = "#5f8787" })
       hl(0, "LazyGitUnstaged", { fg = "#cc6666" })
-      hl(0, "LazyGitSelectedLine", { bg = "#121212" })
+      hl(0, "LazyGitSelectedLine", { bg = "#282828" })
 
       -- Override terminal ANSI red/green for lazygit staging & diffs
       vim.g.terminal_color_1  = "#cc6666"  -- red
@@ -68,18 +68,18 @@ return {
       -- Diagnostics
       hl(0, "DiagnosticError", { fg = "#cc6666" })
       hl(0, "DiagnosticWarn", { fg = "#e78a43" })
-      hl(0, "DiagnosticInfo", { fg = "#888888" })
-      hl(0, "DiagnosticHint", { fg = "#505050" })
+      hl(0, "DiagnosticInfo", { fg = "#9e9e9e" })
+      hl(0, "DiagnosticHint", { fg = "#666666" })
       hl(0, "DiagnosticUnderlineError", { undercurl = true, sp = "#cc6666" })
       hl(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = "#e78a43" })
-      hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = "#888888" })
-      hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = "#505050" })
+      hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = "#9e9e9e" })
+      hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = "#666666" })
 
       -- Completion popup
-      hl(0, "BlinkCmpMenuBorder", { fg = "#505050" })
-      hl(0, "BlinkCmpDocBorder", { fg = "#505050" })
+      hl(0, "BlinkCmpMenuBorder", { fg = "#666666" })
+      hl(0, "BlinkCmpDocBorder", { fg = "#666666" })
       hl(0, "BlinkCmpLabelMatch", { fg = "#e78a43", bold = true })
-      hl(0, "BlinkCmpMenuSelection", { bg = "#333333" })
+      hl(0, "BlinkCmpMenuSelection", { bg = "#494949" })
     end,
   },
 
