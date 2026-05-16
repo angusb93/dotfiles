@@ -1,32 +1,37 @@
 return {
-  -- Disable Mason auto-install for LSPs we manage via Nix
-  {
-    "mason-org/mason-lspconfig.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = opts.ensure_installed or {}
-      opts.automatic_installation = false
-    end,
-  },
+  -- All tools managed by Nix — disable Mason entirely
+  { "mason-org/mason.nvim", enabled = false },
+  { "mason-org/mason-lspconfig.nvim", enabled = false },
 
-  -- Configure LSPs
   {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        nil_ls = {
-          mason = false, -- Don't use Mason for nil_ls
-        },
-        gopls = {
-          mason = false, -- Don't use Mason for gopls
-        },
+        -- Nix
+        nil_ls = {},
+        -- Go
+        gopls = {},
+        -- Terraform
         terraformls = {
-          mason = false, -- Don't use Mason for terraform-ls
-          -- Disable LSP formatting in favor of conform.nvim
           on_attach = function(client, bufnr)
             client.server_capabilities.documentFormattingProvider = false
             client.server_capabilities.documentRangeFormattingProvider = false
           end,
         },
+        -- TypeScript/JavaScript
+        vtsls = {},
+        eslint = {},
+        -- Web
+        svelte = {},
+        tailwindcss = {},
+        -- General
+        lua_ls = {},
+        bashls = {},
+        jsonls = {},
+        yamlls = {},
+        marksman = {},
+        taplo = {},
+        biome = {},
       },
     },
   },
@@ -39,11 +44,7 @@ return {
         terraform = { "tflint" },
         tf = { "tflint" },
       },
-      linters = {
-        tflint = {
-          cmd = "tflint", -- Uses system tflint from Nix
-        },
-      },
+      linters = {},
     },
   },
 

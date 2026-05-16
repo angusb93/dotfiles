@@ -24,56 +24,90 @@
           # List packages installed in system profile. To search by name, run:
           # $ nix-env -qaP | grep wget
           environment.systemPackages = [
-            pkgs.neovim
-            pkgs.tmux
-            pkgs.git
-            pkgs.gh
-            pkgs.stow
-            pkgs.bun
-            pkgs.aerospace
-            pkgs.obsidian
-            pkgs.starship
+            # Shell & terminal
+            pkgs.bash
             pkgs.fd
             pkgs.fzf
-            pkgs.zoxide
-            pkgs.sesh
-            pkgs.lua
-            pkgs.lazygit
-            pkgs.ngrok
             pkgs.ripgrep
-            pkgs.typescript
-            pkgs.vscode
-            pkgs.slack
-            pkgs.grpcurl
-            pkgs.notion-app
+            pkgs.sesh
+            pkgs.starship
+            pkgs.tmux
+            pkgs.zoxide
+
+            # Git
+            pkgs.gh
+            pkgs.git
             pkgs.git-lfs
-            pkgs.code-cursor
-            pkgs.opencode
+            pkgs.lazygit
+            pkgs.stow
+
+            # Editors
+            pkgs.neovim
+            pkgs.vscode
+
+            # Languages & runtimes
+            pkgs.bun
             pkgs.go
+            pkgs.lua
+            pkgs.pnpm
+            pkgs.typescript
+            pkgs.yarn
+
+            # Language servers
+            pkgs.bash-language-server
             pkgs.gopls
+            pkgs.lua-language-server
+            pkgs.marksman
+            pkgs.nil
+            pkgs.svelte-language-server
+            pkgs.tailwindcss-language-server
+            pkgs.taplo
+            pkgs.terraform-ls
+            pkgs.vscode-langservers-extracted # eslint, json, html, css
+            pkgs.vtsls
+            pkgs.yaml-language-server
+
+            # Linters
+            pkgs.biome
+            pkgs.golangci-lint
+            pkgs.markdownlint-cli2
+            pkgs.shellcheck
+            pkgs.statix
+            pkgs.tflint
+
+            # Formatters
+            pkgs.gofumpt
+            pkgs.gotools # goimports
+            pkgs.nixfmt
+            pkgs.prettier
+            pkgs.shfmt
+            pkgs.stylua
+
+            # Cloud & infra
+            pkgs.bore-cli
+            pkgs.devbox
             pkgs.direnv
             pkgs.google-cloud-sdk
-            pkgs.devbox
-            pkgs.nixfmt
+            pkgs.grpcurl
+            pkgs.ngrok
             pkgs.redis
-            pkgs.bore-cli
-            pkgs.bash
-            pkgs.nil # Nix LSP
-            pkgs.stylua # Lua formatter
             pkgs.tenv
-            pkgs.terraform-ls # Terraform LSP
-            pkgs.statix # Nix linter
-            pkgs.shellcheck
+
+            # Apps
+            pkgs.gcalcli
+            pkgs.notion-app
+            pkgs.obsidian
+            pkgs.opencode
             pkgs.postman
-            pkgs.tflint
-            pkgs.ffmpeg
-            pkgs.pnpm
-            pkgs.yarn
+            pkgs.slack
+
+            # macOS / system
+            pkgs.aerospace
             pkgs.claude-code
             pkgs.desktoppr
+            pkgs.ffmpeg
             pkgs.mise
             pkgs.sketchybar
-            pkgs.gcalcli
           ];
 
           launchd.user.agents.sketchybar = {
