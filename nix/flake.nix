@@ -26,6 +26,7 @@
           environment.systemPackages = [
             # Shell & terminal
             pkgs.bash
+            pkgs.btop
             pkgs.fd
             pkgs.fzf
             pkgs.ripgrep
