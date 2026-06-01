@@ -43,7 +43,6 @@
 
             # Editors
             pkgs.neovim
-            pkgs.vscode
 
             # Languages & runtimes
             pkgs.bun
