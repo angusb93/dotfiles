@@ -51,6 +51,11 @@ stow -R --target "$HOME" ralph
 # Generate theme configs from centralized palette
 ./theme/apply.sh
 
+# Register Claude Code MCP servers (idempotent)
+if command -v claude &>/dev/null; then
+  claude mcp add -s user playwright bunx @playwright/mcp 2>/dev/null || true
+fi
+
 # Switch gh account if specified
 if command -v gh &>/dev/null && [[ -n "${GH_DEFAULT_USER:-}" ]]; then
   gh auth switch --user "$GH_DEFAULT_USER"
