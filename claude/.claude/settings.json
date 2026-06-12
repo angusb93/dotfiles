@@ -1,8 +1,9 @@
 {
-  "skipDangerousModePermissionPrompt": true,
-  "editorMode": "vim",
   "attribution": {
     "commit": "",
     "pr": ""
-  }
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "model": "claude-fable-5[1m]"
 }
