@@ -139,6 +139,7 @@
               "jpeg"
               "giflib"
               "librsvg"
+              "uv"
             ];
             casks = [
               "ghostty"
