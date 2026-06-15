@@ -3,7 +3,7 @@
     "commit": "",
     "pr": ""
   },
+  "model": "opus",
   "skipDangerousModePermissionPrompt": true,
-  "editorMode": "vim",
-  "model": "claude-fable-5[1m]"
+  "editorMode": "vim"
 }
