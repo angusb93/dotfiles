@@ -106,7 +106,13 @@
             pkgs.claude-code
             pkgs.desktoppr
             pkgs.ffmpeg
-            pkgs.mise
+            # The Nix build sandbox strips setuid/setgid/sticky bits, which
+            # makes this mise test fail with a false assertion. Skip just it.
+            (pkgs.mise.overrideAttrs (old: {
+              checkFlags = (old.checkFlags or [ ]) ++ [
+                "--skip=oci::layer::tests::preserve_metadata_dir_layer_keeps_special_permission_bits"
+              ];
+            }))
             pkgs.sketchybar
           ];
 
