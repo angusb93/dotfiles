@@ -4,6 +4,7 @@ background-blur-radius = 20
 window-decoration = true
 # keybind = global:cmd+/=toggle_quick_terminal
 macos-option-as-alt = true
+keybind = shift+enter=text:\x1b\r
 background-opacity = 1.0
 # [theme:generated] — do not edit, run theme/apply.sh
 background = 000000
