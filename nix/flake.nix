@@ -72,7 +72,11 @@
             pkgs.golangci-lint
             pkgs.markdownlint-cli2
             pkgs.shellcheck
-            pkgs.statix
+            # TEMP: statix 0.5.8-unstable-2026-06-28 has a broken snapshot test
+            # (useless_has_attr) and isn't in the binary cache yet, so it builds
+            # from source and fails its checkPhase. Skip checks until a good
+            # build is cached upstream, then drop this override.
+            (pkgs.statix.overrideAttrs (_: { doCheck = false; }))
             pkgs.tflint
 
             # Formatters
@@ -106,13 +110,7 @@
             pkgs.claude-code
             pkgs.desktoppr
             pkgs.ffmpeg
-            # The Nix build sandbox strips setuid/setgid/sticky bits, which
-            # makes this mise test fail with a false assertion. Skip just it.
-            (pkgs.mise.overrideAttrs (old: {
-              checkFlags = (old.checkFlags or [ ]) ++ [
-                "--skip=oci::layer::tests::preserve_metadata_dir_layer_keeps_special_permission_bits"
-              ];
-            }))
+            pkgs.mise
             pkgs.sketchybar
           ];
 
