@@ -161,6 +161,8 @@
           system = {
             activationScripts.postActivation.text = ''
               sudo -u angusbuick ${pkgs.desktoppr}/bin/desktoppr /Users/angusbuick/dotfiles/wallpapers/custom-bg-2.png
+              # Turn the display off after 60 min idle (both AC and battery).
+              /usr/bin/pmset -a displaysleep 60
             '';
             defaults = {
               dock = {
