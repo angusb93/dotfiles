@@ -4,11 +4,11 @@
     "pr": ""
   },
   "model": "sonnet",
-  "skipDangerousModePermissionPrompt": true,
-  "editorMode": "vim",
-  "voiceEnabled": true,
   "voice": {
     "enabled": true,
     "mode": "hold"
-  }
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "editorMode": "vim",
+  "voiceEnabled": true
 }
