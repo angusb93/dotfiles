@@ -76,7 +76,9 @@
             # (useless_has_attr) and isn't in the binary cache yet, so it builds
             # from source and fails its checkPhase. Skip checks until a good
             # build is cached upstream, then drop this override.
-            (pkgs.statix.overrideAttrs (_: { doCheck = false; }))
+            (pkgs.statix.overrideAttrs (_: {
+              doCheck = false;
+            }))
             pkgs.tflint
 
             # Formatters
@@ -89,12 +91,14 @@
 
             # Cloud & infra
             pkgs.bore-cli
+            pkgs.dbmate
             pkgs.devbox
             pkgs.direnv
             pkgs.google-cloud-sdk
             pkgs.grpcurl
             pkgs.ngrok
             pkgs.redis
+            pkgs.supabase-cli
             pkgs.tenv
 
             # Apps
