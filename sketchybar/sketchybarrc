@@ -52,8 +52,8 @@ sketchybar --add item aerospace_listener left \
 sketchybar --add item front_app left \
   --set front_app \
   label.color=$BAR_FG \
-  width=135 \
-  label.max_chars=13 \
+  width=90 \
+  label.max_chars=8 \
   label.align=left \
   script="$PLUGIN_DIR/front_app.sh" \
   --subscribe front_app front_app_switched
