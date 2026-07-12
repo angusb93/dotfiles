@@ -60,3 +60,23 @@ fi
 if command -v gh &>/dev/null && [[ -n "${GH_DEFAULT_USER:-}" ]]; then
   gh auth switch --user "$GH_DEFAULT_USER"
 fi
+
+# Restart AeroSpace so the running app matches the freshly-installed binary.
+# nix updates the binary but doesn't restart the running process, leaving the
+# aerospace CLI and server on incompatible socket protocols until relaunch.
+# Run install.sh after `darwin-rebuild switch` for this to take effect.
+if [[ "$(uname)" == "Darwin" ]] && command -v aerospace &>/dev/null; then
+  echo "Restarting AeroSpace to match the installed binary..."
+  osascript -e 'quit app "AeroSpace"' 2>/dev/null || true
+  # Wait for the old process to exit before relaunching (avoids single-instance race)
+  for _ in {1..20}; do
+    pgrep -x AeroSpace >/dev/null 2>&1 || break
+    sleep 0.2
+  done
+  open -a AeroSpace 2>/dev/null || true
+  # Repaint sketchybar's workspace items once the server is back up
+  if command -v sketchybar &>/dev/null; then
+    sleep 2
+    "$HOME/.config/sketchybar/plugins/aerospace.sh" 2>/dev/null || true
+  fi
+fi
