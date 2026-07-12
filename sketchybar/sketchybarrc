@@ -54,14 +54,6 @@ sketchybar --add item front_app left \
   label.color=$BAR_FG \
   script="$PLUGIN_DIR/front_app.sh" \
   --subscribe front_app front_app_switched
-#
-# Right side: meeting
-sketchybar --add item meeting right \
-  --set meeting \
-  drawing=off \
-  update_freq=30 \
-  script="$PLUGIN_DIR/meeting.sh" \
-  --subscribe meeting system_woke
 
 # Right side: battery
 sketchybar --add item battery right \
@@ -82,6 +74,14 @@ sketchybar --add item clock right \
   --set clock \
   update_freq=10 \
   script="$PLUGIN_DIR/clock.sh"
+
+# Right side: meeting (added last so it sits leftmost in the right cluster)
+sketchybar --add item meeting right \
+  --set meeting \
+  drawing=off \
+  update_freq=30 \
+  script="$PLUGIN_DIR/meeting.sh" \
+  --subscribe meeting system_woke
 
 sketchybar --update
 
