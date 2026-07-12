@@ -9,7 +9,7 @@ CACHE_MAX_AGE=300 # 5 minutes
 if [ ! -f "$CACHE_FILE" ] || [ $(($(date +%s) - $(stat -f %m "$CACHE_FILE"))) -gt $CACHE_MAX_AGE ]; then
   gcalcli agenda \
     --tsv \
-    --no-declined \
+    --nodeclined \
     "$(date '+%Y-%m-%dT%H:%M')" \
     "$(date '+%Y-%m-%d')T23:59" \
     2>/dev/null > "$CACHE_FILE" || true
@@ -19,15 +19,15 @@ NOW=$(date +%s)
 NEXT_TIME=""
 NEXT_TITLE=""
 
-while IFS=$'\t' read -r date start_time end_time title; do
-  # Skip all-day events (no start time)
+while IFS=$'\t' read -r start_date start_time end_date end_time title; do
+  # Skip all-day events (no start time) and the TSV header row
   [ -z "$start_time" ] && continue
 
   # Parse event start time
-  EVENT_TS=$(date -j -f "%Y-%m-%d %H:%M" "$date $start_time" +%s 2>/dev/null) || continue
+  EVENT_TS=$(date -j -f "%Y-%m-%d %H:%M" "$start_date $start_time" +%s 2>/dev/null) || continue
 
   # Parse event end time
-  EVENT_END=$(date -j -f "%Y-%m-%d %H:%M" "$date $end_time" +%s 2>/dev/null) || continue
+  EVENT_END=$(date -j -f "%Y-%m-%d %H:%M" "$end_date $end_time" +%s 2>/dev/null) || continue
 
   # Skip events that have already ended
   [ "$EVENT_END" -le "$NOW" ] && continue
