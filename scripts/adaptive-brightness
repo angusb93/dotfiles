@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""Set external monitor brightness based on the sun.
+
+Ramps the Dell's DDC luminance between a daytime max and a night-time min,
+transitioning around local sunrise and sunset. Because sunrise/sunset are
+computed from latitude/longitude for the current date, the curve shifts with
+the seasons automatically.
+
+Tunables are read from the environment (with sensible defaults) so they can be
+adjusted in the launchd agent without editing this file:
+
+  ADAPTIVE_LAT      latitude in degrees   (default 51.5074, London)
+  ADAPTIVE_LON      longitude in degrees  (default -0.1278, London)
+  ADAPTIVE_MAX      daytime luminance 0-100   (default 80)
+  ADAPTIVE_MIN      night luminance 0-100     (default 20)
+  ADAPTIVE_FADE     transition length, minutes (default 45)
+
+Requires `m1ddc` on PATH. Exits quietly if no external display is connected.
+"""
+
+import datetime
+import math
+import os
+import shutil
+import subprocess
+import sys
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ[name])
+    except (KeyError, ValueError):
+        return default
+
+
+LAT = _env_float("ADAPTIVE_LAT", 51.5074)
+LON = _env_float("ADAPTIVE_LON", -0.1278)
+MAX_B = _env_float("ADAPTIVE_MAX", 80)
+MIN_B = _env_float("ADAPTIVE_MIN", 20)
+FADE_MIN = _env_float("ADAPTIVE_FADE", 45)
+
+
+def _solar_event(lat: float, lon: float, date: datetime.date, rising: bool):
+    """Return the UTC datetime of sunrise/sunset, or None on a polar day/night.
+
+    Implements the standard "Almanac for Computers" algorithm (accurate to ~1
+    minute for our purposes).
+    """
+    zenith = 90.833  # official sunrise/sunset, accounts for refraction + sun radius
+    n = date.timetuple().tm_yday
+    lng_hour = lon / 15.0
+    t = n + (((6 if rising else 18) - lng_hour) / 24)
+
+    # Sun's mean anomaly and true longitude
+    m = (0.9856 * t) - 3.289
+    lsun = (
+        m
+        + (1.916 * math.sin(math.radians(m)))
+        + (0.020 * math.sin(math.radians(2 * m)))
+        + 282.634
+    ) % 360
+
+    # Right ascension, kept in the same quadrant as the true longitude
+    ra = math.degrees(math.atan(0.91764 * math.tan(math.radians(lsun)))) % 360
+    ra += (math.floor(lsun / 90) * 90) - (math.floor(ra / 90) * 90)
+    ra /= 15  # into hours
+
+    # Declination
+    sin_dec = 0.39782 * math.sin(math.radians(lsun))
+    cos_dec = math.cos(math.asin(sin_dec))
+
+    cos_h = (
+        math.cos(math.radians(zenith)) - (sin_dec * math.sin(math.radians(lat)))
+    ) / (cos_dec * math.cos(math.radians(lat)))
+    if cos_h > 1 or cos_h < -1:
+        return None  # sun never rises / never sets at this latitude today
+
+    h = (360 - math.degrees(math.acos(cos_h))) if rising else math.degrees(
+        math.acos(cos_h)
+    )
+    h /= 15
+
+    mean_time = h + ra - (0.06571 * t) - 6.622
+    ut = (mean_time - lng_hour) % 24
+    hour = int(ut)
+    minute = int((ut - hour) * 60)
+    second = int(((ut - hour) * 60 - minute) * 60)
+    return datetime.datetime(
+        date.year, date.month, date.day, hour, minute, second,
+        tzinfo=datetime.timezone.utc,
+    )
+
+
+def _ramp(now, start, span_minutes, from_b, to_b):
+    """Linear interpolate brightness across a transition window."""
+    elapsed = (now - start).total_seconds() / 60.0
+    frac = max(0.0, min(1.0, elapsed / span_minutes))
+    return from_b + (to_b - from_b) * frac
+
+
+def target_brightness(now: datetime.datetime) -> float:
+    today = now.date()
+    sunrise = _solar_event(LAT, LON, today, rising=True)
+    sunset = _solar_event(LAT, LON, today, rising=False)
+
+    # Polar edge cases: no sunrise -> stay dim; no sunset -> stay bright.
+    if sunrise is None or sunset is None:
+        return MIN_B if sunrise is None else MAX_B
+
+    if now < sunrise:
+        return MIN_B
+    if now < sunrise + datetime.timedelta(minutes=FADE_MIN):
+        return _ramp(now, sunrise, FADE_MIN, MIN_B, MAX_B)
+    if now < sunset:
+        return MAX_B
+    if now < sunset + datetime.timedelta(minutes=FADE_MIN):
+        return _ramp(now, sunset, FADE_MIN, MAX_B, MIN_B)
+    return MIN_B
+
+
+def main() -> int:
+    m1ddc = shutil.which("m1ddc")
+    if m1ddc is None:
+        print("m1ddc not found on PATH", file=sys.stderr)
+        return 1
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    target = round(target_brightness(now))
+
+    # Skip the write if we're already close, to avoid the monitor's on-screen
+    # brightness popup flashing on every tick.
+    try:
+        current = int(
+            subprocess.run(
+                [m1ddc, "get", "luminance"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+        )
+    except (ValueError, subprocess.SubprocessError):
+        current = None  # no external display / DDC unavailable
+
+    if current is None:
+        return 0  # nothing to control right now
+    if abs(current - target) < 2:
+        return 0
+
+    subprocess.run(
+        [m1ddc, "set", "luminance", str(target)],
+        capture_output=True, text=True, timeout=5,
+    )
+    print(f"{now.astimezone().strftime('%H:%M')} luminance {current} -> {target}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

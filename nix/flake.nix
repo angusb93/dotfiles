@@ -114,6 +114,7 @@
             pkgs.claude-code
             pkgs.desktoppr
             pkgs.ffmpeg
+            pkgs.m1ddc
             pkgs.mise
             pkgs.sketchybar
           ];
@@ -127,6 +128,31 @@
               EnvironmentVariables.PATH = "/run/current-system/sw/bin:/usr/bin:/bin:/opt/homebrew/bin";
               StandardOutPath = "/tmp/sketchybar.log";
               StandardErrorPath = "/tmp/sketchybar.log";
+            };
+          };
+
+          # Dim the external monitor with the sun. Runs periodically (not a
+          # daemon), reading the tunable brightness curve from the script in
+          # ~/.config/scripts. Adjust ADAPTIVE_* to change location/range/fade.
+          launchd.user.agents.adaptive-brightness = {
+            serviceConfig = {
+              Label = "adaptive-brightness";
+              ProgramArguments = [
+                "${pkgs.python3}/bin/python3"
+                "/Users/angusbuick/.config/scripts/adaptive-brightness"
+              ];
+              RunAtLoad = true;
+              StartInterval = 300; # every 5 minutes
+              EnvironmentVariables = {
+                PATH = "/run/current-system/sw/bin:/usr/bin:/bin";
+                ADAPTIVE_LAT = "51.5074";
+                ADAPTIVE_LON = "-0.1278";
+                ADAPTIVE_MAX = "80";
+                ADAPTIVE_MIN = "20";
+                ADAPTIVE_FADE = "45";
+              };
+              StandardOutPath = "/tmp/adaptive-brightness.log";
+              StandardErrorPath = "/tmp/adaptive-brightness.log";
             };
           };
 
