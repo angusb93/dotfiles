@@ -48,40 +48,49 @@ sketchybar --add item aerospace_listener left \
   script="$PLUGIN_DIR/aerospace.sh" \
   --subscribe aerospace_listener aerospace_workspace_change
 
-# Left side: focused app
+# Left side: focused app (fixed width + truncation so items after it don't shift)
 sketchybar --add item front_app left \
   --set front_app \
   label.color=$BAR_FG \
+  width=135 \
+  label.max_chars=13 \
+  label.align=left \
   script="$PLUGIN_DIR/front_app.sh" \
   --subscribe front_app front_app_switched
 
+# Left side: meeting (right of focused app, with a background to stand out)
+sketchybar --add item meeting left \
+  --set meeting \
+  drawing=off \
+  background.drawing=on \
+  background.color=$INACTIVE \
+  update_freq=30 \
+  script="$PLUGIN_DIR/meeting.sh" \
+  --subscribe meeting system_woke
+
+# Right group: tighter padding so clock/volume/battery pack closer together
+# (helps the notch display where horizontal room is scarce)
+RIGHT_PAD=(padding_left=2 padding_right=2 label.padding_left=6 label.padding_right=6)
+
 # Right side: battery
 sketchybar --add item battery right \
-  --set battery \
+  --set battery "${RIGHT_PAD[@]}" \
   update_freq=60 \
   script="$PLUGIN_DIR/battery.sh" \
   --subscribe battery system_woke power_source_change
 
 # Right side: volume
 sketchybar --add item volume right \
-  --set volume \
+  --set volume "${RIGHT_PAD[@]}" \
   update_freq=30 \
   script="$PLUGIN_DIR/volume.sh" \
   --subscribe volume volume_change
 
 # Right side: clock
 sketchybar --add item clock right \
-  --set clock \
+  --set clock "${RIGHT_PAD[@]}" \
   update_freq=10 \
   script="$PLUGIN_DIR/clock.sh"
-
-# Right side: meeting (added last so it sits leftmost in the right cluster)
-sketchybar --add item meeting right \
-  --set meeting \
-  drawing=off \
-  update_freq=30 \
-  script="$PLUGIN_DIR/meeting.sh" \
-  --subscribe meeting system_woke
 
 sketchybar --update
 

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sketchybar --set clock label="$(date +'%a %-d %b  %H:%M')"
+sketchybar --set clock label="$(date +'%d/%m/%y  %H:%M')"
