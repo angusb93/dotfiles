@@ -182,5 +182,4 @@ See `.env.local.example` for available variables. `install.sh` reads `GH_DEFAULT
 
 - [ ] change the prompt to something else that might run faster than starship (or at least benchmark it)
 - [x] Add gcal to sketchybar so i dont miss meetings
-- [ ] Stop aerospace bumping me from a workspace if i close the program in that workspace
 - [ ] add raycast
