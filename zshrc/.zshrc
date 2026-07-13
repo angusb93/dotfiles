@@ -48,6 +48,7 @@ alias gs="git status"
 alias ..="cd .."
 alias ...="cd ../.."
 alias lg="lazygit"
+alias cac="claude agents --cwd ./"
 
 # --- History ---
 HISTFILE=~/.zsh_history
