@@ -147,7 +147,7 @@
                 PATH = "/run/current-system/sw/bin:/usr/bin:/bin";
                 ADAPTIVE_LAT = "51.5074";
                 ADAPTIVE_LON = "-0.1278";
-                ADAPTIVE_MAX = "80";
+                ADAPTIVE_MAX = "100";
                 ADAPTIVE_MIN = "20";
                 ADAPTIVE_FADE = "45";
               };
