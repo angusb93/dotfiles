@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """Set external monitor brightness based on the sun.
 
-Ramps the Dell's DDC luminance between a daytime max and a night-time min,
-transitioning around local sunrise and sunset. Because sunrise/sunset are
-computed from latitude/longitude for the current date, the curve shifts with
-the seasons automatically.
+Ramps the Dell's DDC luminance between a daytime max and a night-time min.
+Each transition *completes* at the solar event and begins FADE minutes before
+it: the screen reaches full brightness by sunrise and is back down to the
+night level by the moment of sunset. Because sunrise/sunset are computed from
+latitude/longitude for the current date, the curve shifts with the seasons
+automatically.
 
 Tunables are read from the environment (with sensible defaults) so they can be
 adjusted in the launchd agent without editing this file:
 
   ADAPTIVE_LAT      latitude in degrees   (default 51.5074, London)
   ADAPTIVE_LON      longitude in degrees  (default -0.1278, London)
-  ADAPTIVE_MAX      daytime luminance 0-100   (default 80)
+  ADAPTIVE_MAX      daytime luminance 0-100   (default 100)
   ADAPTIVE_MIN      night luminance 0-100     (default 20)
-  ADAPTIVE_FADE     transition length, minutes (default 45)
+  ADAPTIVE_FADE     transition length, minutes (default 60)
 
 Requires `m1ddc` on PATH. Exits quietly if no external display is connected.
 """
@@ -35,9 +37,9 @@ def _env_float(name: str, default: float) -> float:
 
 LAT = _env_float("ADAPTIVE_LAT", 51.5074)
 LON = _env_float("ADAPTIVE_LON", -0.1278)
-MAX_B = _env_float("ADAPTIVE_MAX", 80)
+MAX_B = _env_float("ADAPTIVE_MAX", 100)
 MIN_B = _env_float("ADAPTIVE_MIN", 20)
-FADE_MIN = _env_float("ADAPTIVE_FADE", 45)
+FADE_MIN = _env_float("ADAPTIVE_FADE", 60)
 
 
 def _solar_event(lat: float, lon: float, date: datetime.date, rising: bool):
@@ -107,15 +109,49 @@ def target_brightness(now: datetime.datetime) -> float:
     if sunrise is None or sunset is None:
         return MIN_B if sunrise is None else MAX_B
 
-    if now < sunrise:
+    # Each transition finishes at the solar event, starting FADE_MIN before it:
+    # fully bright by sunrise, fully dim by sunset.
+    fade = datetime.timedelta(minutes=FADE_MIN)
+    if now < sunrise - fade:
         return MIN_B
-    if now < sunrise + datetime.timedelta(minutes=FADE_MIN):
-        return _ramp(now, sunrise, FADE_MIN, MIN_B, MAX_B)
-    if now < sunset:
+    if now < sunrise:
+        return _ramp(now, sunrise - fade, FADE_MIN, MIN_B, MAX_B)
+    if now < sunset - fade:
         return MAX_B
-    if now < sunset + datetime.timedelta(minutes=FADE_MIN):
-        return _ramp(now, sunset, FADE_MIN, MAX_B, MIN_B)
+    if now < sunset:
+        return _ramp(now, sunset - fade, FADE_MIN, MAX_B, MIN_B)
     return MIN_B
+
+
+def _read_luminance(m1ddc: str):
+    """Return the monitor's current luminance, or None if unreadable.
+
+    DDC reads are noisy: m1ddc frequently reports 0 for a display that is
+    actually fine, often in a clean every-other-read pattern. Because our night
+    floor is well above 0, a 0 is never a real luminance here - it is always a
+    glitch (or a sleeping/absent display). Sample a few times, discard the
+    zeros, and take the median of what's left so a glitch can't make us think
+    brightness is far off (which would trigger a redundant write and flash the
+    on-screen brightness popup). If every sample is 0 or errors, the display
+    isn't readable and we report None so the caller leaves it alone.
+    """
+    samples = []
+    for _ in range(5):
+        try:
+            value = int(
+                subprocess.run(
+                    [m1ddc, "get", "luminance"],
+                    capture_output=True, text=True, timeout=5,
+                ).stdout.strip()
+            )
+        except (ValueError, subprocess.SubprocessError):
+            continue  # no external display / DDC unavailable this sample
+        if value > 0:
+            samples.append(value)
+    if not samples:
+        return None
+    samples.sort()
+    return samples[len(samples) // 2]
 
 
 def main() -> int:
@@ -129,16 +165,7 @@ def main() -> int:
 
     # Skip the write if we're already close, to avoid the monitor's on-screen
     # brightness popup flashing on every tick.
-    try:
-        current = int(
-            subprocess.run(
-                [m1ddc, "get", "luminance"],
-                capture_output=True, text=True, timeout=5,
-            ).stdout.strip()
-        )
-    except (ValueError, subprocess.SubprocessError):
-        current = None  # no external display / DDC unavailable
-
+    current = _read_luminance(m1ddc)
     if current is None:
         return 0  # nothing to control right now
     if abs(current - target) < 2:
