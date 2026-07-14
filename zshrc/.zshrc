@@ -48,7 +48,7 @@ alias gs="git status"
 alias ..="cd .."
 alias ...="cd ../.."
 alias lg="lazygit"
-alias cac="claude agents --cwd ./"
+alias cac="claude agents --cwd ./ --allow-dangerously-skip-permissions"
 
 # --- History ---
 HISTFILE=~/.zsh_history
