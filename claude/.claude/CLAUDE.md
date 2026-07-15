@@ -29,8 +29,4 @@ When you are talking/posting on behalf of Angus using his identity, read ~/VOICE
 
 ## Ralph
 
-Ralph is a multi-phase agent orchestration system. It breaks features into sequential phases, each executed by a fresh Claude agent in a git worktree.
-
-**Skills:** `/ralph-init` (plan a track), `/ralph-status` (view status), `/ralph-cleanup` (clean up after completion)
-
-**Terminal commands:** `ralph-run` (run all phases), `ralph-single` (run one phase), `ralph-status`, `ralph-cleanup`
+Ralph is a one-shot agent: `ralph-oneshot` (terminal command) creates a worktree, runs a headless Claude agent to complete a task, opens a draft PR, then cleans up the worktree.

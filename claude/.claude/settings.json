@@ -3,7 +3,7 @@
     "commit": "",
     "pr": ""
   },
-  "model": "sonnet",
+  "model": "claude-fable-5[1m]",
   "voice": {
     "enabled": true,
     "mode": "hold"

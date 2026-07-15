@@ -21,7 +21,7 @@ if [[ -L "$HOME/.claude" ]]; then
   cp -a "claude/.claude" "$HOME/.claude.tmp"
   mv "$HOME/.claude.tmp" "$HOME/.claude"
   # Remove config files that stow will replace with symlinks
-  for f in CLAUDE.md ralph-agents.md settings.json; do
+  for f in CLAUDE.md settings.json; do
     rm -f "$HOME/.claude/$f"
   done
   rm -rf "$HOME/.claude/skills"
