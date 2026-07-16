@@ -9,6 +9,16 @@ export VISUAL="nvim"
 export PAGER="less"
 export LANG="en_US.UTF-8"
 
+# --- Claude vertex ---
+export CLAUDE_CODE_USE_VERTEX=1
+export CLOUD_ML_REGION=global
+export ANTHROPIC_VERTEX_PROJECT_ID=generally-neat-seahorse
+export ANTHROPIC_DEFAULT_OPUS_MODEL='claude-opus-4-8'
+export ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-5'
+export ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-haiku-4-5'
+# To assist with cost attribution, include
+export ANTHROPIC_CUSTOM_HEADERS="X-Vertex-AI-Labels: $(echo -n "{\"system\": \"claude-code\", \"user\": \"$(whoami | tr '[:upper:].' '[:lower:]-')\"}" | base64 | tr -d '\n')"
+
 # --- PATH ---
 export PNPM_HOME="$HOME/Library/pnpm"
 export PATH="/run/current-system/sw/bin:$PNPM_HOME:$HOME/.cargo/bin:$HOME/bin:$PATH"
@@ -49,7 +59,7 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias lg="lazygit"
 alias cac="claude agents --cwd ./ --allow-dangerously-skip-permissions"
-
+alias vcac="CLAUDE_CODE_USE_VERTEX=1 claude agents --cwd ./ --allow-dangerously-skip-permissions"
 # --- History ---
 HISTFILE=~/.zsh_history
 HISTSIZE=100000
@@ -61,3 +71,4 @@ setopt hist_ignore_space
 
 # --- Terminal title ---
 precmd() { print -Pn "\e]0;%n@%m: %~\a" }
+

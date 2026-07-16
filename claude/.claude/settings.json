@@ -10,5 +10,9 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "env": {
+    "CLOUD_ML_REGION": "global",
+    "ANTHROPIC_VERTEX_PROJECT_ID": "generally-neat-seahorse"
+  }
 }
