@@ -9,6 +9,7 @@ macOS development environment managed with Nix, nix-darwin, and GNU Stow.
 | System config & packages | [nix-darwin](https://github.com/LnL7/nix-darwin) + [nixpkgs](https://nixos.org/) |
 | GUI apps                 | Homebrew casks (via nix-darwin)                                                  |
 | Dotfile symlinks         | [GNU Stow](https://www.gnu.org/software/stow/)                                   |
+| Language runtimes        | [mise](https://mise.jdx.dev/)                                                    |
 | Terminal                 | [Ghostty](https://ghostty.org/)                                                  |
 | Shell                    | zsh                                                                              |
 | Multiplexer              | tmux                                                                             |
@@ -27,6 +28,12 @@ macOS development environment managed with Nix, nix-darwin, and GNU Stow.
 ### Stow manages dotfiles
 
 Each top-level directory (e.g. `nvim/`, `tmux/`, `zshrc/`) is a stow package. `install.sh` symlinks them into `~/.config` or `$HOME` as appropriate. The repo lives at `~/dotfiles` and `install.sh` is safe to re-run at any time.
+
+### mise manages language runtimes
+
+Global runtime defaults (currently node) are declared in `mise/config.toml`, which stow symlinks to `~/.config/mise/config.toml`.
+Projects override the global by pinning versions in their own `.mise.toml` or `.tool-versions`.
+`install.sh` runs `mise install` so a fresh machine gets the pinned runtimes automatically.
 
 ### Theme system
 
@@ -106,6 +113,29 @@ sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook
 
 ```bash
 ~/dotfiles/install.sh
+```
+
+---
+
+## Runtime versions (mise)
+
+The global defaults live in `mise/config.toml` (stowed to `~/.config/mise/config.toml`), so changes made with `mise use -g` show up as a git diff in this repo.
+
+```bash
+# Change the global default node version (writes to mise/config.toml)
+mise use -g node@24
+
+# Install everything pinned in the active mise configs
+mise install
+
+# Pin a version for one project (run from the project root; overrides the global)
+mise use node@22
+
+# Show which versions are active in the current directory and where they come from
+mise current
+
+# List all installed runtimes
+mise ls
 ```
 
 ---
