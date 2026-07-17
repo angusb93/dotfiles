@@ -10,7 +10,7 @@ export PAGER="less"
 export LANG="en_US.UTF-8"
 
 # --- Claude vertex ---
-export CLAUDE_CODE_USE_VERTEX=1
+# CLAUDE_CODE_USE_VERTEX is intentionally not exported globally; vcac sets it per-invocation
 export CLOUD_ML_REGION=global
 export ANTHROPIC_VERTEX_PROJECT_ID=generally-neat-seahorse
 export ANTHROPIC_DEFAULT_OPUS_MODEL='claude-opus-4-8'
