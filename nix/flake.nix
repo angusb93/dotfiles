@@ -49,6 +49,7 @@
             pkgs.bun
             pkgs.go
             pkgs.lua
+            pkgs.nodejs # includes npm and npx
             pkgs.pnpm
             pkgs.typescript
             pkgs.yarn
