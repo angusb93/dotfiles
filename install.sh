@@ -52,6 +52,11 @@ stow -R --target "$HOME" ralph
 # Generate theme configs from centralized palette
 ./theme/apply.sh
 
+# Install mise-managed global runtimes (e.g. node) from ~/.config/mise/config.toml
+if command -v mise &>/dev/null; then
+  mise install --yes
+fi
+
 # Register Claude Code MCP servers (idempotent)
 if command -v claude &>/dev/null; then
   claude mcp add -s user playwright bunx @playwright/mcp 2>/dev/null || true
