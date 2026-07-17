@@ -33,6 +33,7 @@ mkdir -p "$HOME/.claude"
 # Stow everything using default .stowrc (into ~/.config)
 # Ignore packages that target $HOME (handled below) and non-stow directories
 stow -R \
+  --ignore='\.claude' \
   --ignore=zshrc \
   --ignore=claude \
   --ignore=ralph \
