@@ -108,6 +108,7 @@
             pkgs.opencode
             pkgs.postman
             pkgs.slack
+            pkgs.linear
 
             # macOS / system
             pkgs.aerospace
