@@ -1,18 +1,18 @@
 {
+  "env": {
+    "CLOUD_ML_REGION": "global",
+    "ANTHROPIC_VERTEX_PROJECT_ID": "generally-neat-seahorse"
+  },
   "attribution": {
     "commit": "",
     "pr": ""
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-opus-4-8[1m]",
   "voice": {
     "enabled": true,
     "mode": "hold"
   },
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
-  "voiceEnabled": true,
-  "env": {
-    "CLOUD_ML_REGION": "global",
-    "ANTHROPIC_VERTEX_PROJECT_ID": "generally-neat-seahorse"
-  }
+  "voiceEnabled": true
 }
