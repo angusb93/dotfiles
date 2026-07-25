@@ -149,7 +149,7 @@
                 ADAPTIVE_LAT = "51.5074";
                 ADAPTIVE_LON = "-0.1278";
                 ADAPTIVE_MAX = "100";
-                ADAPTIVE_MIN = "20";
+                ADAPTIVE_MIN = "5";
                 ADAPTIVE_FADE = "60";
               };
               StandardOutPath = "/tmp/adaptive-brightness.log";
