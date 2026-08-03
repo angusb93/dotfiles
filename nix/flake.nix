@@ -201,6 +201,19 @@
           # The platform the configuration will be used on.
           nixpkgs.hostPlatform = "aarch64-darwin";
 
+          # TEMP: Obsidian 1.13.4's dmg puts the app inside an
+          # "Obsidian <version>-universal" folder, but nixpkgs still expects
+          # Obsidian.app at the extraction root, so the darwin build fails.
+          # Drop this overlay once the upstream fix lands:
+          # https://github.com/NixOS/nixpkgs/pull/548742
+          nixpkgs.overlays = [
+            (final: prev: {
+              obsidian = prev.obsidian.overrideAttrs (old: {
+                sourceRoot = "Obsidian ${old.version}-universal/Obsidian.app";
+              });
+            })
+          ];
+
           # Allow unfree packages
           nixpkgs.config.allowUnfree = true;
         };
