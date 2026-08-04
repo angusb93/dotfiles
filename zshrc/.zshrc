@@ -13,9 +13,6 @@ export LANG="en_US.UTF-8"
 # CLAUDE_CODE_USE_VERTEX is intentionally not exported globally; vcac sets it per-invocation
 export CLOUD_ML_REGION=global
 export ANTHROPIC_VERTEX_PROJECT_ID=generally-neat-seahorse
-export ANTHROPIC_DEFAULT_OPUS_MODEL='claude-opus-4-8'
-export ANTHROPIC_DEFAULT_SONNET_MODEL='claude-sonnet-5'
-export ANTHROPIC_DEFAULT_HAIKU_MODEL='claude-haiku-4-5'
 # To assist with cost attribution, include
 export ANTHROPIC_CUSTOM_HEADERS="X-Vertex-AI-Labels: $(echo -n "{\"system\": \"claude-code\", \"user\": \"$(whoami | tr '[:upper:].' '[:lower:]-')\"}" | base64 | tr -d '\n')"
 
