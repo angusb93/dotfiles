@@ -41,7 +41,19 @@
   # --- Shell ---
   programs.zsh.enable = true;
 
-  # --- User ---
+  # --- Users ---
+  users.users.angus = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "networkmanager" ];
+    initialPassword = "changeme";
+    shell = pkgs.zsh;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPHOsJHKtJxBPCVrhttYSLcYm2Hy0SXoplKlrX0rJYH7"
+    ];
+  };
+
+  # alice: the installer's example user — kept only until angus is verified,
+  # then removed.
   users.users.alice = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
