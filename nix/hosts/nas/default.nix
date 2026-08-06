@@ -41,6 +41,17 @@
   # --- Shell ---
   programs.zsh.enable = true;
 
+  # --- nix-ld: run prebuilt dynamic binaries on NixOS ---
+  # The Claude Agent SDK bundles a prebuilt Claude Code binary; NixOS needs
+  # nix-ld to provide a compatible dynamic linker for it (and for other
+  # pip/npm-downloaded binaries).
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    stdenv.cc.cc.lib
+    zlib
+    openssl
+  ];
+
   # --- User ---
   users.users.angus = {
     isNormalUser = true;
@@ -62,6 +73,8 @@
     neovim
     # runtimes / env
     mise direnv
+    # personal-agent PoC (Claude Agent SDK)
+    python3 uv nodejs_22
   ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
