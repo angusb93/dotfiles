@@ -12,6 +12,7 @@
   outputs =
     {
       self,
+      nixpkgs,
       nix-darwin,
       mac-app-util,
       nix-homebrew,
@@ -265,6 +266,13 @@
             };
           }
         ];
+      };
+
+      # Build the NAS flake using:
+      # $ sudo nixos-rebuild switch --flake .#nas
+      nixosConfigurations."nas" = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ ./hosts/nas ];
       };
     };
 }
