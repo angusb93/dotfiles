@@ -74,7 +74,7 @@
     # runtimes / env
     mise direnv
     # personal-agent PoC (Claude Agent SDK)
-    python3 uv nodejs_22
+    python3 uv nodejs_22 claude-code
   ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
