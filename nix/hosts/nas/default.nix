@@ -14,6 +14,11 @@
   networking.hostName = "nas";
   networking.networkmanager.enable = true;
 
+  # --- Tailscale: remote access mesh (reach the NAS from phone / work laptop) ---
+  # After deploy, run once: sudo tailscale up
+  services.tailscale.enable = true;
+  networking.firewall.trustedInterfaces = [ "tailscale0" ];
+
   # --- A NAS must never sleep ---
   # Masks sleep at the systemd level, so it holds regardless of GNOME's
   # power settings (which suspended the box on idle before this).
