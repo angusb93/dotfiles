@@ -121,6 +121,12 @@
             pkgs.sketchybar
           ];
 
+          # --- Tailscale: remote access mesh (reach the NAS from this laptop) ---
+          # Runs tailscaled as a launchd daemon (utun interface, no GUI app or
+          # system extension needed). After deploy, run once:
+          #   sudo tailscale up
+          services.tailscale.enable = true;
+
           launchd.user.agents.sketchybar = {
             serviceConfig = {
               Label = "sketchybar";
