@@ -1,5 +1,23 @@
 # Agent Guidelines for Dotfiles Repository
 
+## Golden rule: this repo is the source of truth
+
+Every machine's configuration is declared here and applied from here. Never
+configure a machine imperatively - always change the source and re-apply.
+
+- **Installing a program?** Add it to the Nix flake (`nix/`), not `brew install`
+  / `npm i -g` / a manual download. `darwin-rebuild switch --flake ~/dotfiles/nix#macbook`
+  (or `nixos-rebuild ... #nas`) applies it.
+- **Adding/editing a config file?** Put it in the matching stow package here and
+  let `stow` symlink it into place - don't hand-edit the file under `$HOME`. New
+  packages that target `$HOME` (rather than `~/.config`) must be wired into
+  `install.sh` like `zshrc` / `claude` / `ssh`.
+- **Applying changes:** run `./install.sh` (stow + mise + MCP + theme) after a
+  rebuild. The repo, pushed to `main`, syncs to every machine via `git pull`.
+
+This repo is **public** - never commit secrets (keys, tokens, `known_hosts`).
+Use `sops-nix` for anything sensitive; gitignore the rest.
+
 ## Build/Lint/Test Commands
 - **Nix formatting**: `nixfmt-rfc-style .` (format Nix files)
 - **Lua formatting**: `stylua .` (format Lua config files, 2-space indent, 120 char width)
