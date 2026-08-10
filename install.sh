@@ -37,6 +37,7 @@ stow -R \
   --ignore=zshrc \
   --ignore=claude \
   --ignore=ralph \
+  --ignore=ssh \
   --ignore='glove80.*' \
   --ignore=chrome \
   --ignore=wallpapers \
@@ -48,6 +49,9 @@ stow -R \
 stow -R --target "$HOME" zshrc
 stow -R --target "$HOME" --no-folding claude
 stow -R --target "$HOME" ralph
+# --no-folding so stow symlinks ~/.ssh/config individually rather than the whole
+# ~/.ssh dir (which holds keys and known_hosts that must stay real local files).
+stow -R --target "$HOME" --no-folding ssh
 
 # Generate theme configs from centralized palette
 ./theme/apply.sh
