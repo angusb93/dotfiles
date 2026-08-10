@@ -31,8 +31,29 @@ Phases 3 and 4 loop: a push made while handling Copilot comments sends you back 
 - You must be on a feature branch.
   If on the default branch, create a feature branch first and move the work there.
 - `gh auth status` must succeed.
+- Resolve the default branch from the remote rather than assuming `main` or `master`:
 
-Capture the intent before anything else: what the user set out to accomplish, in their terms, plus the deliberate decisions and tradeoffs made along the way.
+  ```sh
+  gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
+  ```
+
+  Use that name wherever `<default-branch>` appears below.
+  Do not trust `origin/HEAD`; it is frequently stale and can point at a branch the repo has stopped using.
+
+Then rebase onto the current default branch, before the review and before anything is pushed.
+This is what makes the branch mergeable, and it means the phase 1 review and CI both run against the base the PR will actually merge into:
+
+```sh
+git fetch origin
+git rebase origin/<default-branch>
+```
+
+- Resolve any conflicts with the smallest correct resolution, then `git rebase --continue`.
+- If a conflict is beyond mechanical resolution, or resolving it would mean guessing at someone else's intent, run `git rebase --abort` and bring it to the user rather than inventing a merge you cannot justify.
+- The rebase rewrites history, so if the branch was already pushed, every push from here on uses `git push --force-with-lease`.
+- If the rebase pulled in non-trivial upstream changes, run the test suite once it finishes; a clean textual rebase can still be semantically broken.
+
+Finally, capture the intent: what the user set out to accomplish, in their terms, plus the deliberate decisions and tradeoffs made along the way.
 You know this from the conversation; do not re-read files to reconstruct it.
 The reviewer in phase 1 and the PR body both need it, and it is what separates "deliberate choice" from "mistake" in every judgment call below.
 
@@ -63,6 +84,8 @@ Then act on the findings in one pass:
 ## Phase 2: Push and PR
 
 - Push the branch: `git push -u origin HEAD`.
+  If the phase 0 rebase rewrote history on an already-pushed branch, use `git push --force-with-lease -u origin HEAD` instead.
+  Never use a bare `--force`.
 - If no PR exists (`gh pr view` fails), create one with `gh pr create`.
   Structure the body as: `## Intent` (the phase 0 paragraph), `## What changed`, `## Testing` (what you ran and what the review found).
 - If a PR already exists, the push updates it; refresh the body with `gh pr edit --body` only if the change's shape moved materially.
@@ -95,7 +118,8 @@ Watch until checks are green and the PR is mergeable.
    gh pr view --json mergeable,mergeStateStatus --jq '"\(.mergeable) \(.mergeStateStatus)"'
    ```
 
-   On `CONFLICTING` or `DIRTY`: fetch, rebase onto `origin/<default-branch>`, resolve conflicts with the smallest correct resolution, then `git push --force-with-lease`, and return to step 1.
+   Phase 0 already rebased, so this should be clean; it catches the case where the default branch moved while you were working.
+   On `CONFLICTING` or `DIRTY`: repeat the phase 0 rebase, resolve conflicts with the smallest correct resolution, then `git push --force-with-lease`, and return to step 1.
    A PR that is merely behind but clean needs nothing.
 
 ## Phase 4: Copilot review loop
