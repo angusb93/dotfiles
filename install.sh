@@ -30,11 +30,19 @@ fi
 # Ensure ~/.claude exists as a real directory before stowing
 mkdir -p "$HOME/.claude"
 
-# macOS-only GUI app configs - skip them when stowing on Linux (e.g. the NAS),
-# where the apps don't exist. Everything else is cross-platform.
-mac_only_ignores=()
+# When stowing on Linux (e.g. the NAS), skip things that don't belong there:
+#  - macOS-only GUI app configs (aerospace/sketchybar/ghostty) - apps absent
+#  - gh: the server manages its own gh auth; don't clobber ~/.config/gh
+#  - nix: never fold ~/.config/nix -> the flake dir (NixOS reads ~/.config/nix/)
+#  - non-config top-level items that shouldn't land in ~/.config at all
+linux_extra_ignores=()
 if [[ "$(uname)" != "Darwin" ]]; then
-  mac_only_ignores=(--ignore=aerospace --ignore=sketchybar --ignore=ghostty)
+  linux_extra_ignores=(
+    --ignore=aerospace --ignore=sketchybar --ignore=ghostty
+    --ignore=gh --ignore=nix --ignore=scripts
+    --ignore=install.sh --ignore=AGENTS.md --ignore=CLAUDE.md
+    --ignore='.env.local.example'
+  )
 fi
 
 # Stow everything using default .stowrc (into ~/.config)
@@ -50,7 +58,7 @@ stow -R \
   --ignore=wallpapers \
   --ignore=theme \
   --ignore=result \
-  "${mac_only_ignores[@]}" \
+  "${linux_extra_ignores[@]}" \
   .
 
 # Create symlinks for packages that target $HOME
