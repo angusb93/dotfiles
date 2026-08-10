@@ -17,7 +17,13 @@ export ANTHROPIC_VERTEX_PROJECT_ID=generally-neat-seahorse
 export ANTHROPIC_CUSTOM_HEADERS="X-Vertex-AI-Labels: $(echo -n "{\"system\": \"claude-code\", \"user\": \"$(whoami | tr '[:upper:].' '[:lower:]-')\"}" | base64 | tr -d '\n')"
 
 # --- PATH ---
-export PNPM_HOME="$HOME/Library/pnpm"
+# pnpm's home differs by OS (macOS uses ~/Library; Linux follows XDG).
+if [[ "$OSTYPE" == darwin* ]]; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+else
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+fi
+# /run/current-system/sw/bin is the Nix profile path on both nix-darwin and NixOS.
 export PATH="/run/current-system/sw/bin:$PNPM_HOME:$HOME/.cargo/bin:$HOME/bin:$PATH"
 
 # --- Prompt & Heavy Plugins ---

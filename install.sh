@@ -30,6 +30,13 @@ fi
 # Ensure ~/.claude exists as a real directory before stowing
 mkdir -p "$HOME/.claude"
 
+# macOS-only GUI app configs - skip them when stowing on Linux (e.g. the NAS),
+# where the apps don't exist. Everything else is cross-platform.
+mac_only_ignores=()
+if [[ "$(uname)" != "Darwin" ]]; then
+  mac_only_ignores=(--ignore=aerospace --ignore=sketchybar --ignore=ghostty)
+fi
+
 # Stow everything using default .stowrc (into ~/.config)
 # Ignore packages that target $HOME (handled below) and non-stow directories
 stow -R \
@@ -43,6 +50,7 @@ stow -R \
   --ignore=wallpapers \
   --ignore=theme \
   --ignore=result \
+  "${mac_only_ignores[@]}" \
   .
 
 # Create symlinks for packages that target $HOME
@@ -53,12 +61,19 @@ stow -R --target "$HOME" ralph
 # ~/.ssh dir (which holds keys and known_hosts that must stay real local files).
 stow -R --target "$HOME" --no-folding ssh
 
-# Generate theme configs from centralized palette
-./theme/apply.sh
+# Generate theme configs from centralized palette.
+# macOS only: the generator uses BSD-specific tooling (sed -i '') and writes to
+# mac app paths. On Linux the already-generated theme files (nvim colorscheme,
+# tmux/theme.conf, starship.toml) are committed and stowed, so no regen needed -
+# only re-run this on a Mac when changing the palette.
+if [[ "$(uname)" == "Darwin" ]]; then
+  ./theme/apply.sh
+fi
 
-# Install mise-managed global runtimes (e.g. node) from ~/.config/mise/config.toml
+# Install mise-managed global runtimes (e.g. node) from ~/.config/mise/config.toml.
+# Non-fatal: a runtime download hiccup shouldn't abort the whole stow install.
 if command -v mise &>/dev/null; then
-  mise install --yes
+  mise install --yes || echo "⚠ mise install failed (continuing)"
 fi
 
 # Register Claude Code MCP servers (idempotent)
