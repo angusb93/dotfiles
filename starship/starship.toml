@@ -1,6 +1,7 @@
 command_timeout = 1000
 
 format = """
+$hostname\
 [░▒▓](#5f8787)\
 [  ](bg:#5f8787 fg:#000000)\
 [](bg:#666666 fg:#5f8787)\
@@ -15,6 +16,12 @@ $golang\
 $php\
 [ ](fg:#282828)\
 \n$character"""
+
+# Only shown over SSH (ssh_only) so a remote box (morty) is unmistakable
+# while a local shell stays clean - fixes "which host am I on?".
+[hostname]
+ssh_only = true
+format = "[󰇄 $hostname ](bold fg:#fbcb97)"
 
 [directory]
 style = "fg:#fbcb97 bg:#666666"

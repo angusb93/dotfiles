@@ -222,6 +222,7 @@ sed \
 command_timeout = 1000
 
 format = """
+$hostname\
 [░▒▓]({ACCENT})\
 [  ](bg:{ACCENT} fg:{BG})\
 [](bg:{DIR_BG} fg:{ACCENT})\
@@ -236,6 +237,12 @@ $golang\
 $php\
 [ ](fg:{LANG_BG})\
 \n$character"""
+
+# Only shown over SSH (ssh_only) so a remote box (morty) is unmistakable
+# while a local shell stays clean - fixes "which host am I on?".
+[hostname]
+ssh_only = true
+format = "[󰇄 $hostname ](bold fg:{DIR_FG})"
 
 [directory]
 style = "fg:{DIR_FG} bg:{DIR_BG}"
