@@ -10,8 +10,17 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelModules = [ "amd64_edac" ]; # ECC monitoring (PRO 4650G + ECC UDIMM)
 
+  # --- Storage: ZFS on the 2TB NVMe (pool "tank", app data / vault / cache) ---
+  # Matches the planned 8TB ZFS array's tooling. Root stays on ext4 (sda);
+  # this only adds ZFS support + auto-imports the data pool created on nvme0n1.
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.zfs.extraPools = [ "tank" ]; # import the data pool at boot
+  services.zfs.autoScrub.enable = true; # monthly integrity scrub
+  services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
+
   # --- Networking ---
   networking.hostName = "nas";
+  networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
   networking.networkmanager.enable = true;
 
   # --- Tailscale: remote access mesh (reach the NAS from phone / work laptop) ---
