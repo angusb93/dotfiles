@@ -26,7 +26,3 @@ When you are working on something that would benefit from being informed by Angu
 ## Voice Profile
 
 When you are talking/posting on behalf of Angus using his identity, read ~/VOICE.md to see how Angus talks.
-
-## Ralph
-
-Ralph is a one-shot agent: `ralph-oneshot` (terminal command) creates a worktree, runs a headless Claude agent to complete a task, opens a draft PR, then cleans up the worktree.
