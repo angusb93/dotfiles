@@ -20,7 +20,7 @@
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
 
   # --- Networking ---
-  networking.hostName = "nas";
+  networking.hostName = "morty";
   networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
   networking.networkmanager.enable = true;
 
