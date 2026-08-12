@@ -10,11 +10,12 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelModules = [ "amd64_edac" ]; # ECC monitoring (PRO 4650G + ECC UDIMM)
 
-  # --- Storage: ZFS on the 2TB NVMe (pool "tank", app data / vault / cache) ---
-  # Matches the planned 8TB ZFS array's tooling. Root stays on ext4 (sda);
-  # this only adds ZFS support + auto-imports the data pool created on nvme0n1.
+  # --- Storage: ZFS on the 2TB NVMe (pool "fast" = fast NVMe app data / vault) ---
+  # Named "fast" (not "tank") since it's the quick NVMe scratch drive; the future
+  # 8TB HDD array can take a "tank"/bulk name. Root stays on ext4 (sda); this adds
+  # ZFS support + auto-imports the data pool created on nvme0n1.
   boot.supportedFilesystems = [ "zfs" ];
-  boot.zfs.extraPools = [ "tank" ]; # import the data pool at boot
+  boot.zfs.extraPools = [ "fast" ]; # import the NVMe data pool at boot
   services.zfs.autoScrub.enable = true; # monthly integrity scrub
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
 
