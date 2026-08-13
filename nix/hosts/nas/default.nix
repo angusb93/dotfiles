@@ -19,6 +19,20 @@
   services.zfs.autoScrub.enable = true; # monthly integrity scrub
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
 
+  # --- Syncthing: live two-way sync of the Obsidian vault (Mac <-> morty) ---
+  # Runs as angus so it can read/write /fast/vault. GUI bound to localhost;
+  # configure device/folder pairing via an SSH tunnel to :8384. Sync ports
+  # (22000/tcp, 21027/udp) opened by openDefaultPorts.
+  services.syncthing = {
+    enable = true;
+    user = "angus";
+    group = "users";
+    configDir = "/home/angus/.config/syncthing";
+    dataDir = "/home/angus/.local/share/syncthing";
+    openDefaultPorts = true;
+    guiAddress = "127.0.0.1:8384";
+  };
+
   # --- Networking ---
   networking.hostName = "morty";
   networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
