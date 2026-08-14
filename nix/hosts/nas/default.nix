@@ -33,6 +33,27 @@
     guiAddress = "127.0.0.1:8384";
   };
 
+  # --- Personal agent: Telegram <-> Claude Code bridge (always-on) ---
+  # Bridge + approval hook live in ~angus/telegram-agent (imperative for now;
+  # candidate to move into its own repo like claw-agent later). This unit just
+  # keeps it running across reboots, retiring the tmux session.
+  systemd.services.telegram-agent = {
+    description = "morty personal agent (Telegram <-> Claude Code bridge)";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    path = with pkgs; [ python3 claude-code uv nodejs_22 git bash coreutils gnugrep ];
+    serviceConfig = {
+      User = "angus";
+      Group = "users";
+      WorkingDirectory = "/home/angus/telegram-agent";
+      Environment = "HOME=/home/angus";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/bridge.py";
+      Restart = "always";
+      RestartSec = 5;
+    };
+  };
+
   # --- Networking ---
   networking.hostName = "morty";
   networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
