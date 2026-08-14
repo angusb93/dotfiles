@@ -86,6 +86,14 @@
   # --- Shell ---
   programs.zsh.enable = true;
 
+  # ssh forwards the client's TERM, so a Mac running ghostty arrives here as
+  # TERM=xterm-ghostty. Without a matching terminfo entry zle cannot look up the
+  # cursor-left capability and echoes a space for every backspace instead of
+  # erasing, which makes the delete key append characters rather than remove
+  # them. This installs the terminfo database for the common emulators (ghostty,
+  # kitty, alacritty, wezterm, foot, tmux) so any client shell behaves.
+  environment.enableAllTerminfo = true;
+
   # --- nix-ld: run prebuilt dynamic binaries on NixOS ---
   # The Claude Agent SDK bundles a prebuilt Claude Code binary; NixOS needs
   # nix-ld to provide a compatible dynamic linker for it (and for other
