@@ -227,6 +227,16 @@
                     Minimize = "\\~\\$\\^\\@m";
                   };
                 };
+                # AeroSpace owns window and workspace management, so the native
+                # Mission Control overlay is redundant and steals ctrl+up from it.
+                # 32 is the symbolic hotkey id for "Mission Control".
+                "com.apple.symbolichotkeys" = {
+                  AppleSymbolicHotKeys = {
+                    "32" = {
+                      enabled = false;
+                    };
+                  };
+                };
               };
             };
             primaryUser = "angusbuick";
