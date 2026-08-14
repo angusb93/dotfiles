@@ -147,7 +147,13 @@
     lazygit
     stow
     # editor
+    # nvim-treesitter's main branch compiles parsers on the box, and LazyVim
+    # runs with mason disabled here, so the toolchain has to come from nix:
+    # gcc supplies the cc that builds each parser, tree-sitter is the CLI it
+    # shells out to. Without these nvim opens with an unmet-requirements popup.
     neovim
+    gcc
+    tree-sitter
     # runtimes / env
     mise
     direnv
