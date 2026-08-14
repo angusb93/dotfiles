@@ -1,6 +1,6 @@
 # NixOS system config for the London NAS.
 # Deploy: sudo nixos-rebuild switch --flake ~/dotfiles/nix#nas
-{ config, lib, pkgs, ... }:
+{ pkgs, ... }:
 
 {
   imports = [ ./hardware-configuration.nix ];
@@ -42,7 +42,16 @@
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
-    path = with pkgs; [ python3 claude-code uv nodejs_22 git bash coreutils gnugrep ];
+    path = with pkgs; [
+      python3
+      claude-code
+      uv
+      nodejs_22
+      git
+      bash
+      coreutils
+      gnugrep
+    ];
     serviceConfig = {
       User = "angus";
       Group = "users";
@@ -108,7 +117,10 @@
   # --- User ---
   users.users.angus = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+    ];
     initialPassword = "changeme";
     shell = pkgs.zsh;
     openssh.authorizedKeys.keys = [
@@ -119,18 +131,37 @@
   # --- CLI environment (the reusable core, shared in spirit with the Mac) ---
   environment.systemPackages = with pkgs; [
     # shell & terminal
-    bash btop fd fzf ripgrep sesh starship tmux zoxide
+    bash
+    btop
+    fd
+    fzf
+    ripgrep
+    sesh
+    starship
+    tmux
+    zoxide
     # git
-    gh git git-lfs lazygit stow
+    gh
+    git
+    git-lfs
+    lazygit
+    stow
     # editor
     neovim
     # runtimes / env
-    mise direnv
+    mise
+    direnv
     # personal-agent PoC (Claude Agent SDK)
-    python3 uv nodejs_22 claude-code
+    python3
+    uv
+    nodejs_22
+    claude-code
   ];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
   nixpkgs.config.allowUnfree = true;
 
   # Do not change after install (data-compat marker).

@@ -19,7 +19,8 @@ This repo is **public** - never commit secrets (keys, tokens, `known_hosts`).
 Use `sops-nix` for anything sensitive; gitignore the rest.
 
 ## Build/Lint/Test Commands
-- **Nix formatting**: `nixfmt-rfc-style .` (format Nix files)
+- **Nix formatting**: `fd -e nix -E hardware-configuration.nix -x nixfmt` (the `nixfmt` binary is already RFC-style; passing it a directory is deprecated, hence `fd -x`, and the generated hardware config is left alone)
+- **Nix linting**: `statix check .` (rule exclusions live in `statix.toml`)
 - **Lua formatting**: `stylua .` (format Lua config files, 2-space indent, 120 char width)
 - **System rebuild**: `darwin-rebuild switch --flake ~/dotfiles/nix#macbook`
 - **Update flake**: `nix flake update && sudo darwin-rebuild switch --flake ~/dotfiles/nix#macbook`
@@ -27,7 +28,7 @@ Use `sops-nix` for anything sensitive; gitignore the rest.
 ## Code Style Guidelines
 
 ### Nix Files
-- Use `nixfmt-rfc-style` for formatting
+- Use `nixfmt` for formatting (v1.x implements the RFC 166 style)
 - Follow functional programming patterns
 - Keep attribute sets clean and well-structured
 
