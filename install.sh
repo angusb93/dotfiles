@@ -66,6 +66,11 @@ stow -R --target "$HOME" --no-folding claude
 # --no-folding so stow symlinks ~/.ssh/config individually rather than the whole
 # ~/.ssh dir (which holds keys and known_hosts that must stay real local files).
 stow -R --target "$HOME" --no-folding ssh
+# Host entries live in ~/.ssh/config.d/*.conf and are deliberately NOT managed
+# here: they name private infrastructure and this repo is public. Nothing is
+# created for them on purpose - the Include in ssh/.ssh/config is a glob, which
+# exits 0 when the directory is absent, so dotfiles installs and works fully
+# without them. Host aliases are an optional overlay, never a dependency.
 
 # Generate theme configs from centralized palette.
 # macOS only: the generator uses BSD-specific tooling (sed -i '') and writes to
