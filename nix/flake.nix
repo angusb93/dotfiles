@@ -190,6 +190,16 @@
               "figma"
               "spotify"
               "google-chrome"
+              # 1Password: cask rather than nixpkgs `_1password-gui`, which does
+              # support aarch64-darwin. Two reasons. (1) The macOS app must live
+              # in /Applications for browser integration and Touch ID unlock;
+              # nix installs to the store and symlinks, which 1Password's
+              # signature/path checks don't reliably accept. (2) The cask is
+              # auto_updates - for a password manager, shipping its own security
+              # fixes beats waiting on a flake bump. nixpkgs currently lags:
+              # gui 8.12.30 vs 8.12.33, cli 2.34.1 vs 2.38.1 (checked 2026-08-14).
+              "1password"
+              "1password-cli"
             ];
           };
           system = {
