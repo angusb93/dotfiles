@@ -100,10 +100,18 @@
       # Note .config is in ReadWritePaths above for claude-code's state, which
       # is exactly why gh and syncthing need masking rather than being left to
       # inherit it.
+      # The systemd entries close an escape hatch created by making .config and
+      # .local writable above: a user unit dropped in ~/.config/systemd/user
+      # runs under the *user* manager, which is a separate process tree and does
+      # NOT inherit this unit's NoNewPrivileges - so it could sudo freely. Same
+      # reasoning for ~/.local/bin, which can shadow binaries on angus's PATH.
       InaccessiblePaths = [
         "/home/angus/.ssh"
         "/home/angus/.config/gh"
         "/home/angus/.config/syncthing"
+        "/home/angus/.config/systemd"
+        "/home/angus/.local/share/systemd"
+        "/home/angus/.local/bin"
       ];
 
       PrivateTmp = true;
