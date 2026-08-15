@@ -60,6 +60,49 @@
       ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/bridge.py";
       Restart = "always";
       RestartSec = 5;
+
+      # --- Sandbox: bound what an autonomous agent can reach ---
+      # Context: this unit runs Claude with --dangerously-skip-permissions, gated
+      # only by a best-effort, fail-open PreToolUse hook. It runs as `angus`, and
+      # `security.sudo.wheelNeedsPassword = false` below gives angus passwordless
+      # root - so without this block the agent effectively has root.
+      #
+      # NoNewPrivileges is the load-bearing line: it stops the process tree from
+      # gaining privileges via setuid binaries, which is how sudo works. Even if
+      # the approval hook is bypassed, the agent cannot escalate.
+      NoNewPrivileges = true;
+      CapabilityBoundingSet = "";
+      AmbientCapabilities = "";
+      RestrictSUIDSGID = true;
+
+      # Read-only filesystem except the paths the agent genuinely writes to.
+      # Enumerated generously on purpose: claude-code writes cache/config/state
+      # under $HOME, and a missing path here is a silent runtime failure.
+      # NOT setting ProtectHome - the bridge, its token and the agent's whole
+      # state live under /home/angus, so protecting it would break the service.
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        "/home/angus/telegram-agent"
+        "/home/angus/.claude"
+        "/home/angus/.cache"
+        "/home/angus/.config"
+        "/home/angus/.local"
+        "/fast/vault"
+      ];
+
+      PrivateTmp = true;
+      PrivateDevices = true;
+      ProtectKernelTunables = true;
+      ProtectKernelModules = true;
+      ProtectKernelLogs = true;
+      ProtectControlGroups = true;
+      ProtectClock = true;
+      ProtectHostname = true;
+      RestrictRealtime = true;
+      LockPersonality = true;
+      # Deliberately NOT set: RestrictNamespaces, MemoryDenyWriteExecute,
+      # SystemCallFilter. Each can break claude-code's own sandboxing or the
+      # Node JIT, and the value here is bounding privilege, not syscalls.
     };
   };
 
