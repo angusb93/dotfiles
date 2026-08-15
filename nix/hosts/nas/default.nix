@@ -90,6 +90,22 @@
         "/fast/vault"
       ];
 
+      # ProtectSystem bounds writes but not reads, and the agent shares angus's
+      # home - so mask the credential stores explicitly. This gets most of the
+      # benefit of a dedicated service user without migrating the agent's Claude
+      # auth and vault ownership, which is a riskier change done separately.
+      # Verified safe: bridge.py and approve-hook.py contain no git/ssh/push/
+      # clone/remote references, and the vault is not a git repo, so the agent
+      # has no reason to touch any of these.
+      # Note .config is in ReadWritePaths above for claude-code's state, which
+      # is exactly why gh and syncthing need masking rather than being left to
+      # inherit it.
+      InaccessiblePaths = [
+        "/home/angus/.ssh"
+        "/home/angus/.config/gh"
+        "/home/angus/.config/syncthing"
+      ];
+
       PrivateTmp = true;
       PrivateDevices = true;
       ProtectKernelTunables = true;
