@@ -105,13 +105,19 @@
       # runs under the *user* manager, which is a separate process tree and does
       # NOT inherit this unit's NoNewPrivileges - so it could sudo freely. Same
       # reasoning for ~/.local/bin, which can shadow binaries on angus's PATH.
+      # The "-" prefix marks each path optional. Without it, systemd fails
+      # namespace setup with 226/NAMESPACE if the path does not exist, taking
+      # the whole service down - which is exactly what happened when
+      # ~/.config/systemd was listed before it existed. These are defensive
+      # masks for paths that may or may not be present, so they must be
+      # optional or the unit becomes fragile to unrelated filesystem changes.
       InaccessiblePaths = [
-        "/home/angus/.ssh"
-        "/home/angus/.config/gh"
-        "/home/angus/.config/syncthing"
-        "/home/angus/.config/systemd"
-        "/home/angus/.local/share/systemd"
-        "/home/angus/.local/bin"
+        "-/home/angus/.ssh"
+        "-/home/angus/.config/gh"
+        "-/home/angus/.config/syncthing"
+        "-/home/angus/.config/systemd"
+        "-/home/angus/.local/share/systemd"
+        "-/home/angus/.local/bin"
       ];
 
       PrivateTmp = true;
