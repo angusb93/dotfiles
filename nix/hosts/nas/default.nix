@@ -2,6 +2,104 @@
 # Deploy: sudo nixos-rebuild switch --flake ~/dotfiles/nix#nas
 { pkgs, ... }:
 
+let
+  # Everything the agent units need on PATH: python runs the bridge and the
+  # check-ins, claude-code is the agent itself, uv launches the Garmin MCP
+  # servers, node is claude-code's runtime.
+  agentPath = with pkgs; [
+    python3
+    claude-code
+    uv
+    nodejs_22
+    git
+    bash
+    coreutils
+    gnugrep
+  ];
+
+  # --- Sandbox: bound what an autonomous agent can reach ---
+  # Shared by every unit that runs claude-code, so the always-on bridge and the
+  # scheduled planning check-ins cannot drift apart. They execute the same binary
+  # with the same credentials, so a weaker sandbox on any one of them becomes the
+  # new weakest link - defining this once is a security property, not tidiness.
+  #
+  # Context: these units run Claude with --dangerously-skip-permissions, gated
+  # only by a best-effort, fail-open PreToolUse hook. They run as `angus`, and
+  # `security.sudo.wheelNeedsPassword = false` below gives angus passwordless
+  # root - so without this block the agent effectively has root.
+  #
+  # NoNewPrivileges is the load-bearing line: it stops the process tree from
+  # gaining privileges via setuid binaries, which is how sudo works. Even if
+  # the approval hook is bypassed, the agent cannot escalate.
+  agentSandbox = {
+    User = "angus";
+    Group = "users";
+    Environment = "HOME=/home/angus";
+
+    NoNewPrivileges = true;
+    CapabilityBoundingSet = "";
+    AmbientCapabilities = "";
+    RestrictSUIDSGID = true;
+
+    # Read-only filesystem except the paths the agent genuinely writes to.
+    # Enumerated generously on purpose: claude-code writes cache/config/state
+    # under $HOME, and a missing path here is a silent runtime failure.
+    # NOT setting ProtectHome - the bridge, its token and the agent's whole
+    # state live under /home/angus, so protecting it would break the service.
+    ProtectSystem = "strict";
+    ReadWritePaths = [
+      "/home/angus/telegram-agent"
+      "/home/angus/.claude"
+      "/home/angus/.cache"
+      "/home/angus/.config"
+      "/home/angus/.local"
+      "/fast/vault"
+    ];
+
+    # ProtectSystem bounds writes but not reads, and the agent shares angus's
+    # home - so mask the credential stores explicitly. This gets most of the
+    # benefit of a dedicated service user without migrating the agent's Claude
+    # auth and vault ownership, which is a riskier change done separately.
+    # Verified safe: bridge.py, approve-hook.py and checkin.py contain no git/
+    # ssh/push/clone/remote references against these paths, and the vault is not
+    # a git repo, so the agent has no reason to touch any of them.
+    # Note .config is in ReadWritePaths above for claude-code's state, which
+    # is exactly why gh and syncthing need masking rather than being left to
+    # inherit it.
+    # The systemd entries close an escape hatch created by making .config and
+    # .local writable above: a user unit dropped in ~/.config/systemd/user
+    # runs under the *user* manager, which is a separate process tree and does
+    # NOT inherit this unit's NoNewPrivileges - so it could sudo freely. Same
+    # reasoning for ~/.local/bin, which can shadow binaries on angus's PATH.
+    # The "-" prefix marks each path optional. Without it, systemd fails
+    # namespace setup with 226/NAMESPACE if the path does not exist, taking the
+    # whole service down - which is exactly what happened on 2026-08-15 when
+    # ~/.config/systemd was masked before it existed.
+    InaccessiblePaths = [
+      "-/home/angus/.ssh"
+      "-/home/angus/.config/gh"
+      "-/home/angus/.config/syncthing"
+      "-/home/angus/.config/systemd"
+      "-/home/angus/.local/share/systemd"
+      "-/home/angus/.local/bin"
+    ];
+
+    PrivateTmp = true;
+    PrivateDevices = true;
+    ProtectKernelTunables = true;
+    ProtectKernelModules = true;
+    ProtectKernelLogs = true;
+    ProtectControlGroups = true;
+    ProtectClock = true;
+    ProtectHostname = true;
+    RestrictRealtime = true;
+    LockPersonality = true;
+    # Deliberately NOT set: RestrictNamespaces, MemoryDenyWriteExecute,
+    # SystemCallFilter. Each can break claude-code's own sandboxing or the
+    # Node JIT, and the value here is bounding privilege, not syscalls.
+  };
+in
+
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -42,99 +140,76 @@
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
-    path = with pkgs; [
-      python3
-      claude-code
-      uv
-      nodejs_22
-      git
-      bash
-      coreutils
-      gnugrep
-    ];
-    serviceConfig = {
-      User = "angus";
-      Group = "users";
+    path = agentPath;
+    serviceConfig = agentSandbox // {
       WorkingDirectory = "/home/angus/telegram-agent";
-      Environment = "HOME=/home/angus";
       ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/bridge.py";
       Restart = "always";
       RestartSec = 5;
-
-      # --- Sandbox: bound what an autonomous agent can reach ---
-      # Context: this unit runs Claude with --dangerously-skip-permissions, gated
-      # only by a best-effort, fail-open PreToolUse hook. It runs as `angus`, and
-      # `security.sudo.wheelNeedsPassword = false` below gives angus passwordless
-      # root - so without this block the agent effectively has root.
-      #
-      # NoNewPrivileges is the load-bearing line: it stops the process tree from
-      # gaining privileges via setuid binaries, which is how sudo works. Even if
-      # the approval hook is bypassed, the agent cannot escalate.
-      NoNewPrivileges = true;
-      CapabilityBoundingSet = "";
-      AmbientCapabilities = "";
-      RestrictSUIDSGID = true;
-
-      # Read-only filesystem except the paths the agent genuinely writes to.
-      # Enumerated generously on purpose: claude-code writes cache/config/state
-      # under $HOME, and a missing path here is a silent runtime failure.
-      # NOT setting ProtectHome - the bridge, its token and the agent's whole
-      # state live under /home/angus, so protecting it would break the service.
-      ProtectSystem = "strict";
-      ReadWritePaths = [
-        "/home/angus/telegram-agent"
-        "/home/angus/.claude"
-        "/home/angus/.cache"
-        "/home/angus/.config"
-        "/home/angus/.local"
-        "/fast/vault"
-      ];
-
-      # ProtectSystem bounds writes but not reads, and the agent shares angus's
-      # home - so mask the credential stores explicitly. This gets most of the
-      # benefit of a dedicated service user without migrating the agent's Claude
-      # auth and vault ownership, which is a riskier change done separately.
-      # Verified safe: bridge.py and approve-hook.py contain no git/ssh/push/
-      # clone/remote references, and the vault is not a git repo, so the agent
-      # has no reason to touch any of these.
-      # Note .config is in ReadWritePaths above for claude-code's state, which
-      # is exactly why gh and syncthing need masking rather than being left to
-      # inherit it.
-      # The systemd entries close an escape hatch created by making .config and
-      # .local writable above: a user unit dropped in ~/.config/systemd/user
-      # runs under the *user* manager, which is a separate process tree and does
-      # NOT inherit this unit's NoNewPrivileges - so it could sudo freely. Same
-      # reasoning for ~/.local/bin, which can shadow binaries on angus's PATH.
-      # The "-" prefix marks each path optional. Without it, systemd fails
-      # namespace setup with 226/NAMESPACE if the path does not exist, taking
-      # the whole service down - which is exactly what happened when
-      # ~/.config/systemd was listed before it existed. These are defensive
-      # masks for paths that may or may not be present, so they must be
-      # optional or the unit becomes fragile to unrelated filesystem changes.
-      InaccessiblePaths = [
-        "-/home/angus/.ssh"
-        "-/home/angus/.config/gh"
-        "-/home/angus/.config/syncthing"
-        "-/home/angus/.config/systemd"
-        "-/home/angus/.local/share/systemd"
-        "-/home/angus/.local/bin"
-      ];
-
-      PrivateTmp = true;
-      PrivateDevices = true;
-      ProtectKernelTunables = true;
-      ProtectKernelModules = true;
-      ProtectKernelLogs = true;
-      ProtectControlGroups = true;
-      ProtectClock = true;
-      ProtectHostname = true;
-      RestrictRealtime = true;
-      LockPersonality = true;
-      # Deliberately NOT set: RestrictNamespaces, MemoryDenyWriteExecute,
-      # SystemCallFilter. Each can break claude-code's own sandboxing or the
-      # Node JIT, and the value here is bounding privilege, not syscalls.
     };
   };
+
+  # --- Planning check-ins ---
+  # Evening opens the nightly planning conversation, morning restates what was
+  # agreed. Both run checkin.py, which posts into the Planner forum topic so
+  # replies route back to the same persona and continue the same claude session.
+  # Design + the evidence behind it:
+  #   /fast/vault/wiki/projects/life-balance-system.md
+  #   /fast/vault/wiki/self/planning-psychology.md
+  #
+  # These reuse agentSandbox deliberately: same binary, same credentials, same
+  # blast radius as the bridge, so they get the same bounds.
+  #
+  # NOTE ON TIME: morty's clock is UTC and Angus is in London, so the timezone
+  # is named explicitly. An unqualified "20:45" would fire at 21:45 BST - an
+  # hour later than intended for the whole of summer.
+  systemd.services.morty-checkin = {
+    description = "morty evening planning check-in";
+    after = [ "network-online.target" "telegram-agent.service" ];
+    wants = [ "network-online.target" ];
+    path = agentPath;
+    serviceConfig = agentSandbox // {
+      Type = "oneshot";
+      WorkingDirectory = "/home/angus/telegram-agent";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py evening";
+      # MCP round-trips make this slow; checkin.py caps claude at 30 min itself.
+      TimeoutStartSec = "35min";
+    };
+  };
+
+  systemd.timers.morty-checkin = {
+    description = "Nightly planning check-in at 20:45 London";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Europe/London *-*-* 20:45:00";
+      # Deliberately not Persistent: a missed check-in is worthless later, and a
+      # 3am "plan your day" push after a reboot is how a system gets muted.
+      Persistent = false;
+    };
+  };
+
+  systemd.services.morty-morning = {
+    description = "morty morning card";
+    after = [ "network-online.target" "telegram-agent.service" ];
+    wants = [ "network-online.target" ];
+    path = agentPath;
+    serviceConfig = agentSandbox // {
+      Type = "oneshot";
+      WorkingDirectory = "/home/angus/telegram-agent";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py morning";
+      TimeoutStartSec = "35min";
+    };
+  };
+
+  systemd.timers.morty-morning = {
+    description = "Morning card at 07:30 London";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Europe/London *-*-* 07:30:00";
+      Persistent = false;
+    };
+  };
+
 
   # --- Networking ---
   networking.hostName = "morty";
