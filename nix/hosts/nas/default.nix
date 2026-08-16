@@ -171,7 +171,7 @@ in
     serviceConfig = agentSandbox // {
       Type = "oneshot";
       WorkingDirectory = "/home/angus/telegram-agent";
-      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py evening";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py planner evening";
       # MCP round-trips make this slow; checkin.py caps claude at 30 min itself.
       TimeoutStartSec = "35min";
     };
@@ -196,7 +196,7 @@ in
     serviceConfig = agentSandbox // {
       Type = "oneshot";
       WorkingDirectory = "/home/angus/telegram-agent";
-      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py morning";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py planner morning";
       TimeoutStartSec = "35min";
     };
   };
@@ -206,6 +206,60 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "*-*-* 07:30:00 Europe/London";
+      Persistent = false;
+    };
+  };
+
+  # --- PT check-ins ---
+  # The training plan silently drifting out of step with reality is the failure
+  # these prevent: running-plan.md sat for six weeks claiming "Week 3 of 13"
+  # while the actual training was 1.2 runs/week. So the daily job is to write
+  # any new Garmin session into running-log.md, and the weekly job is to make
+  # running-plan.md tell the truth about where the block actually is.
+  #
+  # Daily runs at 20:00, before the 20:45 planner check-in, so the day's
+  # training is already logged when the planner reads it. It stays SILENT when
+  # there is nothing new - checkin.py suppresses a NOTHING reply.
+  systemd.services.morty-pt-daily = {
+    description = "morty PT daily training sync";
+    after = [ "network-online.target" "telegram-agent.service" ];
+    wants = [ "network-online.target" ];
+    path = agentPath;
+    serviceConfig = agentSandbox // {
+      Type = "oneshot";
+      WorkingDirectory = "/home/angus/telegram-agent";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py pt daily";
+      TimeoutStartSec = "35min";
+    };
+  };
+
+  systemd.timers.morty-pt-daily = {
+    description = "PT training sync at 20:00 London";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 20:00:00 Europe/London";
+      Persistent = false;
+    };
+  };
+
+  systemd.services.morty-pt-weekly = {
+    description = "morty PT weekly reconciliation";
+    after = [ "network-online.target" "telegram-agent.service" ];
+    wants = [ "network-online.target" ];
+    path = agentPath;
+    serviceConfig = agentSandbox // {
+      Type = "oneshot";
+      WorkingDirectory = "/home/angus/telegram-agent";
+      ExecStart = "${pkgs.python3}/bin/python3 -u /home/angus/telegram-agent/checkin.py pt weekly";
+      TimeoutStartSec = "35min";
+    };
+  };
+
+  systemd.timers.morty-pt-weekly = {
+    description = "PT weekly reconciliation, Sunday 19:00 London";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Sun *-*-* 19:00:00 Europe/London";
       Persistent = false;
     };
   };
