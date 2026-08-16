@@ -181,7 +181,7 @@ in
     description = "Nightly planning check-in at 20:45 London";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "Europe/London *-*-* 20:45:00";
+      OnCalendar = "*-*-* 20:45:00 Europe/London";
       # Deliberately not Persistent: a missed check-in is worthless later, and a
       # 3am "plan your day" push after a reboot is how a system gets muted.
       Persistent = false;
@@ -205,7 +205,7 @@ in
     description = "Morning card at 07:30 London";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "Europe/London *-*-* 07:30:00";
+      OnCalendar = "*-*-* 07:30:00 Europe/London";
       Persistent = false;
     };
   };
