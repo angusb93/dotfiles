@@ -1,6 +1,6 @@
 # NixOS system config for the London NAS.
-# Deploy: nixos-rebuild switch --use-remote-sudo --flake ~/dotfiles/nix#nas
-# (--use-remote-sudo: the automations input is a private repo, so evaluation runs
+# Deploy: nixos-rebuild switch --sudo --flake ~/dotfiles/nix#nas
+# (--sudo: the automations input is a private repo, so evaluation runs
 #  as angus, whose SSH key GitHub knows, while activation still runs as root.)
 { pkgs, ... }:
 

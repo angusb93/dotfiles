@@ -10,7 +10,7 @@
 
     # Private: the personal automations monorepo (telegram-agent lives here).
     # Evaluating this flake therefore needs GitHub SSH access, which is why the
-    # NAS is rebuilt with --use-remote-sudo rather than plain sudo - root has no
+    # NAS is rebuilt with --sudo rather than plain sudo - root has no
     # key of its own.
     automations = {
       url = "git+ssh://git@github.com/angusb93/automations";
@@ -330,7 +330,7 @@
       };
 
       # Build the NAS flake using:
-      # $ nixos-rebuild switch --use-remote-sudo --flake .#nas
+      # $ nixos-rebuild switch --sudo --flake .#nas
       nixosConfigurations."nas" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         modules = [
