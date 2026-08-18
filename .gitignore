@@ -28,3 +28,6 @@ claude/.claude/paste-cache/
 claude/.claude/sessions/
 claude/.claude/mcp-needs-auth-cache.json
 result
+
+# Claude Code runtime state at the repo root, not the stowed claude/ package
+/.claude/worktrees/
