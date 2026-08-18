@@ -1,0 +1,9 @@
+{
+  "name": "screenshot-pr-scripts",
+  "private": true,
+  "description": "Deps for capture.mjs — install with: npm i --prefix ~/.claude/skills/screenshot-pr/scripts",
+  "type": "module",
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}
