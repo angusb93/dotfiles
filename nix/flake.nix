@@ -7,6 +7,15 @@
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     mac-app-util.url = "github:hraban/mac-app-util";
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
+
+    # Private: the personal automations monorepo (telegram-agent lives here).
+    # Evaluating this flake therefore needs GitHub SSH access, which is why the
+    # NAS is rebuilt with --use-remote-sudo rather than plain sudo - root has no
+    # key of its own.
+    automations = {
+      url = "git+ssh://git@github.com/angusb93/automations";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -16,6 +25,7 @@
       nix-darwin,
       mac-app-util,
       nix-homebrew,
+      automations,
       ...
     }:
     let
@@ -320,10 +330,13 @@
       };
 
       # Build the NAS flake using:
-      # $ sudo nixos-rebuild switch --flake .#nas
+      # $ nixos-rebuild switch --use-remote-sudo --flake .#nas
       nixosConfigurations."nas" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./hosts/nas ];
+        modules = [
+          ./hosts/nas
+          automations.nixosModules.telegram-agent
+        ];
       };
     };
 }

@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "automations": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787084310,
+        "narHash": "sha256-XgpN6Y6w0Cu8o+BP55leslMKrSSregqcGC18yXSvTZA=",
+        "ref": "refs/heads/main",
+        "rev": "e588dd7a02f06ef227a8ab91df9644392d70ae2c",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/angusb93/automations"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/angusb93/automations"
+      }
+    },
     "brew-src": {
       "flake": false,
       "locked": {
@@ -252,6 +272,7 @@
     },
     "root": {
       "inputs": {
+        "automations": "automations",
         "mac-app-util": "mac-app-util",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
