@@ -174,31 +174,6 @@
             };
           };
 
-          # Syncthing: the Mac half of the live Obsidian vault sync with morty
-          # (the NAS half is declared in hosts/nas/default.nix). This was
-          # previously a stray `brew install`, so `homebrew.onActivation.cleanup
-          # = "zap"` uninstalled it out from under the running process - hence
-          # declaring it here. No --home flag: syncthing defaults to
-          # ~/Library/Application Support/Syncthing on macOS, which keeps the
-          # existing device identity and folder pairing. --no-restart hands
-          # restarts to launchd's KeepAlive instead of syncthing restarting
-          # itself.
-          launchd.user.agents.syncthing = {
-            serviceConfig = {
-              Label = "syncthing";
-              ProgramArguments = [
-                "${pkgs.syncthing}/bin/syncthing"
-                "serve"
-                "--no-browser"
-                "--no-restart"
-              ];
-              RunAtLoad = true;
-              KeepAlive = true;
-              StandardOutPath = "/tmp/syncthing.log";
-              StandardErrorPath = "/tmp/syncthing.log";
-            };
-          };
-
           # Set up environment variables for pkg-config
           # environment.variables = {
           #   PKG_CONFIG_PATH = "${pkgs.pixman}/lib/pkgconfig:${pkgs.cairo}/lib/pkgconfig:${pkgs.pango}/lib/pkgconfig";

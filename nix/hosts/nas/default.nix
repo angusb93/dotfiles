@@ -21,19 +21,28 @@
   services.zfs.autoScrub.enable = true; # monthly integrity scrub
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
 
-  # --- Syncthing: live two-way sync of the Obsidian vault (Mac <-> morty) ---
-  # Runs as angus so it can read/write /fast/vault. GUI bound to localhost;
-  # configure device/folder pairing via an SSH tunnel to :8384. Sync ports
-  # (22000/tcp, 21027/udp) opened by openDefaultPorts.
-  services.syncthing = {
-    enable = true;
-    user = "angus";
-    group = "users";
-    configDir = "/home/angus/.config/syncthing";
-    dataDir = "/home/angus/.local/share/syncthing";
-    openDefaultPorts = true;
-    guiAddress = "127.0.0.1:8384";
-  };
+  # --- Obsidian vault sync: obsidian-headless (replaced Syncthing 2026-08-20) ---
+  # Syncthing used to hold the Mac <-> morty half of vault sync, with the Mac
+  # bridging to Obsidian Sync for the phone. That made the laptop - the one
+  # machine that is usually asleep - the relay for the always-on box, so agent
+  # writes on morty only reached the phone once the Mac was opened.
+  #
+  # Obsidian shipped an official headless Sync client in Feb 2026, so morty is
+  # now a first-class Obsidian Sync peer and the Mac is out of the path
+  # entirely. Syncthing is therefore removed on BOTH halves (the Mac launchd
+  # agent went at the same time).
+  #
+  # NOT YET DECLARATIVE: the client is installed per-user via npm
+  # (~/.npm-global/bin/ob) and driven by user units in ~/.config/systemd/user:
+  #   obsidian-sync.service          - `ob sync --continuous` against /fast/vault
+  #   obsidian-sync-watchdog.timer   - restarts it when it silently stalls
+  # It is not in nixpkgs yet. Packaging it with buildNpmPackage is the follow-up,
+  # and until that lands this is exactly the undeclared-dependency shape that
+  # bit syncthing twice. See wiki/concepts/infra/obsidian-headless-sync.md
+  #
+  # The watchdog is not optional: upstream issue #50 has `sync --continuous`
+  # stalling at "Connecting..." while the process stays alive, so systemd's
+  # Restart=on-failure never fires.
 
   # --- Personal agent: Telegram <-> Claude Code bridge (always-on) ---
   # The bridge, the approval hook, the check-in prompts and the systemd units
