@@ -22,4 +22,8 @@ Make the choice that keeps you fast a year from now, even when it's slower this 
 
 ## Product
 
-<!-- e.g. "Ship the smallest thing that proves the idea, then iterate." -->
+**The biggest risk is that nobody cares.**
+Not that the tech won't work, not that a competitor ships first - that you build something nobody wants.
+So an MVP has to earn its investment by proving product-market fit, not by looking finished.
+Keep the bet small and the spend low until there's real demand signal, then pour resources in.
+
