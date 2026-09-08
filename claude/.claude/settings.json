@@ -19,5 +19,28 @@
   "editorMode": "vim",
   "voiceEnabled": true,
   "remoteControlAtStartup": true,
-  "outputStyle": "concise"
+  "outputStyle": "concise",
+  "tui": "fullscreen",
+  "theme": "dark",
+  "extraKnownMarketplaces": {
+    "claude-whatsapp": {
+      "source": {
+        "source": "github",
+        "repo": "crisandrews/claude-whatsapp"
+      }
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__claude_ai_Google_Calendar__.*|mcp__claude_ai_Gmail__.*|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "telegram-agent-approve-hook"
+          }
+        ]
+      }
+    ]
+  }
 }
