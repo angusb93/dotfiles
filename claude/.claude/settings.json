@@ -17,5 +17,7 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "editorMode": "vim",
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "remoteControlAtStartup": true,
+  "outputStyle": "concise"
 }
