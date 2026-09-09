@@ -6,10 +6,21 @@ cd "$(dirname "$0")" || exit
 # Ensure target directories exist
 mkdir -p "$HOME/bin"
 
-# Remove stale non-symlink files that would block stow
-# (e.g. leftover configs from before dotfiles were managed)
-for f in .zshrc; do
-  [[ -e "$HOME/$f" && ! -L "$HOME/$f" ]] && rm -rf "$HOME/$f"
+# Move aside real files that would block stow - leftovers from before dotfiles
+# managed them. stow refuses to overwrite anything that is not already a symlink
+# it owns, so these have to go before the corresponding `stow` call below.
+#
+# Backed up rather than deleted: a hand-written config may hold settings worth
+# migrating (~/.ssh/config especially, since host entries are deliberately
+# untracked here and belong in ~/.ssh/config.d/*.conf). Only the named file is
+# touched - never the directory - so ssh keys and known_hosts are left alone.
+for f in .zshrc .ssh/config; do
+  target="${HOME:?}/$f"
+  [[ -e "$target" && ! -L "$target" ]] || continue
+  backup="$target.pre-dotfiles"
+  [[ -e "$backup" ]] && backup="$backup.$(date +%Y%m%d%H%M%S)"
+  echo "Backing up pre-existing $f -> ${backup#"$HOME/"}"
+  mv "$target" "$backup"
 done
 
 # Transition ~/.claude from directory-level symlink to real directory
@@ -30,14 +41,30 @@ fi
 # Ensure ~/.claude exists as a real directory before stowing
 mkdir -p "$HOME/.claude"
 
+# Stow everything using default .stowrc (into ~/.config)
+# Ignore packages that target $HOME (handled below) and non-stow directories.
+# Built as one array (never empty) so `set -u` stays happy on bash 3.2, the
+# /bin/bash macOS ships - there, expanding an empty array is an "unbound
+# variable" error.
+stow_ignores=(
+  --ignore='\.claude'
+  --ignore=zshrc
+  --ignore=claude
+  --ignore=ssh
+  --ignore='glove80.*'
+  --ignore=chrome
+  --ignore=wallpapers
+  --ignore=theme
+  --ignore=result
+)
+
 # When stowing on Linux (e.g. the NAS), skip things that don't belong there:
 #  - macOS-only GUI app configs (aerospace/sketchybar/ghostty) - apps absent
 #  - gh: the server manages its own gh auth; don't clobber ~/.config/gh
 #  - nix: never fold ~/.config/nix -> the flake dir (NixOS reads ~/.config/nix/)
 #  - non-config top-level items that shouldn't land in ~/.config at all
-linux_extra_ignores=()
 if [[ "$(uname)" != "Darwin" ]]; then
-  linux_extra_ignores=(
+  stow_ignores+=(
     --ignore=aerospace --ignore=sketchybar --ignore=ghostty
     --ignore=gh --ignore=nix --ignore=scripts
     --ignore=install.sh --ignore=AGENTS.md --ignore=CLAUDE.md
@@ -45,20 +72,7 @@ if [[ "$(uname)" != "Darwin" ]]; then
   )
 fi
 
-# Stow everything using default .stowrc (into ~/.config)
-# Ignore packages that target $HOME (handled below) and non-stow directories
-stow -R \
-  --ignore='\.claude' \
-  --ignore=zshrc \
-  --ignore=claude \
-  --ignore=ssh \
-  --ignore='glove80.*' \
-  --ignore=chrome \
-  --ignore=wallpapers \
-  --ignore=theme \
-  --ignore=result \
-  "${linux_extra_ignores[@]}" \
-  .
+stow -R "${stow_ignores[@]}" .
 
 # Create symlinks for packages that target $HOME
 stow -R --target "$HOME" zshrc
