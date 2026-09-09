@@ -201,6 +201,22 @@
     neovim
     gcc
     tree-sitter
+    # storage / disk diagnostics (the 8x SAS array + LSI 9201-8i HBA)
+    # smartmontools: the He10s are used data-centre pulls, so power-on hours,
+    # the grown defect list and non-medium error count are what decide whether
+    # a drive goes in the array or back to the seller. Needed permanently, not
+    # ad-hoc - services.smartd on top of this is the follow-up once the pool
+    # exists and there is somewhere for its alerts to go.
+    # sg3_utils: SCSI generic tools. sg_format is the escape hatch if a pull
+    # turns up with 520-byte sectors or T10 protection that has to be stripped.
+    # lsscsi + pciutils: see what is actually on the SAS bus and in the PCIe
+    # slots. lspci was missing entirely, which made identifying the HBA harder
+    # than it should have been.
+    smartmontools
+    sg3_utils
+    lsscsi
+    pciutils
+    hdparm
     # runtimes / env
     mise
     direnv
