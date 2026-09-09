@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "telegram-agent-approve-hook"
+            "command": "command -v telegram-agent-approve-hook >/dev/null 2>&1 || exit 0; exec telegram-agent-approve-hook"
           }
         ]
       }
