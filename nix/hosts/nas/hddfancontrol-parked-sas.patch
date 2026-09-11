@@ -1,0 +1,61 @@
+--- a/src/device/drive.rs
++++ b/src/device/drive.rs
+@@ -160,6 +160,17 @@
+                 return Ok(line.trim().to_owned());
+             }
+         }
++        // Both commands fail on a stopped SAS drive, but the kernel cached the
++        // INQUIRY product at probe time and reading it does not wake the drive
++        if let Some(model) = path
++            .file_name()
++            .map(|n| Path::new("/sys/class/block").join(n).join("device/model"))
++            .and_then(|p| fs::read_to_string(p).ok())
++            .map(|m| m.trim().to_owned())
++            .filter(|m| !m.is_empty())
++        {
++            return Ok(model);
++        }
+         anyhow::bail!("Unable to get drive {path:?} model name");
+     }
+ 
+@@ -216,8 +227,15 @@
+             .stderr(Stdio::null())
+             .env("LANG", "C")
+             .output()?;
++        // A stopped SAS drive makes `sdparm --command=ready` print "Not ready"
++        // and exit 2, so a non-zero status alone does not mean the probe failed
++        let not_ready = output
++            .stdout
++            .lines()
++            .map_while(Result::ok)
++            .any(|l| l.trim() == "Not ready");
+         anyhow::ensure!(
+-            output.status.success(),
++            output.status.success() || not_ready,
+             "sdparm failed with code {}",
+             output.status
+         );
+@@ -404,13 +422,22 @@
+             "sdparm",
+             "    /dev/_sdX: SEAGATE   ST2000NM0001      0002\nNot ready\n".as_bytes(),
+             &[],
+-            0,
++            2,
+         )
+         .unwrap();
+         assert!(matches!(
+             Drive::state_sdparm(Path::new("/dev/_sdX")).unwrap(),
+             State::Sleeping
+         ));
++
++        let _sdparm_mock = BinaryMock::new(
++            "sdparm",
++            "    /dev/_sdX: SEAGATE   ST2000NM0001      0002\n".as_bytes(),
++            &[],
++            2,
++        )
++        .unwrap();
++        assert!(Drive::state_sdparm(Path::new("/dev/_sdX")).is_err());
+     }
+ 
+     #[test]

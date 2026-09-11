@@ -43,6 +43,20 @@
   # limit is 60C, trip 65C. If the daemon dies the fans are left at 100%.
   services.hddfancontrol = {
     enable = true;
+    # Upstream (2.1.2, and master as of 2026-09-11) cannot cope with parked
+    # SAS drives (`sg_start --stop`), which is where these sit until the pool
+    # exists. Two bugs, both patched:
+    # - `sdparm --command=ready` prints "Not ready" but exits 2, and the status
+    #   check runs before the output is parsed, so a parked drive is a probe
+    #   failure rather than asleep. The daemon exited after 5 probes and left
+    #   the fans at 100%.
+    # - startup needs the drive model from `hdparm -I` or `smartctl -i`, both
+    #   of which fail on a stopped drive, so the daemon could not start at all.
+    #   Falls back to the model the kernel cached in sysfs.
+    # With both, parked drives read as asleep and the fans hold at the floor.
+    package = pkgs.hddfancontrol.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [ ./hddfancontrol-parked-sas.patch ];
+    });
     settings.drives = {
       disks = [ "scsi" ];
       pwmPaths = [ "$(echo /sys/devices/platform/nct6775.656/hwmon/hwmon*)/pwm4:76:40" ];
@@ -55,7 +69,13 @@
       ];
     };
   };
-  systemd.services.hddfancontrol-drives.serviceConfig.StateDirectory = "hddfancontrol";
+  systemd.services.hddfancontrol-drives.serviceConfig = {
+    StateDirectory = "hddfancontrol";
+    # On exit the fans go to 100%, which is safe but loud; come back rather
+    # than stay there until someone notices.
+    Restart = "on-failure";
+    RestartSec = "30s";
+  };
   # The module also starts the hddtemp daemon and hands it `disks` as its
   # device list, which here is the "scsi" selector rather than paths, so it
   # could not start. hddfancontrol invokes hddtemp per disk on its own.
