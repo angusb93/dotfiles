@@ -270,6 +270,13 @@
           # Necessary for using flakes on this system.
           nix.settings.experimental-features = "nix-command flakes";
 
+          # Touch ID for sudo, so passwords are rarely typed into a terminal.
+          # reattach (pam_reattach) is what makes Touch ID work inside tmux.
+          security.pam.services.sudo_local = {
+            touchIdAuth = true;
+            reattach = true;
+          };
+
           # Enable alternative shell support in nix-darwin.
           # programs.fish.enable = true;
 
