@@ -2,7 +2,7 @@
 # Deploy: nixos-rebuild switch --sudo --flake ~/dotfiles/nix#nas
 # (--sudo: the automations input is a private repo, so evaluation runs
 #  as angus, whose SSH key GitHub knows, while activation still runs as root.)
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 {
   imports = [ ./hardware-configuration.nix ];
@@ -10,7 +10,10 @@
   # --- Boot ---
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelModules = [ "amd64_edac" ]; # ECC monitoring (PRO 4650G + ECC UDIMM)
+  boot.kernelModules = [
+    "amd64_edac" # ECC monitoring (PRO 4650G + ECC UDIMM)
+    "nct6775" # B550M Pro4 Super I/O (NCT6798D): fan tach + PWM, not autoloaded
+  ];
 
   # --- Storage: ZFS on the 2TB NVMe (pool "fast" = fast NVMe app data / vault) ---
   # Named "fast" (not "tank") since it's the quick NVMe scratch drive; the future
@@ -20,6 +23,43 @@
   boot.zfs.extraPools = [ "fast" ]; # import the NVMe data pool at boot
   services.zfs.autoScrub.enable = true; # monthly integrity scrub
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
+
+  # --- Drive-chamber fans follow HDD temperature ---
+  # The Sagittarius has two chambers. The drive-cage fans are on CHA_FAN2
+  # (nct6798 pwm4), the motherboard-chamber fans on CHA_FAN3 (pwm5); both
+  # pairs share one header each via splitters, so there is one tach per pair.
+  # The BIOS curve keys off SYSTIN, a board sensor that cannot see the disks,
+  # so the drive pair is driven from the hottest disk instead. pwm5 stays on
+  # the BIOS curve.
+  #
+  # "scsi" selects every /dev/disk/by-id/scsi-* disk, i.e. exactly the SAS
+  # drives on the HBA (the boot SSD is ata-*, the pool NVMe nvme-*), so a
+  # replacement or the spare is picked up without editing this.
+  #
+  # PWM thresholds (start 76, stop 40) are hand-measured: `pwm-test` cannot
+  # calibrate this pair because the splitter tach reads garbage (~5000 rpm)
+  # once the fans stall below ~PWM 40. 76 is the BIOS floor and starts them
+  # reliably. 20% minimum = PWM 83 ~= 655 rpm, fully on at 45C. He10 operating
+  # limit is 60C, trip 65C. If the daemon dies the fans are left at 100%.
+  services.hddfancontrol = {
+    enable = true;
+    settings.drives = {
+      disks = [ "scsi" ];
+      pwmPaths = [ "$(echo /sys/devices/platform/nct6775.656/hwmon/hwmon*)/pwm4:76:40" ];
+      extraArgs = [
+        "--drive-temp-range 35 45"
+        "--min-fan-speed-prct=20"
+        "--interval=20s"
+        "--temp-log=/var/lib/hddfancontrol/temps.jsonl"
+        "--temp-log-max-files=90"
+      ];
+    };
+  };
+  systemd.services.hddfancontrol-drives.serviceConfig.StateDirectory = "hddfancontrol";
+  # The module also starts the hddtemp daemon and hands it `disks` as its
+  # device list, which here is the "scsi" selector rather than paths, so it
+  # could not start. hddfancontrol invokes hddtemp per disk on its own.
+  hardware.sensor.hddtemp.enable = lib.mkForce false;
 
   # --- Obsidian vault sync: obsidian-headless (replaced Syncthing 2026-08-20) ---
   # Syncthing used to hold the Mac <-> morty half of vault sync, with the Mac
