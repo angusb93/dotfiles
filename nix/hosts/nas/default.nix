@@ -170,6 +170,124 @@
     };
   };
 
+  # --- Claude Code Remote Control (always-on target for the phone) ---
+  # `claude remote-control` registers morty as an environment on claude.ai/code,
+  # so it shows up as a target in the mobile app and new sessions can be started
+  # on it from anywhere. Sessions are spawned on demand in /fast/vault.
+  #
+  # It is the SUBCOMMAND, not the `--remote-control` flag. The flag only attaches
+  # one interactive session to the bridge and never registers the machine, so the
+  # phone sees no target and prompts sent to it queue up unserved. The subcommand
+  # is hidden from `claude --help`; `claude remote-control --help` documents it.
+  #
+  # A user service rather than a system one: it needs angus's Claude credentials
+  # in ~/.claude. Lingering is enabled for angus, so it still starts at boot with
+  # nobody logged in.
+  systemd.user.services.claude-remote-control = {
+    description = "Claude Code Remote Control host for morty";
+    wantedBy = [ "default.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    # Never stop retrying - the point of the unit is to always be there.
+    unitConfig.StartLimitIntervalSec = 0;
+    # Stable profile path, not a /nix/store path, so spawned sessions keep a
+    # working PATH across rebuilds. mkForce because the user-service module sets
+    # its own minimal PATH; the system profile is a superset of it.
+    environment.PATH = lib.mkForce "/run/current-system/sw/bin:/home/angus/.npm-global/bin";
+    serviceConfig = {
+      Type = "simple";
+      # Must already be trusted in ~/.claude.json, or startup blocks forever on
+      # the workspace trust dialog with nobody at a keyboard to answer it.
+      # /home/angus is explicitly NOT trusted; /fast/vault is.
+      WorkingDirectory = "/fast/vault";
+      # This is a server, not a TUI - it runs fine with no controlling terminal.
+      ExecStart = "${pkgs.claude-code}/bin/claude remote-control --name morty";
+      Restart = "always";
+      RestartSec = 5;
+      RestartSteps = 5;
+      RestartMaxDelaySec = 120;
+      # Signal the server only. The shared claude daemon reparents to PID 1 but
+      # stays in this unit's cgroup, and it supervises every other background
+      # session on the machine - a cgroup-wide kill would take them all down.
+      KillMode = "process";
+      TimeoutStopSec = 30;
+    };
+  };
+
+  # systemd only supervises the process, but what makes morty a target is the
+  # bridge. Claude gives up on it permanently after ~10 minutes of connection
+  # errors (bridge_poll_give_up) and then keeps running with nothing on the other
+  # end - the unit looks healthy while the target has silently vanished, which is
+  # the same shape as the obsidian-sync stall above. The bridge holds one
+  # long-lived TLS connection, so its absence is the signal to restart.
+  systemd.user.services.claude-remote-control-healthcheck = {
+    description = "Verify the Claude Remote Control host is still connected";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "claude-rc-healthcheck";
+          runtimeInputs = with pkgs; [
+            systemd
+            iproute2
+            procps
+            gnugrep
+            coreutils
+          ];
+          text = ''
+            unit=claude-remote-control.service
+            state="''${XDG_RUNTIME_DIR:-/tmp}/claude-rc-health.state"
+
+            if ! systemctl --user is-active --quiet "$unit"; then
+              exit 0
+            fi
+
+            main_pid=$(systemctl --user show "$unit" -p MainPID --value)
+            if [ -z "$main_pid" ] || [ "$main_pid" = "0" ]; then
+              exit 0
+            fi
+
+            conns=$(ss -tnp 2>/dev/null | grep -c "pid=$main_pid," || true)
+            if [ "$conns" -gt 0 ]; then
+              rm -f "$state"
+              exit 0
+            fi
+
+            # Never interrupt sessions that are actually doing work.
+            if pgrep -P "$main_pid" >/dev/null 2>&1; then
+              echo "no bridge connection, but spawned sessions are active; deferring restart"
+              exit 0
+            fi
+
+            # Require two consecutive misses so a momentary reconnect between
+            # long-poll requests cannot trigger a pointless restart.
+            fails=$(( $(cat "$state" 2>/dev/null || echo 0) + 1 ))
+            echo "$fails" > "$state"
+            if [ "$fails" -lt 2 ]; then
+              echo "no bridge connection (strike $fails); waiting one more cycle"
+              exit 0
+            fi
+
+            echo "no bridge connection after $fails checks; restarting $unit"
+            rm -f "$state"
+            exec systemctl --user restart "$unit"
+          '';
+        }
+      );
+    };
+  };
+
+  systemd.user.timers.claude-remote-control-healthcheck = {
+    description = "Check the Claude Remote Control host every 2 minutes";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "3min";
+      OnUnitActiveSec = "2min";
+      AccuracySec = "15s";
+      Unit = "claude-remote-control-healthcheck.service";
+    };
+  };
+
   # --- Networking ---
   networking.hostName = "morty";
   networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
