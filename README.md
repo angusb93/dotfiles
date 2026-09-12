@@ -208,6 +208,43 @@ See `.env.local.example` for available variables. `install.sh` reads `GH_DEFAULT
 
 ---
 
+## Secrets (1Password)
+
+API keys are never stored in this repo and never written to a config file on disk.
+The repo holds only a 1Password *secret reference* - an `op://vault/item/field` pointer, which is useless without access to the vault - and the key itself is resolved at the moment it is needed.
+
+Secrets are read lazily rather than exported at shell start.
+An eager `op read` in `.zshrc` would fire a 1Password unlock prompt every time a terminal or tmux pane opens, so each integration instead resolves its key inside a thin wrapper function around the command that needs it.
+
+### OpenRouter (opencode)
+
+`.zshrc` wraps `opencode` so that `OPENROUTER_API_KEY` is populated from 1Password only when opencode actually launches.
+opencode auto-registers the OpenRouter provider from that variable alone, which is why `opencode/opencode.json` carries no provider block.
+
+Deliberately *not* used here: `opencode auth login`.
+That writes the key in plaintext to `~/.local/share/opencode/auth.json`, which is untracked machine-local state and would have to be redone by hand on every machine - exactly what the golden rule at the top of `AGENTS.md` forbids.
+
+The item is addressed by ID rather than by title.
+Two items in the Private vault differ only by case (`OpenRouter`, an empty Google-sign-in login, and `Openrouter`, the API credential holding the key), and `op read` refuses to guess between them; an ID also survives a later rename.
+
+Override the pointer from `.env.local` if the key ever moves:
+
+```bash
+export OPENROUTER_KEY_REF="op://Private/<item-id-or-unique-title>/credential"
+```
+
+To verify the wiring end to end:
+
+```bash
+# 0 without the wrapper, 367 with it
+command opencode models | grep -c '^openrouter/'
+opencode models | grep -c '^openrouter/'
+```
+
+Note that a free-tier OpenRouter key can only reach `:free` models until credits are added.
+
+---
+
 ## TODO
 
 - [ ] change the prompt to something else that might run faster than starship (or at least benchmark it)
