@@ -241,7 +241,14 @@ command opencode models | grep -c '^openrouter/'
 opencode models | grep -c '^openrouter/'
 ```
 
-Note that a free-tier OpenRouter key can only reach `:free` models until credits are added.
+Check the credit balance backing the key with:
+
+```bash
+curl -s -H "Authorization: Bearer $(op read --no-newline "$OPENROUTER_KEY_REF")" \
+  https://openrouter.ai/api/v1/credits
+```
+
+Without credit a key can only reach `:free` models.
 
 ---
 
