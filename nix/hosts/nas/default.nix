@@ -16,11 +16,29 @@
   ];
 
   # --- Storage: ZFS on the 2TB NVMe (pool "fast" = fast NVMe app data / vault) ---
-  # Named "fast" (not "tank") since it's the quick NVMe scratch drive; the future
-  # 8TB HDD array can take a "tank"/bulk name. Root stays on ext4 (sda); this adds
-  # ZFS support + auto-imports the data pool created on nvme0n1.
+  # Named "fast" (not "tank") since it's the quick NVMe scratch drive; the 8TB
+  # HDD array is "tank". Root stays on ext4 (sda); this adds ZFS support and
+  # auto-imports both data pools.
   boot.supportedFilesystems = [ "zfs" ];
-  boot.zfs.extraPools = [ "fast" ]; # import the NVMe data pool at boot
+  boot.zfs.extraPools = [
+    "fast" # 2TB NVMe: app data, the vault
+    "tank" # 6x HGST He10 8TB SAS (D1-D6), RAIDZ2, ~29TB: bulk storage
+  ];
+  # tank is natively encrypted (aes-256-gcm) from the pool root down. Its key
+  # is a 64-char hex file at /etc/zfs/keys/tank.key (root 0400) on the boot
+  # SSD - deliberately NOT in this flake, since it is a secret - with a copy in
+  # 1Password; lose both and the pool is unrecoverable. It is loaded at import
+  # by boot.zfs.requestEncryptionCredentials (default true), so tank unlocks
+  # unattended. This protects drives that leave the house (RMA, resale,
+  # disposal), not theft of the whole box.
+  # Created 2026-09-13 with: ashift=12 compression=zstd atime=off xattr=sa
+  # acltype=posixacl dnodesize=auto, members by /dev/disk/by-id/wwn-*.
+  # No spindown (yet): RAIDZ wakes all six at once, a runtime surge the single
+  # backplane Molex cable should not carry. Revisit after the second cable.
+
+  # The 26.11 default. Never force-import a pool that looks claimed by another
+  # host - a force import there risks corrupting it.
+  boot.zfs.forceImportRoot = false;
   services.zfs.autoScrub.enable = true; # monthly integrity scrub
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
 
