@@ -124,6 +124,14 @@ setopt share_history
 setopt hist_ignore_dups
 setopt hist_ignore_space
 
+# --- SSH landing directory ---
+# SSH into morty should land in the vault rather than $HOME. Only interactive
+# logins that start in $HOME move, so `ssh morty <cmd>`, scp, and tmux panes
+# keep their own working directory. Machines without the vault are unaffected.
+if [[ $- == *i* && -n "$SSH_CONNECTION" && -z "$TMUX" && "$PWD" == "$HOME" && -d /fast/vault ]]; then
+  cd /fast/vault
+fi
+
 # --- Terminal title ---
 precmd() { print -Pn "\e]0;%n@%m: %~\a" }
 
