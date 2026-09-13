@@ -211,7 +211,9 @@
     # Stable profile path, not a /nix/store path, so spawned sessions keep a
     # working PATH across rebuilds. mkForce because the user-service module sets
     # its own minimal PATH; the system profile is a superset of it.
-    environment.PATH = lib.mkForce "/run/current-system/sw/bin:/home/angus/.npm-global/bin";
+    # /run/wrappers/bin first: it holds the setuid sudo. Without it, sessions
+    # resolve sw/bin's plain sudo, which fails with "must be owned by uid 0".
+    environment.PATH = lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/home/angus/.npm-global/bin";
     serviceConfig = {
       Type = "simple";
       # Must already be trusted in ~/.claude.json, or startup blocks forever on
