@@ -208,6 +208,10 @@
     after = [ "network-online.target" ];
     # Never stop retrying - the point of the unit is to always be there.
     unitConfig.StartLimitIntervalSec = 0;
+    # systemd.user units are enabled for every user manager, including the
+    # gdm-greeter one, where there are no Claude credentials and the unit
+    # crash-loops on "You must be logged in to use Remote Control".
+    unitConfig.ConditionUser = "angus";
     # Stable profile path, not a /nix/store path, so spawned sessions keep a
     # working PATH across rebuilds. mkForce because the user-service module sets
     # its own minimal PATH; the system profile is a superset of it.
@@ -242,6 +246,7 @@
   # long-lived TLS connection, so its absence is the signal to restart.
   systemd.user.services.claude-remote-control-healthcheck = {
     description = "Verify the Claude Remote Control host is still connected";
+    unitConfig.ConditionUser = "angus";
     serviceConfig = {
       Type = "oneshot";
       ExecStart = lib.getExe (
@@ -300,6 +305,7 @@
   systemd.user.timers.claude-remote-control-healthcheck = {
     description = "Check the Claude Remote Control host every 2 minutes";
     wantedBy = [ "timers.target" ];
+    unitConfig.ConditionUser = "angus";
     timerConfig = {
       OnBootSec = "3min";
       OnUnitActiveSec = "2min";
