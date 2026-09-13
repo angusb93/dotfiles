@@ -65,24 +65,44 @@ fi
 # opencode launches, rather than exported at shell start - so opening a terminal
 # or a tmux pane never triggers a 1Password unlock prompt.
 #
-# The item is addressed by ID rather than by title ("Openrouter", an API
-# Credential item in the Private vault). A title reference is ambiguous here -
-# an older, empty "OpenRouter" login item differs only by case, and op refuses
-# to guess between them - and an ID survives a later rename. Item IDs are
-# identifiers, not credentials: useless without access to the vault.
-# Point OPENROUTER_KEY_REF at a different item from .env.local to override.
-export OPENROUTER_KEY_REF="${OPENROUTER_KEY_REF:-op://Private/tnp6iehqxngjupd4ejqq7b63nm/credential}"
+# Items are addressed by ID rather than by title. A title reference is ambiguous
+# in Private - an older, empty "OpenRouter" login item differs only by case from
+# the "Openrouter" API Credential, and op refuses to guess between them - and an
+# ID survives a later rename. Item IDs are identifiers, not credentials: useless
+# without access to the vault.
+#
+# The Mac unlocks through the 1Password desktop app (Touch ID). morty has no
+# app to unlock through, so it reads with a service account instead: read-only
+# on the Morty vault, its token in OP_SA_TOKEN_FILE (0600, placed by hand, never
+# in this repo). The token file existing is what selects morty's item, its own
+# OpenRouter key. The token is only handed to op for the one read - exporting it
+# would give it to every shell and every agent started from one.
+#
+# The reference is picked at launch, not exported at shell start: an exported
+# default is inherited by child shells, so a tmux pane or agent started from an
+# older shell would stay pinned to whichever item its parent picked.
+# Set OPENROUTER_KEY_REF (e.g. in .env.local) to read a different item.
+OP_SA_TOKEN_FILE="$HOME/.config/op/service-account-token"
+
+_opencode_openrouter_key() {
+  if [[ -s "$OP_SA_TOKEN_FILE" ]]; then
+    OP_SERVICE_ACCOUNT_TOKEN="$(<"$OP_SA_TOKEN_FILE")" op read --no-newline \
+      "${OPENROUTER_KEY_REF:-op://6ozvud25wxpywiml26e3a53hxu/esxkxlfzue6n6iwnk6s4udvmp4/credential}"
+  else
+    op read --no-newline "${OPENROUTER_KEY_REF:-op://Private/tnp6iehqxngjupd4ejqq7b63nm/credential}"
+  fi
+}
 
 # opencode reads OPENROUTER_API_KEY and auto-registers the OpenRouter provider
 # from it, so no provider block is needed in opencode.json.
 opencode() {
   if [[ -z "${OPENROUTER_API_KEY:-}" ]] && command -v op &>/dev/null; then
     local key
-    if key="$(op read --no-newline "$OPENROUTER_KEY_REF" 2>/dev/null)"; then
+    if key="$(_opencode_openrouter_key 2>/dev/null)"; then
       OPENROUTER_API_KEY="$key" command opencode "$@"
       return
     fi
-    print -u2 "⚠ opencode: could not read $OPENROUTER_KEY_REF from 1Password - starting without OpenRouter"
+    print -u2 "⚠ opencode: could not read the OpenRouter key from 1Password - starting without OpenRouter"
   fi
   command opencode "$@"
 }

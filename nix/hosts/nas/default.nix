@@ -440,6 +440,9 @@
     nodejs_22
     claude-code
     opencode
+    # The opencode wrapper in zshrc reads morty's OpenRouter key through a
+    # 1Password service account scoped read-only to the Morty vault.
+    _1password-cli
   ];
 
   nix.settings.experimental-features = [
