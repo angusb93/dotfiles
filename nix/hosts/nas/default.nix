@@ -334,7 +334,15 @@
 
   # --- Remote management: key-only SSH + passwordless sudo for wheel ---
   services.openssh.enable = true;
-  services.openssh.settings.PasswordAuthentication = false;
+  services.openssh.settings = {
+    PasswordAuthentication = false;
+    # PasswordAuthentication alone is not key-only. With PAM, keyboard-interactive
+    # still prompts for the account password, and NixOS leaves it on by default:
+    # until 2026-09-13 sshd offered "publickey,keyboard-interactive" here.
+    KbdInteractiveAuthentication = false;
+    # Nothing logs in as root; deploys go through angus with --sudo.
+    PermitRootLogin = "no";
+  };
   security.sudo.wheelNeedsPassword = false;
 
   # --- Desktop ---
@@ -372,7 +380,9 @@
       "wheel"
       "networkmanager"
     ];
-    initialPassword = "changeme";
+    # No initialPassword: it was "changeme" in plaintext in this public repo, and
+    # only ever applied at account creation, so removing it changes nothing live.
+    # Set the real password with `passwd`.
     shell = pkgs.zsh;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPHOsJHKtJxBPCVrhttYSLcYm2Hy0SXoplKlrX0rJYH7"
