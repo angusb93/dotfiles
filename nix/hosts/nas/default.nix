@@ -429,6 +429,7 @@
     uv
     nodejs_22
     claude-code
+    opencode
   ];
 
   nix.settings.experimental-features = [
