@@ -25,6 +25,10 @@ else
 fi
 # /run/current-system/sw/bin is the Nix profile path on both nix-darwin and NixOS.
 export PATH="/run/current-system/sw/bin:$PNPM_HOME:$HOME/.cargo/bin:$HOME/bin:$PATH"
+# NixOS only: setuid binaries (sudo, ping, ...) are wrappers in /run/wrappers/bin
+# and must win over the plain copies in sw/bin, which cannot elevate.
+[[ -d /run/wrappers/bin ]] && export PATH="/run/wrappers/bin:$PATH"
+typeset -U path
 
 # --- Prompt & Heavy Plugins ---
 # Only load these in interactive shells to keep scripts/tmux fast
