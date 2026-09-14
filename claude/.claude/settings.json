@@ -22,14 +22,6 @@
   "outputStyle": "concise",
   "tui": "fullscreen",
   "theme": "dark",
-  "extraKnownMarketplaces": {
-    "claude-whatsapp": {
-      "source": {
-        "source": "github",
-        "repo": "crisandrews/claude-whatsapp"
-      }
-    }
-  },
   "hooks": {
     "PreToolUse": [
       {
