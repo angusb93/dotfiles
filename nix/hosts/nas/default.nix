@@ -2,8 +2,80 @@
 # Deploy: nixos-rebuild switch --sudo --flake ~/dotfiles/nix#nas
 # (--sudo: the automations input is a private repo, so evaluation runs
 #  as angus, whose SSH key GitHub knows, while activation still runs as root.)
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
+let
+  # One way for anything on morty to reach Angus: `morty-alert SUBJECT` with the
+  # body on stdin, delivered as a Telegram DM from the telegram-agent bot.
+  #
+  # The bot token and Angus's chat id are read from the bridge's state dir, so
+  # this runs as root (zed and smartd both do). When S3 of the security plan
+  # moves bridge secrets into 1Password, this has to move with them.
+  #
+  # The token goes to curl on stdin (--config -), never in argv, so it cannot
+  # be read from the process list.
+  morty-alert = pkgs.writeShellApplication {
+    name = "morty-alert";
+    runtimeInputs = with pkgs; [
+      coreutils
+      curl
+      util-linux
+    ];
+    text = ''
+      subject=''${1:?usage: morty-alert SUBJECT < body}
+      state=/home/angus/telegram-agent
+
+      # Telegram caps a message at 4096 characters.
+      body=$(head -c 3500)
+      text=$(printf '🚨 %s\n\n%s' "$subject" "$body")
+
+      if ! printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$(cat "$state/token")" \
+        | curl --silent --show-error --fail --max-time 20 --retry 3 --retry-all-errors \
+            --config - \
+            --data-urlencode "chat_id=$(cat "$state/owner")" \
+            --data-urlencode "text=$text" >/dev/null; then
+        logger -p daemon.err -t morty-alert "Telegram delivery FAILED: $subject"
+        exit 1
+      fi
+      logger -p daemon.notice -t morty-alert "sent: $subject"
+    '';
+  };
+
+  # smartd's `-M exec` hook. smartd names the kernel device (/dev/sdb), which
+  # reshuffles between boots, so the alert also carries the stable by-id names.
+  # The WWN is what the bay map in the vault joins to a tray label.
+  smartd-alert = pkgs.writeShellApplication {
+    name = "smartd-alert";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.findutils
+      config.boot.zfs.package
+      morty-alert
+    ];
+    text = ''
+      dev=''${SMARTD_DEVICE##*/}
+      ids=$(find /dev/disk/by-id -lname "*/$dev" -printf '%f\n' 2>/dev/null | sort || true)
+      {
+        echo "''${SMARTD_FULLMESSAGE:-''${SMARTD_MESSAGE:-}}"
+        echo
+        echo "device:  ''${SMARTD_DEVICESTRING:-$SMARTD_DEVICE}"
+        echo "failure: ''${SMARTD_FAILTYPE:-unknown}"
+        echo "by-id:"
+        echo "''${ids:-  (none found)}"
+        echo
+        echo "Map the WWN to a tray with the bay table in wiki/projects/home-lab.md,"
+        echo "and confirm against zpool status before pulling anything."
+        echo
+        zpool status -x
+      } | morty-alert "''${SMARTD_SUBJECT:-SMART warning on morty}"
+    '';
+  };
+in
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -41,6 +113,51 @@
   boot.zfs.forceImportRoot = false;
   services.zfs.autoScrub.enable = true; # monthly integrity scrub
   services.zfs.trim.enable = true; # periodic SSD TRIM (NVMe health)
+
+  # --- Dead-disk alerts, to Telegram ---
+  # A RAIDZ2 that loses a drive keeps serving data, so without an alert it looks
+  # exactly like a healthy one until the next two drives go. And all six are
+  # one batch, so correlated failures are the expected shape, not the unlucky one.
+  # Two sources, both delivered by morty-alert above:
+  #
+  # ZED reports what ZFS itself sees: a vdev FAULTED, DEGRADED, REMOVED or
+  # UNAVAIL, checksum and I/O errors, and a scrub or resilver that finished
+  # with errors. ZED only knows how to email, so morty-alert stands in as the
+  # "mail program": with @SUBJECT@ in the options the subject arrives as $1 and
+  # the body on stdin. ZED_EMAIL_ADDR is never used, but ZED skips email
+  # entirely without one. Repeats are rate-limited per event (ZED default, 1h).
+  services.zfs.zed.settings = {
+    ZED_EMAIL_ADDR = "angus";
+    ZED_EMAIL_PROG = lib.getExe morty-alert;
+    ZED_EMAIL_OPTS = "'@SUBJECT@'";
+  };
+
+  # smartd reports what the drives say before ZFS notices: SMART health failing,
+  # a growing defect list, failed self-tests, over-temperature. It scans every
+  # disk (the six SAS drives, the boot SSD and the NVMe).
+  # - `-s`: short self-test daily at 02:00, long self-test on the 15th at 03:00,
+  #   clear of the monthly scrub on the 1st. A long test is a full sequential
+  #   read, about 12h per drive, and the drives run it in parallel.
+  # - `-W 0,50,55`: log from 50C, alert at 55C. The He10s are rated to 60C and
+  #   the fan curve is flat out at 45C, so 55C means cooling has failed.
+  # - `-M daily`: repeat a standing problem once a day rather than only once.
+  # No `-o on`: that is ATA-only.
+  services.smartd = {
+    enable = true;
+    autodetect = true;
+    # The module turns X11 popups on whenever xserver is enabled (GNOME, here),
+    # and that injects its own `-m`/`-M exec` ahead of ours on every line.
+    notifications.x11.enable = false;
+    notifications.wall.enable = false;
+    defaults.autodetected = lib.concatStringsSep " " [
+      "-a"
+      "-s (S/../.././02|L/../15/./03)"
+      "-W 0,50,55"
+      "-m <nomailer>"
+      "-M exec ${lib.getExe smartd-alert}"
+      "-M daily"
+    ];
+  };
 
   # --- Drive-chamber fans follow HDD temperature ---
   # The Sagittarius has two chambers. The drive-cage fans are on CHA_FAN2
@@ -419,8 +536,7 @@
     # smartmontools: the He10s are used data-centre pulls, so power-on hours,
     # the grown defect list and non-medium error count are what decide whether
     # a drive goes in the array or back to the seller. Needed permanently, not
-    # ad-hoc - services.smartd on top of this is the follow-up once the pool
-    # exists and there is somewhere for its alerts to go.
+    # ad-hoc; services.smartd (above) is the monitoring on top of it.
     # sg3_utils: SCSI generic tools. sg_format is the escape hatch if a pull
     # turns up with 520-byte sectors or T10 protection that has to be stripped.
     # lsscsi + pciutils: see what is actually on the SAS bus and in the PCIe
