@@ -113,8 +113,12 @@ alias gs="git status"
 alias ..="cd .."
 alias ...="cd ../.."
 alias lg="lazygit"
+# `claude agents` sessions are spawned by a shared background daemon that keeps the
+# environment of whichever invocation happened to start it, so a `VAR=1 claude agents`
+# prefix leaks into every later session - including ones launched with plain `cac`.
+# --settings is passed per invocation and only reaches that view's dispatched sessions.
 alias cac="claude agents --cwd ./ --allow-dangerously-skip-permissions"
-alias vcac="CLAUDE_CODE_USE_VERTEX=1 claude agents --cwd ./ --allow-dangerously-skip-permissions"
+alias vcac="claude agents --cwd ./ --allow-dangerously-skip-permissions --settings '{\"env\":{\"CLAUDE_CODE_USE_VERTEX\":\"1\"}}'"
 # --- History ---
 HISTFILE=~/.zsh_history
 HISTSIZE=100000
