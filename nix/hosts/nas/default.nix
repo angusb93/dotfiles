@@ -275,6 +275,13 @@ in
     group = "users";
     vaultDir = "/fast/vault";
 
+    # The 1Password service-account token (~/.config/op) unlocks the whole
+    # Morty vault, and the sandbox makes ~/.config writable, so without this a
+    # session driven by a Telegram message could read it. The WhatsApp unit
+    # got the same mask on 2026-09-13. Belongs in the shared sandbox module
+    # once S3 of the security plan lands.
+    extraInaccessiblePaths = [ "-/home/angus/.config/op" ];
+
     checkins = {
       # Evening opens the nightly planning conversation, morning restates what
       # was agreed. Both post into the Planner forum topic so replies route back
