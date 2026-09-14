@@ -11,11 +11,18 @@
 
 let
   # One way for anything on morty to reach Angus: `morty-alert SUBJECT` with the
-  # body on stdin, delivered as a Telegram DM from the telegram-agent bot.
+  # body on stdin, posted by the telegram-agent bot into the "🚨 Alerts" topic
+  # of the morty group.
   #
-  # The bot token and Angus's chat id are read from the bridge's state dir, so
-  # this runs as root (zed and smartd both do). When S3 of the security plan
-  # moves bridge secrets into 1Password, this has to move with them.
+  # The topic's ids live in alerts.json in the bridge's state dir, deliberately
+  # not in threads.json: that map is persona routing, and the bridge's /setup
+  # rewrites it. A reply typed in the Alerts topic goes to the general persona,
+  # so "what does this mean?" gets an answer. If alerts.json is missing the
+  # alert falls back to Angus's DM rather than going nowhere.
+  #
+  # The bot token is read from the same state dir, so this runs as root (zed
+  # and smartd both do). When S3 of the security plan moves bridge secrets into
+  # 1Password, this has to move with them.
   #
   # The token goes to curl on stdin (--config -), never in argv, so it cannot
   # be read from the process list.
@@ -24,6 +31,7 @@ let
     runtimeInputs = with pkgs; [
       coreutils
       curl
+      jq
       util-linux
     ];
     text = ''
@@ -34,10 +42,19 @@ let
       body=$(head -c 3500)
       text=$(printf '🚨 %s\n\n%s' "$subject" "$body")
 
+      target=()
+      if chat=$(jq -er .chat_id "$state/alerts.json" 2>/dev/null) \
+        && thread=$(jq -er .thread_id "$state/alerts.json" 2>/dev/null); then
+        target=(--data-urlencode "chat_id=$chat" --data-urlencode "message_thread_id=$thread")
+      else
+        logger -p daemon.warning -t morty-alert "no usable $state/alerts.json; sending to the owner DM"
+        target=(--data-urlencode "chat_id=$(cat "$state/owner")")
+      fi
+
       if ! printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$(cat "$state/token")" \
         | curl --silent --show-error --fail --max-time 20 --retry 3 --retry-all-errors \
             --config - \
-            --data-urlencode "chat_id=$(cat "$state/owner")" \
+            "''${target[@]}" \
             --data-urlencode "text=$text" >/dev/null; then
         logger -p daemon.err -t morty-alert "Telegram delivery FAILED: $subject"
         exit 1
