@@ -40,6 +40,7 @@
             pkgs.btop
             pkgs.fd
             pkgs.fzf
+            pkgs.jq
             pkgs.ripgrep
             pkgs.sesh
             pkgs.starship

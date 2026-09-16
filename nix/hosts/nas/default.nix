@@ -537,6 +537,7 @@ in
     btop
     fd
     fzf
+    jq
     ripgrep
     sesh
     starship

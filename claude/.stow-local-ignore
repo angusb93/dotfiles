@@ -21,3 +21,7 @@ CVS
 \.claude/shell-snapshots
 \.claude/tasks
 \.claude/telemetry
+
+# Written by install.sh from the repo copy, not symlinked - Claude Code saves
+# runtime state (the current model) into it, which would dirty the repo
+\.claude/settings\.json

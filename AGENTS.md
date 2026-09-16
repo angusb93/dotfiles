@@ -12,6 +12,10 @@ configure a machine imperatively - always change the source and re-apply.
   let `stow` symlink it into place - don't hand-edit the file under `$HOME`. New
   packages that target `$HOME` (rather than `~/.config`) must be wired into
   `install.sh` like `zshrc` / `claude` / `ssh`.
+- **Claude Code settings?** Edit `claude/.claude/settings.json`, never
+  `~/.claude/settings.json`. The live file is generated from the repo copy by
+  `install.sh` (only `model` keeps its live value), so direct edits to it are
+  overwritten on the next install.
 - **Applying changes:** run `./install.sh` (stow + mise + MCP + theme) after a
   rebuild. The repo, pushed to `main`, syncs to every machine via `git pull`.
 

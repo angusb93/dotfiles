@@ -31,7 +31,7 @@ if [[ -L "$HOME/.claude" ]]; then
   # Copy runtime data from stow package to a real directory
   cp -a "claude/.claude" "$HOME/.claude.tmp"
   mv "$HOME/.claude.tmp" "$HOME/.claude"
-  # Remove config files that stow will replace with symlinks
+  # Remove config files that stow and the settings step below recreate
   for f in CLAUDE.md settings.json; do
     rm -f "$HOME/.claude/$f"
   done
@@ -77,6 +77,46 @@ stow -R "${stow_ignores[@]}" .
 # Create symlinks for packages that target $HOME
 stow -R --target "$HOME" zshrc
 stow -R --target "$HOME" --no-folding claude
+
+# ~/.claude/settings.json is written from the repo copy rather than symlinked
+# (it is in claude/.stow-local-ignore). Claude Code saves runtime state into
+# this file - the current model on every /model or /fast switch, and it reorders
+# keys - which through a symlink dirtied the repo and blocked pulls.
+#
+# The repo copy wins wholesale, so removing a key here removes it live too. The
+# only exception is claude_runtime_keys, which keep their live value. Anything
+# else that only exists live (e.g. a /config change) is printed as a diff before
+# it is overwritten, so it can be copied into the repo.
+command -v jq &>/dev/null || {
+  echo "jq is required to install Claude Code settings - apply the nix flake first" >&2
+  exit 1
+}
+claude_settings_repo=claude/.claude/settings.json
+claude_settings_live="$HOME/.claude/settings.json"
+claude_runtime_keys='["model"]'
+claude_live_settings='{}'
+if [[ -e "$claude_settings_live" ]]; then
+  if ! claude_live_settings=$(jq -e 'objects' "$claude_settings_live" 2>/dev/null); then
+    echo "⚠ $claude_settings_live is not a JSON object - replacing it with the repo copy"
+    claude_live_settings='{}'
+  else
+    # shellcheck disable=SC2016 # $k and $runtime are jq variables
+    strip_runtime='with_entries(select(.key as $k | any($runtime[]; . == $k) | not))'
+    if ! diff -u --label "live $claude_settings_live" --label "repo $claude_settings_repo" \
+      <(jq -S --argjson runtime "$claude_runtime_keys" "$strip_runtime" <<<"$claude_live_settings") \
+      <(jq -S --argjson runtime "$claude_runtime_keys" "$strip_runtime" "$claude_settings_repo"); then
+      echo "⚠ Live-only Claude Code settings above (- lines) are being overwritten; copy any worth keeping into $claude_settings_repo"
+    fi
+  fi
+fi
+claude_settings_tmp=$(mktemp "$claude_settings_live.XXXXXX")
+# shellcheck disable=SC2016 # $k and $runtime are jq variables
+jq -s --argjson runtime "$claude_runtime_keys" \
+  '.[1] + (.[0] | with_entries(select(.key as $k | any($runtime[]; . == $k))))' \
+  <(printf '%s' "$claude_live_settings") "$claude_settings_repo" >"$claude_settings_tmp"
+# mv replaces a leftover stow symlink itself rather than writing through it
+mv "$claude_settings_tmp" "$claude_settings_live"
+
 # --no-folding so stow symlinks ~/.ssh/config individually rather than the whole
 # ~/.ssh dir (which holds keys and known_hosts that must stay real local files).
 stow -R --target "$HOME" --no-folding ssh
