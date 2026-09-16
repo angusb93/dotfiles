@@ -14,7 +14,7 @@ mkdir -p "$HOME/bin"
 # migrating (~/.ssh/config especially, since host entries are deliberately
 # untracked here and belong in ~/.ssh/config.d/*.conf). Only the named file is
 # touched - never the directory - so ssh keys and known_hosts are left alone.
-for f in .zshrc .ssh/config; do
+for f in .zshrc .ssh/config .config/mise/config.toml; do
   target="${HOME:?}/$f"
   [[ -e "$target" && ! -L "$target" ]] || continue
   backup="$target.pre-dotfiles"
