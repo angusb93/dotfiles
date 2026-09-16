@@ -5,7 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin.url = "github:LnL7/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-    mac-app-util.url = "github:hraban/mac-app-util";
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
 
     # Private: the personal automations monorepo (telegram-agent lives here).
@@ -23,7 +22,6 @@
       self,
       nixpkgs,
       nix-darwin,
-      mac-app-util,
       nix-homebrew,
       automations,
       ...
@@ -293,15 +291,15 @@
       darwinConfigurations."macbook" = nix-darwin.lib.darwinSystem {
         modules = [
           configuration
-          mac-app-util.darwinModules.default
           nix-homebrew.darwinModules.nix-homebrew
           {
             nix-homebrew = {
               # Install Homebrew under the default prefix
               enable = true;
 
-              # Apple Silicon Only: Also install Homebrew under the default Intel prefix for Rosetta 2
-              enableRosetta = true;
+              # No Intel (/usr/local) prefix: nothing here is x86-only, and Rosetta
+              # isn't installed, so it only produced an empty prefix and a warning.
+              enableRosetta = false;
 
               # User owning the Homebrew prefix
               user = "angusbuick";
