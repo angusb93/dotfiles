@@ -114,7 +114,6 @@
 
             # Apps
             pkgs.gcalcli
-            pkgs.notion-app
             pkgs.obsidian
             pkgs.opencode
             pkgs.postman
