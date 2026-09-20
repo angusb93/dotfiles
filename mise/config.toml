@@ -1,2 +1,5 @@
-[tools]
-node = "24"
+# No global tool pins.
+# Node is pinned per-project instead.
+# A global pin here applies in every directory, and if the version is not
+# installed mise prints `mise WARN missing: node@N` on every prompt and cd.
+# It is also shadowed by the NixOS system node, so it bought nothing.
