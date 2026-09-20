@@ -514,12 +514,25 @@ in
     openssl
   ];
 
+  # --- Docker: local dev services ---
+  # polymarket-platform runs its local Postgres with docker-compose
+  # (docker compose up -d from the repo root).
+  virtualisation.docker.enable = true;
+
+  # --- Prisma: no prebuilt engines for linux-nixos ---
+  # The Prisma CLI downloads engines from binaries.prisma.sh, which publishes
+  # no linux-nixos target, so generate/validate/migrate all 404 and die. Point
+  # the CLI at the nixpkgs-built schema engine instead. (Prisma 7's client no
+  # longer needs a query-engine binary, so this is the only engine missing.)
+  environment.variables.PRISMA_SCHEMA_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/schema-engine";
+
   # --- User ---
   users.users.angus = {
     isNormalUser = true;
     extraGroups = [
       "wheel"
       "networkmanager"
+      "docker"
     ];
     # No initialPassword: it was "changeme" in plaintext in this public repo, and
     # only ever applied at account creation, so removing it changes nothing live.
