@@ -99,6 +99,12 @@ in
   # --- Boot ---
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Encrypted root (storage-migration 1.5) - uncomment on the live USB, after
+  # nixos-generate-config has written the "cryptroot" device into
+  # hardware-configuration.nix. Declaring these without that device fails to
+  # evaluate, which is why they cannot land before the reinstall.
+  # boot.initrd.systemd.enable = true; # required for TPM2 unlock
+  # boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = [ "tpm2-device=auto" ];
   boot.kernelModules = [
     "amd64_edac" # ECC monitoring (PRO 4650G + ECC UDIMM)
     "nct6775" # B550M Pro4 Super I/O (NCT6798D): fan tach + PWM, not autoloaded
@@ -110,6 +116,8 @@ in
   # auto-imports both data pools.
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [
+    # Comment "fast" out for the reinstall (storage-migration 1.5) and back in
+    # once Stage 2 has rebuilt it on the KIOXIA.
     "fast" # 2TB NVMe: app data, the vault
     "tank" # 6x HGST He10 8TB SAS (D1-D6), RAIDZ2, ~29TB: bulk storage
   ];
@@ -529,6 +537,13 @@ in
   # --- User ---
   users.users.angus = {
     isNormalUser = true;
+    # Pinned, not allocated: everything on fast and in the tank/state archive is
+    # owned by 1001, and a fresh install would otherwise hand out 1000.
+    uid = 1001;
+    group = "users";
+    # obsidian-sync and claude-remote-control are user units: without linger
+    # they silently never start at boot. Was set imperatively until 2026-09-23.
+    linger = true;
     extraGroups = [
       "wheel"
       "networkmanager"
