@@ -110,22 +110,21 @@ in
     "nct6775" # B550M Pro4 Super I/O (NCT6798D): fan tach + PWM, not autoloaded
   ];
 
-  # --- Storage: ZFS on the 2TB NVMe (pool "fast" = fast NVMe app data / vault) ---
-  # Named "fast" (not "tank") since it's the quick NVMe scratch drive; the 8TB
-  # HDD array is "tank". Root stays on ext4 (sda); this adds ZFS support and
-  # auto-imports both data pools.
+  # --- Storage: ZFS on the 4TB KIOXIA NVMe (pool "fast" = fast NVMe app data / vault) ---
+  # Named "fast" (not "tank") since it's the quick NVMe drive; the 8TB HDD
+  # array is "tank". Root is ext4 inside LUKS2 on the Intel 660p (M2_2),
+  # unlocked by TPM2; this adds ZFS support and auto-imports both data pools.
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [
-    # Comment "fast" out for the reinstall (storage-migration 1.5) and back in
-    # once Stage 2 has rebuilt it on the KIOXIA.
-    # "fast" # 2TB NVMe: app data, the vault
+    "fast" # 4TB KIOXIA NVMe (M2_1): app data, the vault
     "tank" # 6x HGST He10 8TB SAS (D1-D6), RAIDZ2, ~29TB: bulk storage
   ];
-  # tank is natively encrypted (aes-256-gcm) from the pool root down. Its key
-  # is a 64-char hex file at /etc/zfs/keys/tank.key (root 0400) on the boot
-  # SSD - deliberately NOT in this flake, since it is a secret - with a copy in
-  # 1Password; lose both and the pool is unrecoverable. It is loaded at import
-  # by boot.zfs.requestEncryptionCredentials (default true), so tank unlocks
+  # Both pools are natively encrypted (aes-256-gcm) from the pool root down,
+  # each with its own 64-char hex key at /etc/zfs/keys/{tank,fast}.key (root
+  # 0400) on the encrypted root - deliberately NOT in this flake, since they
+  # are secrets - with copies in 1Password ("Morty drive encryption key",
+  # "morty fast pool key"); lose both copies and that pool is unrecoverable. It is loaded at import
+  # by boot.zfs.requestEncryptionCredentials (default true), so both unlock
   # unattended. This protects drives that leave the house (RMA, resale,
   # disposal), not theft of the whole box.
   # Created 2026-09-13 with: ashift=12 compression=zstd atime=off xattr=sa
