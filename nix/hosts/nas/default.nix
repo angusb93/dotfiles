@@ -250,6 +250,11 @@ in
   # at factory and this rule is the only source of truth; re-applied on every
   # add, so a replacement drive picks it up. Load/unload budget is 600k; the
   # baseline on 2026-09-24 was ~2,790 per drive - watch it in smartctl.
+  # Measured 2026-09-24 (sg_logs -p 0x1a): these NE03-firmware drives enter
+  # IDLE_A and stay there through hddfancontrol's polling, but never enter
+  # IDLE_B or IDLE_C - not with 10s timers, not with PM_BG=2, not with the fan
+  # controller and smartd stopped. Almost certainly OEM firmware. Kept on
+  # because they are harmless here and take effect on a replacement drive.
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ATTRS{model}=="HUH721008AL5204*", RUN+="${pkgs.sdparm}/bin/sdparm --quiet --page=po --set=IDLE_A=1,IACT=20,IDLE_B=1,IBCT=1200,IDLE_C=1,ICCT=6000 $devnode"
     # Realtek RTL8111 (enp5s0): r8169 leaves L1 off by default. Tested stable
