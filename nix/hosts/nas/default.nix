@@ -240,6 +240,28 @@ in
   # could not start. hddfancontrol invokes hddtemp per disk on its own.
   hardware.sensor.hddtemp.enable = lib.mkForce false;
 
+  # --- Power: SAS drive idle states and PCIe ASPM (2026-09-24) ---
+  # The He10s shipped with every power condition timer off, so they sat in
+  # full active idle forever. These are not spindown: IDLE_A idles the
+  # electronics (2s), IDLE_B unloads the heads (2min), IDLE_C also drops RPM
+  # (10min). Recovery is sub-second from B and a few seconds from C, and none
+  # of it wakes all six at once the way a spin-up does, so it does not need the
+  # second backplane cable. Set without --save, so the drives' own NVRAM stays
+  # at factory and this rule is the only source of truth; re-applied on every
+  # add, so a replacement drive picks it up. Load/unload budget is 600k; the
+  # baseline on 2026-09-24 was ~2,790 per drive - watch it in smartctl.
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ATTRS{model}=="HUH721008AL5204*", RUN+="${pkgs.sdparm}/bin/sdparm --quiet --page=po --set=IDLE_A=1,IACT=20,IDLE_B=1,IBCT=1200,IDLE_C=1,ICCT=6000 $devnode"
+    # Realtek RTL8111 (enp5s0): r8169 leaves L1 off by default. Tested stable
+    # on this rev 15 chip 2026-09-24; if the NIC ever drops, this is the first
+    # suspect.
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10ec", ATTR{device}=="0x8168", ATTR{link/l1_aspm}="1"
+  '';
+  # Kernel-managed ASPM with L1 substates wherever a link supports it. The
+  # KIOXIA stays at L0 regardless: its CPU root port (00:02.2) reports ASPM
+  # unsupported, which is firmware, not Linux.
+  boot.kernelParams = [ "pcie_aspm.policy=powersupersave" ];
+
   # --- Obsidian vault sync: obsidian-headless (replaced Syncthing 2026-08-20) ---
   # Syncthing used to hold the Mac <-> morty half of vault sync, with the Mac
   # bridging to Obsidian Sync for the phone. That made the laptop - the one
