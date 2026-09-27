@@ -112,7 +112,10 @@ let
   );
 in
 {
-  imports = [ ./hardware-configuration.nix ];
+  imports = [
+    ./hardware-configuration.nix
+    ./backup.nix
+  ];
 
   # --- Boot ---
   boot.loader.systemd-boot.enable = true;
