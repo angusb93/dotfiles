@@ -92,6 +92,24 @@ let
       } | morty-alert "''${SMARTD_SUBJECT:-SMART warning on morty}"
     '';
   };
+
+  # Every smartd entry runs the same checks, the same self-test schedule and
+  # the same alert hook. Only -W differs, so the thresholds stay out of here.
+  smartd-common = [
+    "-a"
+    "-s (S/../.././02|L/../15/./03)"
+    "-m <nomailer>"
+    "-M exec ${lib.getExe smartd-alert}"
+    "-M daily"
+  ];
+
+  smartd-nvme = lib.concatStringsSep " " (
+    smartd-common
+    ++ [
+      "-d nvme"
+      "-W 0,70,75"
+    ]
+  );
 in
 {
   imports = [ ./hardware-configuration.nix ];
@@ -158,14 +176,26 @@ in
 
   # smartd reports what the drives say before ZFS notices: SMART health failing,
   # a growing defect list, failed self-tests, over-temperature. It scans every
-  # disk (the six SAS drives, the boot SSD and the NVMe).
+  # disk: the six SAS drives, plus the two NVMe (Intel 660p boot, KIOXIA pool).
   # - `-s`: short self-test daily at 02:00, long self-test on the 15th at 03:00,
   #   clear of the monthly scrub on the 1st. A long test is a full sequential
   #   read, about 12h per drive, and the drives run it in parallel.
-  # - `-W 0,50,55`: log from 50C, alert at 55C. The He10s are rated to 60C and
-  #   the fan curve is flat out at 45C, so 55C means cooling has failed.
   # - `-M daily`: repeat a standing problem once a day rather than only once.
   # No `-o on`: that is ATA-only.
+  #
+  # `-W DIFF,INFO,CRIT` is per drive class, because flash and spinning rust do
+  # not share a temperature scale:
+  # - SAS (via DEVICESCAN), 50/55: the He10s are rated to 60C and the fan curve
+  #   is flat out at 45C, so 55C means cooling has failed.
+  # - NVMe (listed explicitly), 70/75: the boot SSD idles at 27C but touches
+  #   56C most nights with nothing running, and the pool NVMe sits at ~46C
+  #   constantly. Both are unremarkable for flash - the kernel reports
+  #   composite critical at 79.85C for the 660p and 84.85C for the KIOXIA - but
+  #   50/55 alerted on them nightly, which is how a monitor gets ignored.
+  #
+  # The explicit entries come before DEVICESCAN, which then covers the SAS
+  # drives. Worth a look after a drive change: `journalctl -u smartd | grep
+  # 'Adding to'` should list each device exactly once.
   services.smartd = {
     enable = true;
     autodetect = true;
@@ -173,14 +203,22 @@ in
     # and that injects its own `-m`/`-M exec` ahead of ours on every line.
     notifications.x11.enable = false;
     notifications.wall.enable = false;
-    defaults.autodetected = lib.concatStringsSep " " [
-      "-a"
-      "-s (S/../.././02|L/../15/./03)"
-      "-W 0,50,55"
-      "-m <nomailer>"
-      "-M exec ${lib.getExe smartd-alert}"
-      "-M daily"
+    devices = [
+      {
+        device = "/dev/nvme0";
+        options = smartd-nvme;
+      }
+      {
+        device = "/dev/nvme1";
+        options = smartd-nvme;
+      }
     ];
+    defaults.autodetected = lib.concatStringsSep " " (
+      smartd-common
+      ++ [
+        "-W 0,50,55"
+      ]
+    );
   };
 
   # --- Drive-chamber fans follow HDD temperature ---
@@ -192,7 +230,7 @@ in
   # the BIOS curve.
   #
   # "scsi" selects every /dev/disk/by-id/scsi-* disk, i.e. exactly the SAS
-  # drives on the HBA (the boot SSD is ata-*, the pool NVMe nvme-*), so a
+  # drives on the HBA (the boot and pool NVMe are both nvme-*), so a
   # replacement or the spare is picked up without editing this.
   #
   # PWM thresholds (start 76, stop 40) are hand-measured: `pwm-test` cannot
