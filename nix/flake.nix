@@ -114,7 +114,8 @@
             # Apps
             pkgs.gcalcli
             pkgs.obsidian
-            pkgs.opencode
+            pkgs.paseo
+            pkgs.pi-coding-agent
             pkgs.postman
             pkgs.slack
             pkgs.linear

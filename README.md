@@ -216,13 +216,16 @@ The repo holds only a 1Password *secret reference* - an `op://vault/item/field` 
 Secrets are read lazily rather than exported at shell start.
 An eager `op read` in `.zshrc` would fire a 1Password unlock prompt every time a terminal or tmux pane opens, so each integration instead resolves its key inside a thin wrapper function around the command that needs it.
 
-### OpenRouter (opencode)
+### OpenRouter (pi)
 
-`.zshrc` wraps `opencode` so that `OPENROUTER_API_KEY` is populated from 1Password only when opencode actually launches.
-opencode auto-registers the OpenRouter provider from that variable alone, which is why `opencode/opencode.json` carries no provider block.
+`.zshrc` wraps `pi` so that `OPENROUTER_API_KEY` is populated from 1Password only when pi actually launches.
+pi registers the OpenRouter provider from that variable alone, which is why there is no config file here carrying a provider block.
 
-Deliberately *not* used here: `opencode auth login`.
-That writes the key in plaintext to `~/.local/share/opencode/auth.json`, which is untracked machine-local state and would have to be redone by hand on every machine - exactly what the golden rule at the top of `AGENTS.md` forbids.
+Deliberately *not* used here: any `auth login` flow that persists the key.
+Those write it in plaintext into untracked machine-local state, which would have to be redone by hand on every machine - exactly what the golden rule at the top of `AGENTS.md` forbids.
+
+On morty the same key is resolved by the `paseo` user unit instead, once at daemon start, because a daemon has no interactive shell to wrap.
+paseo passes it down to every agent it launches.
 
 The item is addressed by ID rather than by title.
 Two items in the Private vault differ only by case (`OpenRouter`, an empty Google-sign-in login, and `Openrouter`, the API credential holding the key), and `op read` refuses to guess between them; an ID also survives a later rename.
@@ -236,9 +239,9 @@ export OPENROUTER_KEY_REF="op://Private/<item-id-or-unique-title>/credential"
 To verify the wiring end to end:
 
 ```bash
-# 0 without the wrapper, 367 with it
-command opencode models | grep -c '^openrouter/'
-opencode models | grep -c '^openrouter/'
+# not_ready without the wrapper, ready with it
+command pi auth check --provider openrouter
+pi auth check --provider openrouter
 ```
 
 Check the credit balance backing the key with:

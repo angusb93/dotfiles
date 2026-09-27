@@ -530,6 +530,95 @@ in
     };
   };
 
+  # --- paseo: supervise the coding agents so the phone can drive them ---
+  # paseo ships no agent of its own. It launches the first-party CLIs already on
+  # the box - pi, claude-code - as ordinary subprocesses, streams their output,
+  # and gives desktop/web/mobile clients a way to steer them. That is what makes
+  # it the replacement for opencode here: opencode was an agent you had to be sat
+  # at a terminal to use, and this is the same work driven from anywhere.
+  #
+  # It listens on loopback only and is reached through `paseo daemon pair
+  # --relay`, which is end-to-end encrypted, so no port is published to the LAN
+  # or the tailnet. Pairing is interactive and one-time:
+  #   systemctl --user start paseo
+  #   paseo daemon pair --relay
+  # then open the offer URL it prints on the phone.
+  #
+  # The agents this launches run as angus, who still has NOPASSWD: ALL. Until the
+  # agent-user work lands, a paired client is root on morty in practice - which
+  # is exactly why it is not bound to a network interface.
+  #
+  # A user service, like claude-remote-control above: it needs angus's agent
+  # credentials in ~/.claude and ~/.config/pi. Lingering is enabled for angus, so
+  # it starts at boot with nobody logged in.
+  systemd.user.services.paseo = {
+    description = "paseo agent supervisor for morty";
+    wantedBy = [ "default.target" ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    # Never stop retrying - the point of the unit is to always be there.
+    unitConfig.StartLimitIntervalSec = 0;
+    # As with claude-remote-control: user units are enabled for every user
+    # manager, including the gdm-greeter one, which has no agent credentials.
+    unitConfig.ConditionUser = "angus";
+    environment = {
+      PASEO_HOME = "/home/angus/.paseo";
+      # Loopback only. Making this routable is a security decision, not a
+      # convenience one - see above.
+      PASEO_LISTEN = "127.0.0.1:6799";
+      # Stable profile path, not a /nix/store path, so the agents paseo spawns
+      # keep a working PATH across rebuilds - paseo resolves `pi` and `claude`
+      # from it. /run/wrappers/bin first: it holds the setuid sudo.
+      PATH = lib.mkForce "/run/wrappers/bin:/run/current-system/sw/bin:/home/angus/.npm-global/bin";
+    };
+    serviceConfig = {
+      Type = "simple";
+      WorkingDirectory = "/fast/vault";
+      ExecStart = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "paseo-daemon";
+          runtimeInputs = with pkgs; [
+            paseo
+            _1password-cli
+            coreutils
+          ];
+          # pi reads OPENROUTER_API_KEY and registers the OpenRouter provider
+          # from it. A daemon has no interactive shell, so the zshrc wrapper
+          # cannot help here: resolve the key once at start and let paseo pass it
+          # down to the agents it launches. Failing to read it is not fatal -
+          # claude-code sessions authenticate through ~/.claude and still work.
+          text = ''
+            token_file="$HOME/.config/op/service-account-token"
+            key_ref="op://6ozvud25wxpywiml26e3a53hxu/esxkxlfzue6n6iwnk6s4udvmp4/credential"
+
+            if [ -s "$token_file" ]; then
+              if key=$(OP_SERVICE_ACCOUNT_TOKEN="$(cat "$token_file")" \
+                         op read --no-newline "$key_ref" 2>/dev/null); then
+                export OPENROUTER_API_KEY="$key"
+              else
+                echo "could not read the OpenRouter key from 1Password; starting without it" >&2
+              fi
+            else
+              echo "no 1Password service account token at $token_file; starting without OpenRouter" >&2
+            fi
+
+            mkdir -p "$PASEO_HOME"
+            exec paseo daemon run
+          '';
+        }
+      );
+      Restart = "always";
+      RestartSec = 5;
+      RestartSteps = 5;
+      RestartMaxDelaySec = 120;
+      # Unlike claude-remote-control, the whole cgroup goes: paseo *is* the
+      # supervisor of the agents it starts, so leaving them behind a dead daemon
+      # would strand sessions no client can reach. A rebuild that changes this
+      # unit therefore ends any live paseo session.
+      TimeoutStopSec = 30;
+    };
+  };
+
   # --- Networking ---
   networking.hostName = "morty";
   networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
@@ -675,9 +764,13 @@ in
     uv
     nodejs_22
     claude-code
-    opencode
-    # The opencode wrapper in zshrc reads morty's OpenRouter key through a
-    # 1Password service account scoped read-only to the Morty vault.
+    # pi is the agent; paseo supervises it (and claude-code) so the phone can
+    # drive a session on morty - see the paseo unit below. paseo ships no agent
+    # of its own, it launches whatever CLI is on PATH.
+    pi-coding-agent
+    paseo
+    # The pi wrapper in zshrc, and the paseo unit below, read morty's OpenRouter
+    # key through a 1Password service account scoped read-only to the Morty vault.
     _1password-cli
   ];
 

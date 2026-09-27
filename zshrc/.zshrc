@@ -59,10 +59,10 @@ if [[ $- == *i* ]]; then
 
 fi
 
-# --- opencode: OpenRouter key from 1Password ---
+# --- pi: OpenRouter key from 1Password ---
 # A secret reference is a pointer, not a secret, so it lives in the repo while
 # the key itself never touches disk. It is resolved lazily, at the moment
-# opencode launches, rather than exported at shell start - so opening a terminal
+# pi launches, rather than exported at shell start - so opening a terminal
 # or a tmux pane never triggers a 1Password unlock prompt.
 #
 # Items are addressed by ID rather than by title. A title reference is ambiguous
@@ -84,7 +84,7 @@ fi
 # Set OPENROUTER_KEY_REF (e.g. in .env.local) to read a different item.
 OP_SA_TOKEN_FILE="$HOME/.config/op/service-account-token"
 
-_opencode_openrouter_key() {
+_openrouter_key() {
   if [[ -s "$OP_SA_TOKEN_FILE" ]]; then
     OP_SERVICE_ACCOUNT_TOKEN="$(<"$OP_SA_TOKEN_FILE")" op read --no-newline \
       "${OPENROUTER_KEY_REF:-op://6ozvud25wxpywiml26e3a53hxu/esxkxlfzue6n6iwnk6s4udvmp4/credential}"
@@ -93,18 +93,20 @@ _opencode_openrouter_key() {
   fi
 }
 
-# opencode reads OPENROUTER_API_KEY and auto-registers the OpenRouter provider
-# from it, so no provider block is needed in opencode.json.
-opencode() {
+# pi reads OPENROUTER_API_KEY and registers the OpenRouter provider from it, so
+# there is no config file to carry a provider block. The same helper is used by
+# morty's paseo daemon unit, which resolves the key once at start and hands it to
+# every agent it launches - a daemon has no interactive shell to wrap.
+pi() {
   if [[ -z "${OPENROUTER_API_KEY:-}" ]] && command -v op &>/dev/null; then
     local key
-    if key="$(_opencode_openrouter_key 2>/dev/null)"; then
-      OPENROUTER_API_KEY="$key" command opencode "$@"
+    if key="$(_openrouter_key 2>/dev/null)"; then
+      OPENROUTER_API_KEY="$key" command pi "$@"
       return
     fi
-    print -u2 "⚠ opencode: could not read the OpenRouter key from 1Password - starting without OpenRouter"
+    print -u2 "⚠ pi: could not read the OpenRouter key from 1Password - starting without OpenRouter"
   fi
-  command opencode "$@"
+  command pi "$@"
 }
 
 # --- Aliases ---
