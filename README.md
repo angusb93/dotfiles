@@ -255,6 +255,28 @@ Without credit a key can only reach `:free` models.
 
 ---
 
+## Agents on morty (paseo)
+
+`paseo` supervises the agent CLIs on morty - `pi` and `claude-code` - and gives the phone, desktop and web clients a way to drive them.
+It ships no agent of its own; it launches whatever is on `PATH`.
+
+The daemon is a user service declared in `nix/hosts/nas/default.nix`, listening on `127.0.0.1:6767` only.
+It is reached through pairing rather than an open port:
+
+```bash
+paseo daemon pair --relay   # prints an offer URL / QR to open on the phone
+```
+
+That is a one-time interactive step and the only part of the setup that is not declarative.
+The daemon's default model for `pi` and its listen address are re-asserted from the flake on every start, so a fresh morty needs neither.
+
+Two things are broken in nixpkgs' paseo 0.9.1, both worked around in the unit rather than patched:
+
+- `paseo daemon run` and `paseo daemon start` fail with `Cannot find module .../@getpaseo/server/dist/server/server/exports.js` - the package names an entry point it does not ship. The unit runs `paseo-server`, the supervisor entrypoint those commands wrap.
+- `node-pty` has no native binary, so the *workspace terminal* feature throws. Agents themselves do not need a PTY and run fine.
+
+---
+
 ## TODO
 
 - [ ] change the prompt to something else that might run faster than starship (or at least benchmark it)

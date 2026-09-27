@@ -563,9 +563,12 @@ in
     unitConfig.ConditionUser = "angus";
     environment = {
       PASEO_HOME = "/home/angus/.paseo";
-      # Loopback only. Making this routable is a security decision, not a
-      # convenience one - see above.
-      PASEO_LISTEN = "127.0.0.1:6799";
+      # Both default to on with the "local" provider, which makes the daemon
+      # download ~700 MB of sherpa speech models (parakeet, kokoro) in the
+      # background the first time it starts. Nothing on a headless NAS dictates
+      # into it, and that download would compete with the Google pulls.
+      PASEO_VOICE_MODE_ENABLED = "false";
+      PASEO_DICTATION_ENABLED = "false";
       # Stable profile path, not a /nix/store path, so the agents paseo spawns
       # keep a working PATH across rebuilds - paseo resolves `pi` and `claude`
       # from it. /run/wrappers/bin first: it holds the setuid sudo.
@@ -574,6 +577,52 @@ in
     serviceConfig = {
       Type = "simple";
       WorkingDirectory = "/fast/vault";
+      # paseo keeps its settings in $PASEO_HOME/config.json, which it writes
+      # itself (pairing keys, daemon state), so the file cannot simply be a
+      # symlink into this repo. Re-asserting the parts that matter on every start
+      # is the declarative equivalent: a fresh morty comes up configured, and a
+      # client that changed one of them gets corrected on the next restart.
+      #
+      # The provider block exists because paseo's built-in default model for pi
+      # is claude-3-haiku, which Anthropic deprecated on 2026-09-10 - every agent
+      # errored with a 404 until this was set. Slugs verified against OpenRouter's
+      # /api/v1/models. The JSON goes through a file so no shell quoting has to
+      # survive Nix string escaping.
+      ExecStartPre = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "paseo-config";
+          runtimeInputs = [ pkgs.paseo ];
+          text =
+            let
+              providers = pkgs.writeText "paseo-providers.json" (
+                builtins.toJSON {
+                  pi = {
+                    extends = "pi";
+                    label = "pi (OpenRouter)";
+                    models = [
+                      {
+                        id = "openrouter/anthropic/claude-sonnet-5";
+                        label = "Sonnet 5";
+                        isDefault = true;
+                      }
+                      {
+                        id = "openrouter/anthropic/claude-opus-5.5";
+                        label = "Opus 5.5";
+                      }
+                    ];
+                  };
+                }
+              );
+            in
+            ''
+              # Loopback only. Making this routable is a security decision, not a
+              # convenience one - see above. 6767 is paseo's own default port, so
+              # the CLI finds the daemon with no --host.
+              paseo daemon config set --string daemon.listen 127.0.0.1:6767
+              paseo daemon config set agents.providers "$(cat ${providers})"
+            '';
+        }
+      );
       ExecStart = lib.getExe (
         pkgs.writeShellApplication {
           name = "paseo-daemon";
@@ -603,7 +652,16 @@ in
             fi
 
             mkdir -p "$PASEO_HOME"
-            exec paseo daemon run
+
+            # `paseo daemon run` is broken in 0.9.1: the published package names
+            # ./dist/server/server/exports.js as @getpaseo/server's entry point
+            # but never ships that file, so the CLI subcommands that load the
+            # server module die on "Cannot find module". paseo-server is the
+            # supervisor entrypoint `daemon run` wraps and it starts fine; the
+            # rest of the CLI (status, pair, config, run) talks to the daemon
+            # over $PASEO_HOME and is unaffected. Revisit when nixpkgs carries a
+            # fixed paseo.
+            exec paseo-server
           '';
         }
       );
