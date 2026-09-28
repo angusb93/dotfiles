@@ -118,6 +118,7 @@ in
     ./snapshots.nix
     ./google-pull.nix
     ./gmail-pull.nix
+    ./kiwix.nix
     ./staleness.nix
   ];
 
