@@ -63,9 +63,20 @@ in
           # -c resumes a partial file rather than starting over, which is the
           # whole point. The mirror redirects to lb.download.kiwix.org and
           # advertises Accept-Ranges, so a resume picks up where it stopped.
+          #
+          # The outer loop exists because wget's own --tries does not help when
+          # a mirror starts refusing connections outright: it burns all twenty
+          # attempts against the same dead host and gives up. Gutenberg died
+          # that way at 60.96 GiB when ftp.nluug.nl stopped answering. Going
+          # back through download.kiwix.org re-runs the load balancer and
+          # usually lands on a different mirror.
           echo "fetching $file"
-          wget -c --progress=dot:giga --tries=20 --waitretry=30 \
-               --read-timeout=120 --timeout=60 "$url" || true
+          for attempt in 1 2 3 4 5; do
+            wget -c --progress=dot:giga --tries=5 --waitretry=30 \
+                 --read-timeout=120 --timeout=60 "$url" && break
+            echo "attempt $attempt for $file ended early; re-resolving the mirror"
+            sleep 30
+          done
 
           if [ "$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)" = "$want" ]; then
             echo "OK $file"
