@@ -822,6 +822,9 @@ in
     lsscsi
     pciutils
     hdparm
+    # Google Takeout delivers .tgz for the big products and .zip for the small
+    # ones, so unpacking a monthly export needs both.
+    unzip
     # runtimes / env
     mise
     direnv
