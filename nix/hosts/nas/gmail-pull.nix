@@ -57,17 +57,54 @@ in
       # anything that is actually wrong will still show up within the burst.
       LogRateLimitIntervalSec = "30s";
       LogRateLimitBurst = 200;
-      ExecStart = toString [
-        "${pkgs.gyb}/bin/gyb"
-        "--email" "angusbuick@gmail.com"
-        "--action" "backup"
-        "--config-folder" configFolder
-        "--local-folder" "/tank/backup/google/mail"
-        # Trusts the local index instead of re-listing every message every
-        # night. The plan's cadence is nightly and new mail only; a full
-        # reconcile is what --noresume is for, run by hand if ever needed.
-        "--fast-incremental"
-      ];
+      ExecStart = pkgs.writeShellScript "gmail-pull" ''
+        set -u
+        export PATH=${pkgs.lib.makeBinPath (with pkgs; [ gyb coreutils findutils gnugrep gawk ])}
+
+        dir=/tank/backup/google/mail
+        target=""
+
+        # A single pass does not finish a large mailbox. Gmail rate-limits by
+        # "Total Query Cost", GYB retries ten times and then moves on, and -
+        # this is the part that matters - it still exits 0. The first run here
+        # reported success having fetched 10,159 of 120,851 messages.
+        #
+        # So: run repeatedly until a pass stops adding anything. GYB is
+        # incremental against its own index, so each pass picks up where the
+        # last gave up, and a finished mailbox costs one cheap no-op pass.
+        for pass in $(seq 1 12); do
+          before=$(find "$dir" -name '*.eml' 2>/dev/null | wc -l)
+
+          out=$(gyb --email angusbuick@gmail.com \
+                    --action backup \
+                    --config-folder ${configFolder} \
+                    --local-folder "$dir" \
+                    --fast-incremental 2>&1)
+          printf '%s\n' "$out" | grep -v 'HttpError 403' | tail -5
+
+          # The server-side total, taken from GYB's own first report.
+          if [ -z "$target" ]; then
+            target=$(printf '%s\n' "$out" | grep -oE 'needs to backup [0-9]+' | grep -oE '[0-9]+' | head -1)
+          fi
+
+          after=$(find "$dir" -name '*.eml' 2>/dev/null | wc -l)
+          echo "pass $pass: $before -> $after messages"
+          [ "$after" -gt "$before" ] || break
+        done
+
+        final=$(find "$dir" -name '*.eml' 2>/dev/null | wc -l)
+        echo "backed up $final messages"
+
+        # Fail loudly on a materially short backup rather than exiting 0 with a
+        # tenth of the mailbox, which is what made the first run look fine.
+        if [ -n "$target" ] && [ "$target" -gt 0 ]; then
+          want=$(( target * 95 / 100 ))
+          if [ "$final" -lt "$want" ]; then
+            echo "INCOMPLETE: $final of $target messages (under 95%)" >&2
+            exit 1
+          fi
+        fi
+      '';
     };
   };
 
