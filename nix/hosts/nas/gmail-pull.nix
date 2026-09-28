@@ -12,8 +12,13 @@
 #
 # The credentials are the same shape as the rclone ones and live beside them,
 # root-only, deliberately not in this flake:
-#   /var/lib/morty-backup/gyb/client_secrets.json  OAuth client
-#   /var/lib/morty-backup/gyb/oauth2.txt           the token itself
+#   /var/lib/morty-backup/gyb/client_secrets.json        OAuth client
+#   /var/lib/morty-backup/gyb/angusbuick@gmail.com.cfg  the token itself
+#
+# GYB names the token after the account, not oauth2.txt as GAM does - which is
+# worth stating because the condition below depends on it, and a condition on a
+# filename that is never created makes this unit skip itself forever while
+# looking perfectly healthy.
 #
 # Both are produced by authorising once on the Mac and copying the files over,
 # the same route the Drive token took - morty has no browser, and a token minted
@@ -40,7 +45,7 @@ in
 
     # Until the token has been placed by hand this unit does nothing at all,
     # rather than failing nightly and training everyone to ignore it.
-    unitConfig.ConditionPathExists = "${configFolder}/oauth2.txt";
+    unitConfig.ConditionPathExists = "${configFolder}/angusbuick@gmail.com.cfg";
 
     serviceConfig = {
       Type = "oneshot";
