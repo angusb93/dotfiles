@@ -119,6 +119,7 @@ in
     ./google-pull.nix
     ./gmail-pull.nix
     ./kiwix.nix
+    ./immich.nix
     ./staleness.nix
   ];
 
