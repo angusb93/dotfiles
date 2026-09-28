@@ -115,6 +115,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./backup.nix
+    ./snapshots.nix
   ];
 
   # --- Boot ---
