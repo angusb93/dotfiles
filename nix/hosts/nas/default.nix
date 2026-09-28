@@ -688,6 +688,15 @@ in
     };
   };
 
+  # Angus is in London, and two things here render in the server's local
+  # timezone rather than his: Immich's storage template, which decides the dated
+  # folder a photo is filed under, and every timestamp in the journal. On UTC a
+  # photo taken at 00:30 BST files under the previous day, permanently, unless
+  # the storage-template migration is re-run. The backup timers move with it,
+  # which is what was wanted anyway - 02:00 should mean 2am where Angus sleeps,
+  # not 2am in a timezone the machine happens to default to.
+  time.timeZone = "Europe/London";
+
   # --- Networking ---
   networking.hostName = "morty";
   networking.hostId = "c05f1be5"; # required by ZFS (identifies the pool's host)
