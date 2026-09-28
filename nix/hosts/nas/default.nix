@@ -117,7 +117,13 @@ in
     ./backup.nix
     ./snapshots.nix
     ./google-pull.nix
+    ./staleness.nix
   ];
+
+  # morty-alert is defined in the let above and used by smartd and ZED here.
+  # staleness.nix needs the same one-way channel to Angus, so pass it as a
+  # module argument rather than building a second copy of it.
+  _module.args.morty-alert = morty-alert;
 
   # --- Boot ---
   boot.loader.systemd-boot.enable = true;

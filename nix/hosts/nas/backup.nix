@@ -16,7 +16,16 @@
 # safe as root on morty - see A1 in morty-security-hardening.
 { pkgs, ... }:
 let
-  datasets = [ "fast/vault" "fast/data" "fast/media" ];
+  # tank/archive is the one dataset whose original exists nowhere else, so it
+  # is the one that most needs an offsite copy. Recordings still live in
+  # fast/media and are covered by it; when they move to tank/media/recordings
+  # that path replaces fast/media here.
+  datasets = [
+    "fast/vault"
+    "fast/data"
+    "fast/media"
+    "tank/archive"
+  ];
   snap = "restic";
 in
 {
