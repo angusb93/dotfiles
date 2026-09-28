@@ -49,6 +49,14 @@ in
 
     serviceConfig = {
       Type = "oneshot";
+
+      # Gmail rate-limits hard on a first full pull and GYB logs every rejected
+      # request, at ~2,300 lines a minute - about 1.4 million over a ten-hour
+      # run, which would bury smartd, ZED and every backup unit in the journal.
+      # The errors are transient and GYB retries them, so a sample is enough:
+      # anything that is actually wrong will still show up within the burst.
+      LogRateLimitIntervalSec = "30s";
+      LogRateLimitBurst = 200;
       ExecStart = toString [
         "${pkgs.gyb}/bin/gyb"
         "--email" "angusbuick@gmail.com"
