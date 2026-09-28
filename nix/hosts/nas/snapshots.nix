@@ -100,8 +100,24 @@
         autoprune = true;
       };
 
-      # tank/media/photos gets a policy when Immich lands, and
-      # tank/media/recordings once the recordings move off fast/media.
+      # The Immich library. Google Photos is its second home - the phone
+      # uploads to both - so this needs no offsite copy, but it does need
+      # snapshots: they are the only thing standing between a mis-swipe in the
+      # app and a photo that is gone from morty.
+      #
+      # Kept deliberately modest. If the Immich storage template is ever
+      # changed, its migration job rewrites the path of every file in the
+      # library, and every snapshot then pins a full copy of the old layout.
+      "tank/media/photos" = {
+        useTemplate = [ "none" ];
+        daily = 30;
+        monthly = 12;
+        autosnap = true;
+        autoprune = true;
+      };
+
+      # tank/media/recordings gets a policy once the recordings move off
+      # fast/media.
     };
   };
 
