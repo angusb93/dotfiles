@@ -117,6 +117,7 @@ in
     ./backup.nix
     ./snapshots.nix
     ./google-pull.nix
+    ./gmail-pull.nix
     ./staleness.nix
   ];
 
