@@ -113,6 +113,9 @@
 
             # Apps
             pkgs.gcalcli
+            # Gmail backup. The nightly pull runs on morty, but the OAuth dance
+            # has to happen where there is a browser, and that is here.
+            pkgs.gyb
             pkgs.obsidian
             pkgs.paseo
             pkgs.pi-coding-agent

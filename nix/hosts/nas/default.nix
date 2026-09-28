@@ -697,6 +697,12 @@ in
   # After deploy, run once: sudo tailscale up
   services.tailscale.enable = true;
   networking.firewall.trustedInterfaces = [ "tailscale0" ];
+  # The tailnet registered this machine as "nas" from an older hostname, so
+  # http://morty:8090 resolved to nothing while every doc said to use it.
+  # `tailscale set` is re-applied on every rebuild, so the name cannot drift
+  # back. Note extraUpFlags would not do: it only fires when authKeyFile is set,
+  # and this machine was brought up by hand.
+  services.tailscale.extraSetFlags = [ "--hostname=morty" ];
 
   # --- A NAS must never sleep ---
   # Masks sleep at the systemd level, so it holds regardless of GNOME's
