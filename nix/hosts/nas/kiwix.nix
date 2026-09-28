@@ -19,12 +19,13 @@
     enable = true;
     port = 8090;
 
-    # Gutenberg joins once `kiwix-fetch` finishes it and its .sha256 passes -
-    # listing it early would take the whole server down rather than just that
-    # one book collection.
+    # All three checksums have passed. Nothing goes in this list until its
+    # .sha256 does, because kiwix-serve refuses a partial ZIM and would take
+    # the whole server down rather than just that one collection.
     library = {
       ifixit = "/tank/reference/kiwix/ifixit_en_all_2025-12.zim";
       wikipedia = "/tank/reference/kiwix/wikipedia_en_all_maxi_2026-08.zim";
+      gutenberg = "/tank/reference/kiwix/gutenberg_en_all_2023-08.zim";
     };
 
     # Deliberately no openFirewall. Reachable over Tailscale only, through
