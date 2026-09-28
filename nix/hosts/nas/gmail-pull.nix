@@ -19,6 +19,12 @@
 # the same route the Drive token took - morty has no browser, and a token minted
 # elsewhere is no less valid.
 #
+# ⚠️ GYB defaults its config folder to its own install directory, which under
+# Nix is a read-only store path, so every action fails with "Please configure a
+# project" until --config-folder points somewhere writable. That is why this
+# unit passes it explicitly, and why the authorising step on the Mac has to pass
+# it too.
+#
 # ⚠️ A Google password change revokes Gmail-scoped tokens. If this unit starts
 # failing with an auth error after a password reset, that is why, and it needs
 # the authorise-and-copy step again rather than a fix here.
