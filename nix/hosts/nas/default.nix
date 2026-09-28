@@ -116,6 +116,7 @@ in
     ./hardware-configuration.nix
     ./backup.nix
     ./snapshots.nix
+    ./google-pull.nix
   ];
 
   # --- Boot ---
