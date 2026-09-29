@@ -122,6 +122,7 @@ in
     ./kiwix-fetch.nix
     ./immich.nix
     ./media.nix
+    ./tv.nix
     ./vpn.nix
     ./staleness.nix
   ];
