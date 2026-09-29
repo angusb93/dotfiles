@@ -10,10 +10,67 @@
 # wires the software. Which indexers Prowlarr talks to, and which Usenet
 # provider SABnzbd authenticates against, are Angus's to enter and are not
 # configured here.
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   library = "/tank/media/library";
   state = "/fast/data";
+
+  # Releases tagged MULTi or DUAL carry the foreign dub as audio track 1 with
+  # the `default` flag on it, and the English track second. Jellyfin's
+  # per-user "preferred audio language" is only a request the client may
+  # honour, and several clients ignore it on resume or override it with their
+  # own playback settings - so the reliable fix is to move the flag in the
+  # file itself.
+  #
+  # This is a header rewrite, not a transcode: no re-encode, no quality loss,
+  # about a second per file, and reversible.
+  #
+  # Runs on every import via a Custom Script connection in Sonarr and Radarr.
+  # Always exits 0 - a cosmetic audio-flag failure must never fail an import.
+  prefer-english-audio = pkgs.writeShellApplication {
+    name = "prefer-english-audio";
+    runtimeInputs = with pkgs; [ ffmpeg mkvtoolnix-cli jq coreutils findutils ];
+    text = ''
+      set -uo pipefail
+      target=''${1:-}
+      [ -n "$target" ] || { echo "usage: prefer-english-audio <file|dir>" >&2; exit 0; }
+
+      fix_one() {
+        f=$1
+        case "$f" in *.mkv) ;; *) return 0 ;; esac
+
+        streams=$(ffprobe -v error -select_streams a           -show_entries stream_tags=language:stream_disposition=default           -of json "$f" 2>/dev/null) || return 0
+
+        count=$(echo "$streams" | jq '.streams | length')
+        [ "$count" -gt 1 ] || return 0
+
+        eng=$(echo "$streams" | jq -r '[.streams[].tags.language // "und"] | index("eng") // empty')
+        [ -n "$eng" ] || { echo "prefer-english-audio: no english track in $f" >&2; return 0; }
+
+        cur=$(echo "$streams" | jq -r '[.streams[].disposition.default] | index(1) // empty')
+        [ "$cur" != "$eng" ] || return 0
+
+        args=()
+        for i in $(seq 0 $((count - 1))); do
+          flag=0
+          [ "$i" = "$eng" ] && flag=1
+          args+=(--edit "track:a$((i + 1))" --set "flag-default=$flag")
+        done
+        if mkvpropedit "$f" "''${args[@]}" >/dev/null 2>&1; then
+          echo "prefer-english-audio: set track $((eng + 1)) default in $f" >&2
+        else
+          echo "prefer-english-audio: FAILED on $f" >&2
+        fi
+      }
+
+      if [ -d "$target" ]; then
+        find "$target" -type f -name '*.mkv' -print0 | while IFS= read -r -d ''' f; do fix_one "$f"; done
+      else
+        fix_one "$target"
+      fi
+      exit 0
+    '';
+  };
 in
 {
   # One group shared by every service that touches the library. This is what
@@ -21,6 +78,8 @@ in
   # rather than copying it - instant, and no second copy of a 40 GB file.
   # Hardlinks cannot cross datasets, which is why downloads/ and the library
   # live together on tank/media/library rather than on separate datasets.
+  environment.systemPackages = [ prefer-english-audio ];
+
   users.groups.media = { };
   users.users.angus.extraGroups = [ "media" ];
 
