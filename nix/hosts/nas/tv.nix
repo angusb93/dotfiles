@@ -31,7 +31,14 @@
     enable = true;
     # The Jellyfin addon is what makes Kodi a client of morty rather than a
     # second, competing library.
-    package = pkgs.kodi.withPackages (p: [ p.jellyfin ]);
+    #
+    # typing_extensions is listed because nixpkgs' plugin.video.jellyfin 2.2.0
+    # does not declare it, and the addon imports `deprecated` from it at
+    # module load. Without it the addon is installed, enabled, and silently
+    # dead: Kodi starts fine, the addon's settings dialog opens with every
+    # field blank, and the only evidence is a ModuleNotFoundError buried in
+    # kodi.log. Upstream bug, one-line workaround here.
+    package = pkgs.kodi.withPackages (p: [ p.jellyfin p.typing_extensions ]);
   };
 
   services.displayManager.autoLogin = {
@@ -39,4 +46,25 @@
     user = "kiosk";
   };
   services.displayManager.defaultSession = "kodi";
+
+  # Kodi's remote-control settings cannot live in the flake directly: Kodi
+  # owns guisettings.xml and rewrites it on exit, so anything written there
+  # declaratively is discarded the first time the session ends.
+  #
+  # Instead this re-asserts them before the session starts, while Kodi is not
+  # running. It is ordered before display-manager for exactly that reason -
+  # patching the file underneath a live Kodi is how the settings got lost the
+  # first time round.
+  #
+  # The web-server password is read from /var/lib/morty-backup/kodi-web.password
+  # rather than the flake, same as the restic, rclone and NordVPN credentials.
+  systemd.services.kodi-settings = {
+    description = "Re-assert Kodi's remote-control settings before the session starts";
+    wantedBy = [ "display-manager.service" ];
+    before = [ "display-manager.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${./kodi-settings.py}";
+    };
+  };
 }
