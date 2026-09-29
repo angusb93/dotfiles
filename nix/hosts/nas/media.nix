@@ -91,6 +91,35 @@ in
     enable = true;
     group = "media";
     openFirewall = false;
+
+    # The module regenerates sabnzbd.ini from `settings` on every start and
+    # installs it mode 400. Left at the default that is a trap: the web UI
+    # accepts a Usenet provider, writes nothing, logs "Cannot write to INI
+    # file" where nobody looks, and loses it on the next rebuild. Since the
+    # provider is Angus's to enter and does not belong in a public flake, the
+    # config has to be writeable.
+    allowConfigWrite = true;
+
+    settings.misc = {
+      # "::" is sabnzbd's dual-stack bind. It lives in the VPN namespace (see vpn.nix) and
+      # the host reaches it across a veth. 127.0.0.1 there is the namespace's
+      # own loopback, which nothing else can address. The namespace has
+      # exactly one neighbour, so this exposes it to nobody new.
+      host = "::";
+      port = 8080;
+
+      # sabnzbd rejects a request whose Host header it does not recognise, and
+      # the DNAT means every request arrives with one it has never seen.
+      host_whitelist = "morty,morty.taile1ace0.ts.net,localhost,10.200.0.2,fd00:200::2,100.121.123.8,fd7a:115c:a1e0::5033:7b09";
+      local_ranges = "10.200.0.0/30,100.64.0.0/10,fd00:200::/126,fd7a:115c:a1e0::/48";
+
+      # On tank, next to the library, because Sonarr and Radarr *hardlink* a
+      # finished download into movies/ or tv/ and a hardlink cannot cross a
+      # filesystem. The default put these under /var/lib/sabnzbd, which would
+      # have silently degraded every import into a full copy of a 40 GB file.
+      download_dir = "/tank/media/library/downloads/incomplete";
+      complete_dir = "/tank/media/library/downloads/complete";
+    };
   };
 
   # The request front end - a Netflix-shaped UI in front of Sonarr and Radarr,
