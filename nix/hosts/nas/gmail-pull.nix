@@ -72,7 +72,13 @@ in
         # So: run repeatedly until a pass stops adding anything. GYB is
         # incremental against its own index, so each pass picks up where the
         # last gave up, and a finished mailbox costs one cheap no-op pass.
-        for pass in $(seq 1 12); do
+        #
+        # The cap is high because a first full backup genuinely needs the
+        # passes: ~8,000 messages each and falling, against a 120,851 message
+        # mailbox. It is a guard against an infinite loop, not a budget - the
+        # loop exits the moment a pass adds nothing, so a settled mailbox never
+        # gets near it.
+        for pass in $(seq 1 30); do
           before=$(find "$dir" -name '*.eml' 2>/dev/null | wc -l)
 
           out=$(gyb --email angusbuick@gmail.com \
@@ -82,9 +88,20 @@ in
                     --fast-incremental 2>&1)
           printf '%s\n' "$out" | grep -v 'HttpError 403' | tail -5
 
-          # The server-side total, taken from GYB's own first report.
+          # The server-side total, from GYB's own first report. It must be
+          # "already has" PLUS "needs to backup", not the latter alone: "needs
+          # to backup" is the *remaining* count, so on a resumed run it shrinks
+          # to whatever is left. Taking it by itself would have compared a
+          # finished 120,851 against a target of 84,782 and called any run a
+          # pass - which is exactly the silent-success failure this check
+          # exists to catch.
           if [ -z "$target" ]; then
-            target=$(printf '%s\n' "$out" | grep -oE 'needs to backup [0-9]+' | grep -oE '[0-9]+' | head -1)
+            have=$(printf '%s\n' "$out" | grep -oE 'already has a backup of [0-9]+' | grep -oE '[0-9]+' | head -1)
+            need=$(printf '%s\n' "$out" | grep -oE 'needs to backup [0-9]+' | grep -oE '[0-9]+' | head -1)
+            if [ -n "$have" ] && [ -n "$need" ]; then
+              target=$(( have + need ))
+              echo "mailbox total: $target messages"
+            fi
           fi
 
           after=$(find "$dir" -name '*.eml' 2>/dev/null | wc -l)
