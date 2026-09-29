@@ -121,6 +121,7 @@ in
     ./kiwix.nix
     ./kiwix-fetch.nix
     ./immich.nix
+    ./media.nix
     ./staleness.nix
   ];
 
@@ -628,9 +629,11 @@ in
             in
             ''
               # Loopback only. Making this routable is a security decision, not a
-              # convenience one - see above. 6767 is paseo's own default port, so
-              # the CLI finds the daemon with no --host.
-              paseo daemon config set --string daemon.listen 127.0.0.1:6767
+              # convenience one - see above. Moved off paseo's own default 6767
+              # because Bazarr also defaults there and its NixOS module exposes
+              # no port option - so paseo is the one that can move. The CLI
+              # needs --host for anything not on the default now.
+              paseo daemon config set --string daemon.listen 127.0.0.1:6799
               paseo daemon config set agents.providers "$(cat ${providers})"
             '';
         }
