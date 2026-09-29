@@ -34,6 +34,16 @@ in
     "d ${library}/music 2775 root media -"
     "d ${library}/downloads 2775 root media -"
 
+    # SABnzbd creates these on its first download, but Sonarr and Radarr check
+    # at startup that they can *see* the completed-download folder and raise a
+    # health error if they cannot. Creating them up front means a fresh deploy
+    # comes up clean rather than with a warning that resolves itself later -
+    # and a warning people learn to ignore is worse than no warning.
+    "d ${library}/downloads/incomplete 2775 root media -"
+    "d ${library}/downloads/complete 2775 root media -"
+    "d ${library}/downloads/complete/tv 2775 root media -"
+    "d ${library}/downloads/complete/movies 2775 root media -"
+
     # /fast/data is root-owned, so a service that creates its own dataDir
     # rather than letting systemd's StateDirectory do it cannot make one.
     # Jellyfin and Radarr managed; Sonarr and Bazarr died with "Access to the
