@@ -238,6 +238,16 @@ in
     ${iptables} -A FORWARD -o ${vethHost} -j ACCEPT
     ${iptables} -A FORWARD -i ${vethHost} -j ACCEPT
 
+    # The one thing the namespace needs *from* the host: Sonarr and Radarr
+    # telling Jellyfin to rescan after an import. Jellyfin stayed on the host
+    # network, so without this the library only updates on its timer and a
+    # finished episode sits invisible for hours.
+    #
+    # Deliberately one port from one address rather than trusting the
+    # interface. The namespace is not a trusted zone - it is the zone whose
+    # egress we do not control.
+    ${iptables} -A INPUT -i ${vethHost} -s ${nsAddr} -p tcp --dport 8096 -j ACCEPT
+
     # The v6 mirror of all of the above.
     ${ip6tables} -t nat -N MORTY_VPN_DNAT 2>/dev/null || ${ip6tables} -t nat -F MORTY_VPN_DNAT
     ${lib.concatMapStrings (p: ''
@@ -259,6 +269,7 @@ in
     ${iptables} -t nat -D POSTROUTING -o ${vethHost} -j MASQUERADE 2>/dev/null || true
     ${iptables} -D FORWARD -o ${vethHost} -j ACCEPT 2>/dev/null || true
     ${iptables} -D FORWARD -i ${vethHost} -j ACCEPT 2>/dev/null || true
+    ${iptables} -D INPUT -i ${vethHost} -s ${nsAddr} -p tcp --dport 8096 -j ACCEPT 2>/dev/null || true
     ${iptables} -t nat -F MORTY_VPN_DNAT 2>/dev/null || true
     ${iptables} -t nat -X MORTY_VPN_DNAT 2>/dev/null || true
 

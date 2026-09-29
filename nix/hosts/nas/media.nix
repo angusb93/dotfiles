@@ -123,6 +123,14 @@ in
       host_whitelist = "morty,morty.taile1ace0.ts.net,localhost,10.200.0.2,fd00:200::2,100.121.123.8,fd7a:115c:a1e0::5033:7b09";
       local_ranges = "10.200.0.0/30,100.64.0.0/10,fd00:200::/126,fd7a:115c:a1e0::/48";
 
+      # SABnzbd creates completed job folders 0700 by default, which locks
+      # out the whole point of the shared `media` group: Sonarr runs as
+      # sonarr:media, cannot traverse into the folder, and reports "No files
+      # found are eligible for import" - which reads like a parsing problem
+      # rather than a permissions one. 775 restores group access so the
+      # hardlink import works.
+      permissions = "775";
+
       # On tank, next to the library, because Sonarr and Radarr *hardlink* a
       # finished download into movies/ or tv/ and a hardlink cannot cross a
       # filesystem. The default put these under /var/lib/sabnzbd, which would
