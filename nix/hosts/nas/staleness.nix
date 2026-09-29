@@ -25,19 +25,16 @@ let
     syncoid-fast-data = 36;
   };
 
-  # Called from ExecStopPost, where systemd exports SERVICE_RESULT. Writing the
-  # stamp from the job itself would record an attempt; writing it here records
-  # an outcome.
-  stamp = pkgs.writeShellApplication {
-    name = "backup-stamp";
-    runtimeInputs = [ pkgs.coreutils ];
-    text = ''
-      [ "''${SERVICE_RESULT:-}" = "success" ] || exit 0
-      mkdir -p ${stampDir}
-      date +%s > ${stampDir}/"$1"
-    '';
-  };
-
+  # No hook on the watched units. The first version of this wrote a stamp from
+  # each unit's ExecStopPost, which meant sanoid and both syncoid units - all
+  # ProtectSystem=strict - could not write it, their ExecStopPost exited
+  # non-zero, and systemd failed the whole unit. sanoid reported failure every
+  # hour for fourteen hours while doing its job perfectly well.
+  #
+  # Monitoring that breaks what it measures is worse than no monitoring, so the
+  # observer now does the observing: this check reads systemd's own record of
+  # each unit's last outcome and keeps the stamps itself. Nothing is added to
+  # the watched units at all.
   table = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (unit: hours: "${unit} ${toString hours}") watched
   );
@@ -51,10 +48,22 @@ let
     text = ''
       now=$(date +%s)
       overdue=""
+      mkdir -p ${stampDir}
 
       while read -r unit hours; do
         [ -n "$unit" ] || continue
         stamp=${stampDir}/"$unit"
+
+        # Refresh the stamp from systemd's own record. InactiveEnterTimestamp is
+        # when the unit last finished; Result says how. A unit mid-run still
+        # reports the previous run here, which is what we want.
+        result=$(systemctl show "$unit" -p Result --value 2>/dev/null || echo unknown)
+        when=$(systemctl show "$unit" -p InactiveEnterTimestamp --value 2>/dev/null || true)
+        if [ "$result" = "success" ] && [ -n "$when" ]; then
+          if epoch=$(date -d "$when" +%s 2>/dev/null); then
+            echo "$epoch" > "$stamp"
+          fi
+        fi
 
         if [ ! -f "$stamp" ]; then
           overdue="$overdue"$'\n'"$unit: no success ever recorded"
@@ -77,33 +86,27 @@ let
         echo "$overdue"
         echo
         echo "Check with: systemctl status <unit> and journalctl -u <unit>"
-      # The same morty-alert smartd and ZED use, passed in as a module argument
-      # so there is one channel to Angus rather than three copies of one.
       } | ${lib.getExe morty-alert} "Backup jobs overdue on morty"
     '';
   };
 in
 {
-  systemd.tmpfiles.rules = [ "d ${stampDir} 0700 root root -" ];
+  # Created here rather than by the stamp script: a hardened unit can write
+  # inside a ReadWritePaths directory but cannot create it.
+  systemd.tmpfiles.rules = [
+    "d /var/lib/morty-backup 0700 root root -"
+    "d ${stampDir} 0700 root root -"
+  ];
 
   # Attach the stamp to every watched unit. Done here rather than in each
   # module so the list of what is watched lives in exactly one place.
-  systemd.services =
-    lib.mapAttrs' (
-      unit: _:
-      lib.nameValuePair unit {
-        serviceConfig.ExecStopPost = [ "${lib.getExe stamp} ${unit}" ];
-      }
-    ) watched
-    // {
-      backup-staleness = {
-        description = "Report backup jobs that have not succeeded recently";
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = lib.getExe check;
-        };
-      };
+  systemd.services.backup-staleness = {
+    description = "Report backup jobs that have not succeeded recently";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = lib.getExe check;
     };
+  };
 
   systemd.timers.backup-staleness = {
     description = "Daily check for overdue backup jobs";

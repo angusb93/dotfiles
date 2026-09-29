@@ -40,6 +40,13 @@ in
 {
   systemd.services.gmail-pull = {
     description = "Pull Gmail down to tank/backup/google/mail";
+
+    # Do not restart this on a rebuild. It is a Type=oneshot that can run for
+    # hours, and switch-to-configuration *waits* for a oneshot it starts - so a
+    # `nixos-rebuild switch` during a long pull appears to hang until the pull
+    # finishes. Changes land on the next timer instead, which is the right
+    # moment for a backup job to pick them up anyway.
+    restartIfChanged = false;
     after = [ "network-online.target" "zfs.target" ];
     wants = [ "network-online.target" ];
 

@@ -53,10 +53,17 @@
       # here. Retention is deliberately longer than the source (90d vs 30d) so
       # the most recent common snapshot always survives pruning on this side -
       # lose that and the next run falls back to a full send.
-      "tank/backup/morty" = {
+      # Listed per child rather than as a recursive parent - see the note on
+      # the google datasets below for why that distinction matters here.
+      "tank/backup/morty/vault" = {
         useTemplate = [ "none" ];
-        recursive = true;
-        processChildrenOnly = true;
+        daily = 90;
+        monthly = 24;
+        autosnap = false;
+        autoprune = true;
+      };
+      "tank/backup/morty/data" = {
+        useTemplate = [ "none" ];
         daily = 90;
         monthly = 24;
         autosnap = false;
@@ -69,10 +76,41 @@
       # close enough behind the pull to be the post-pull state, far enough that
       # a slow pull does not race it. This is what makes the Drive cleanup safe
       # to undo - the snapshot before it still has everything.
-      "tank/backup/google" = {
+      # Named per child, not as a recursive parent. The module delegates zfs
+      # permissions to a systemd DynamicUser for exactly the datasets listed
+      # here, and a delegation on the parent did not reach the children: the
+      # unit ran as sanoid, snapshotted nothing under tank/backup/google and
+      # exited success, while the identical sanoid run as root took all four
+      # immediately. It logged nothing either way.
+      "tank/backup/google/drive" = {
         useTemplate = [ "none" ];
-        recursive = true;
-        processChildrenOnly = true;
+        daily = 30;
+        monthly = 12;
+        daily_hour = 3;
+        daily_min = 0;
+        autosnap = true;
+        autoprune = true;
+      };
+      "tank/backup/google/mail" = {
+        useTemplate = [ "none" ];
+        daily = 30;
+        monthly = 12;
+        daily_hour = 3;
+        daily_min = 0;
+        autosnap = true;
+        autoprune = true;
+      };
+      "tank/backup/google/photos" = {
+        useTemplate = [ "none" ];
+        daily = 30;
+        monthly = 12;
+        daily_hour = 3;
+        daily_min = 0;
+        autosnap = true;
+        autoprune = true;
+      };
+      "tank/backup/google/takeout" = {
+        useTemplate = [ "none" ];
         daily = 30;
         monthly = 12;
         daily_hour = 3;
