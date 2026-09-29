@@ -23,6 +23,10 @@ let
     drive-pull = 36;
     syncoid-fast-vault = 36;
     syncoid-fast-data = 36;
+    # Added once the first full pull completed on 2026-09-29 - 118,175 of
+    # 120,851 messages, above its own 95% bar. Wiring an alarm to a job that had
+    # never finished would only have taught everyone to ignore it.
+    gmail-pull = 36;
   };
 
   # No hook on the watched units. The first version of this wrote a stamp from
