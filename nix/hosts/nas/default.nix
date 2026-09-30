@@ -36,7 +36,7 @@ let
     ];
     text = ''
       subject=''${1:?usage: morty-alert SUBJECT < body}
-      state=/home/angus/telegram-agent
+      state=/var/lib/agent/telegram-agent
 
       # Telegram caps a message at 4096 characters.
       body=$(head -c 3500)
@@ -122,6 +122,7 @@ in
     ./kiwix-fetch.nix
     ./immich.nix
     ./media.nix
+    ./agent.nix
     ./tv.nix
     ./vpn.nix
     ./staleness.nix
@@ -361,16 +362,20 @@ in
   # BST - an hour later than intended for the whole of summer.
   services.telegram-agent = {
     enable = true;
-    user = "angus";
-    group = "users";
-    vaultDir = "/fast/vault";
 
-    # The 1Password service-account token (~/.config/op) unlocks the whole
-    # Morty vault, and the sandbox makes ~/.config writable, so without this a
-    # session driven by a Telegram message could read it. The WhatsApp unit
-    # got the same mask on 2026-09-13. Belongs in the shared sandbox module
-    # once S3 of the security plan lands.
-    extraInaccessiblePaths = [ "-/home/angus/.config/op" ];
+    # Runs as its own user since 2026-09-29, not as `angus` - see agent.nix
+    # for the reasoning, including the correction that this unit could never
+    # have used sudo anyway: NoNewPrivileges blocks setuid.
+    #
+    # The masking list that used to live here has gone with it. It existed to
+    # keep a Telegram-driven session out of ~angus/.config/op, which unlocks
+    # the whole 1Password Morty vault. Separate homes mean there is nothing
+    # left to mask - the agent cannot see that directory at all.
+    user = "agent";
+    group = "agent";
+    homeDir = "/var/lib/agent";
+    stateDir = "/var/lib/agent/telegram-agent";
+    vaultDir = "/fast/vault";
 
     checkins = {
       # Evening opens the nightly planning conversation, morning restates what

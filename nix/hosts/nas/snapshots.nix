@@ -189,6 +189,21 @@
 
     # syncoid runs as its own unprivileged user here and the module delegates
     # the zfs permissions it needs, so stop it reaching for sudo.
-    commonArgs = [ "--no-privilege-elevation" ];
+    #
+    # --exclude-snaps: `restic-backups-drive` takes a snapshot literally named
+    # `@restic` before each run and destroys it afterwards, so the name is
+    # reused nightly with a different GUID every time. Replicating it means the
+    # target ends up holding a stale `@restic`, and the next incremental send
+    # dies on:
+    #
+    #   cannot restore to tank/backup/morty/vault@restic: destination already exists
+    #
+    # That is exactly what happened on 2026-09-29 and 2026-09-30, silently
+    # breaking vault replication for two nights. The snapshot is ephemeral
+    # tooling state and has no business being replicated at all.
+    commonArgs = [
+      "--no-privilege-elevation"
+      "--exclude-snaps=^restic$"
+    ];
   };
 }
