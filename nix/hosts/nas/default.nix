@@ -125,6 +125,7 @@ in
     ./agent.nix
     ./tv.nix
     ./vpn.nix
+    ./homepage.nix
     ./staleness.nix
   ];
 
