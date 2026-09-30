@@ -1,6 +1,6 @@
 # Homepage: one operator view of every service on morty.
 #
-# Ten services across two network zones on ports nobody memorises. Jellyseerr
+# A dozen services across two network zones on ports nobody memorises. Jellyseerr
 # deliberately hides the machinery because its users should not care; this is
 # the other half, for the person who does.
 #
@@ -235,6 +235,22 @@ in
       }
       {
         Services = [
+          {
+            "Uptime Kuma" = {
+              icon = "uptime-kuma.png";
+              href = "${link}:3001";
+              description = "Service monitoring tool";
+              siteMonitor = "${host}:3001";
+            };
+          }
+          {
+            Paperless = {
+              icon = "paperless-ngx.png";
+              href = "${link}:28981";
+              description = "Document management system";
+              siteMonitor = "${host}:28981";
+            };
+          }
           {
             Kiwix = {
               icon = "kiwix.png";

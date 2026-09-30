@@ -126,6 +126,8 @@ in
     ./tv.nix
     ./vpn.nix
     ./homepage.nix
+    ./uptime-kuma.nix
+    ./paperless.nix
     ./staleness.nix
   ];
 
@@ -601,17 +603,12 @@ in
       # is the declarative equivalent: a fresh morty comes up configured, and a
       # client that changed one of them gets corrected on the next restart.
       #
-      # The provider block exists because paseo's built-in default model for pi
-      # is claude-3-haiku, which Anthropic deprecated on 2026-09-10 - every agent
-      # errored with a 404 until this was set. Slugs verified against OpenRouter's
-      # /api/v1/models. The JSON goes through a file so no shell quoting has to
-      # survive Nix string escaping.
-      #
-      # `models` REPLACES pi's own list rather than adding to it, so this is the
-      # entire model picker every client sees - a model missing from the phone is
-      # a model missing from here. Anything OpenRouter serves can be added, but
-      # check `supported_parameters` contains `tools` first: an agent with no
-      # tool calls is just a chatbot with a filesystem it cannot reach.
+      # The provider block exists for exactly one reason: paseo's built-in
+      # default model for pi is claude-3-haiku, which Anthropic deprecated on
+      # 2026-09-10 - every agent errored with a 404 until a default was set.
+      # It deliberately does NOT enumerate models; see the comment on the block.
+      # The JSON goes through a file so no shell quoting has to survive Nix
+      # string escaping.
       ExecStartPre = lib.getExe (
         pkgs.writeShellApplication {
           name = "paseo-config";
@@ -623,19 +620,29 @@ in
                   pi = {
                     extends = "pi";
                     label = "pi (OpenRouter)";
-                    models = [
+                    # `additionalModels`, never `models`. They are not variants of
+                    # one setting: in provider-registry.js, a non-empty `models`
+                    # is a REPLACEMENT for pi's discovered catalogue (the code
+                    # returns profileModels and throws the base list away, and
+                    # `profileModelsAreAdditive` is hardcoded false in 0.9.1 with
+                    # no config key to flip it). `additionalModels` merges into
+                    # that catalogue by id instead.
+                    #
+                    # pi already knows every OpenRouter model - 398 of them in
+                    # ~/.pi/agent/models-store.json, refreshed by `pi update` -
+                    # and paseo asks it for the list at runtime. So nothing here
+                    # needs to enumerate models. Listing three of them is how the
+                    # phone ended up with a three-item picker.
+                    #
+                    # The single entry exists only to move the default off
+                    # claude-3-haiku, which Anthropic deprecated on 2026-09-10 and
+                    # which 404s every new agent. One `isDefault = true` addition
+                    # is enough: mergeModelAdditions rewrites isDefault to false on
+                    # everything else, so this wins without hiding anything.
+                    additionalModels = [
                       {
                         id = "openrouter/anthropic/claude-sonnet-5";
-                        label = "Sonnet 5";
                         isDefault = true;
-                      }
-                      {
-                        id = "openrouter/anthropic/claude-opus-5.5";
-                        label = "Opus 5.5";
-                      }
-                      {
-                        id = "openrouter/z-ai/glm-5.3";
-                        label = "GLM 5.3";
                       }
                     ];
                   };

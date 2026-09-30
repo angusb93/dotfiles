@@ -27,6 +27,23 @@ let
     "tank/archive"
   ];
   snap = "restic";
+
+  # ⚠️ Not everything that matters is on ZFS. /var/lib lives on the ext4
+  # cryptroot, which has no snapshots, no syncoid leg and - until this line -
+  # no offsite copy at all. /var/lib/agent is the telegram bot's entire
+  # configuration: threads.json (persona routing), alerts.json (the topic ids
+  # morty-alert posts into), personas.d and its workspace. Small, irreplaceable
+  # by hand, and it was being backed up only by an ad-hoc tarball somebody made
+  # once, which sat on the same unbacked-up filesystem.
+  #
+  # Backed up live rather than from a snapshot. These are small JSON files
+  # written rarely, so a torn read is a far smaller risk than having no copy.
+  #
+  # ⚠️ /var/lib/morty-backup is deliberately NOT here. It is the secret store -
+  # restic.pass, rclone.conf, the API tokens - and every item in it is meant to
+  # be reproducible from 1Password. Putting it in the repository would make one
+  # password the key to all of them. See wiki/concepts/infra/data-map.md.
+  livePaths = [ "/var/lib/agent" ];
 in
 {
   services.restic.backups.drive = {
@@ -44,7 +61,7 @@ in
         ${pkgs.zfs}/bin/zfs snapshot "$ds@${snap}"
       done
     '';
-    paths = map (ds: "/${ds}/.zfs/snapshot/${snap}") datasets;
+    paths = map (ds: "/${ds}/.zfs/snapshot/${snap}") datasets ++ livePaths;
 
     timerConfig = {
       OnCalendar = "03:30";

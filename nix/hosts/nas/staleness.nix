@@ -27,6 +27,9 @@ let
     # 120,851 messages, above its own 95% bar. Wiring an alarm to a job that had
     # never finished would only have taught everyone to ignore it.
     gmail-pull = 36;
+    # Paperless is the only data on morty with no second home, so its portable
+    # export is watched like the backups themselves rather than like an app.
+    paperless-export = 36;
   };
 
   # No hook on the watched units. The first version of this wrote a stamp from
