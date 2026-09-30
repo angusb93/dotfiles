@@ -639,9 +639,15 @@ in
                     # which 404s every new agent. One `isDefault = true` addition
                     # is enough: mergeModelAdditions rewrites isDefault to false on
                     # everything else, so this wins without hiding anything.
+                    #
+                    # `label` is required by the config schema even here, where
+                    # the entry only carries a default - omitting it makes
+                    # `paseo daemon config set` reject the whole file and the unit
+                    # refuses to start. It fails loudly, which is the good case.
                     additionalModels = [
                       {
                         id = "openrouter/anthropic/claude-sonnet-5";
+                        label = "Sonnet 5";
                         isDefault = true;
                       }
                     ];
