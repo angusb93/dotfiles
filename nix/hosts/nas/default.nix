@@ -378,48 +378,45 @@ in
     vaultDir = "/fast/vault";
 
     checkins = {
-      # Evening opens the nightly planning conversation, morning restates what
-      # was agreed. Both post into the Planner forum topic so replies route back
-      # to the same persona and continue the same claude session.
+      # TWO pushes, deliberately: one a day, and one per workout.
+      #
+      # This replaced four scheduled messages (planner evening + morning, pt
+      # daily + weekly) on 2026-09-30. Four fixed pushes a day arrive whether or
+      # not they have anything to say, and a check-in that does that is how
+      # these get muted. The 07:30 morning card restated what was already on the
+      # calendar, and pt-daily asked about training at 20:00 whether or not any
+      # had happened.
+      #
       # Design + the evidence behind it:
       #   /fast/vault/wiki/projects/life-balance-system.md
       #   /fast/vault/wiki/self/planning-psychology.md
-      planner-evening = {
-        description = "morty evening planning check-in";
+      #   /fast/vault/wiki/projects/marathon-periodization.md  (the weekly rule)
+
+      # The one scheduled message of the day. Decides tomorrow and writes it
+      # straight to the Planning calendar rather than opening with a question -
+      # composing an answer costs Angus more than editing a draft, and lowering
+      # that cost is the whole point. Also logs the day's training, and on
+      # Sundays runs the weekly GREEN/AMBER/RED reconciliation that keeps
+      # running-plan.md honest.
+      daily = {
+        description = "morty daily message";
         persona = "planner";
-        mode = "evening";
+        mode = "daily";
         onCalendar = "*-*-* 20:45:00 Europe/London";
       };
 
-      planner-morning = {
-        description = "morty morning card";
-        persona = "planner";
-        mode = "morning";
-        onCalendar = "*-*-* 07:30:00 Europe/London";
-      };
-
-      # The training plan silently drifting out of step with reality is the
-      # failure these prevent: running-plan.md sat for six weeks claiming
-      # "Week 3 of 13" while the actual training was 1.2 runs/week. So the daily
-      # job is to write any new Garmin session into running-log.md, and the
-      # weekly job is to make running-plan.md tell the truth about where the
-      # block actually is.
-      #
-      # Daily runs at 20:00, before the 20:45 planner check-in, so the day's
-      # training is already logged when the planner reads it. It stays SILENT
-      # when there is nothing new - checkin.py suppresses a NOTHING reply.
-      pt-daily = {
-        description = "morty PT daily training sync";
+      # One response per workout. Event-driven in effect, polled in
+      # implementation: Garmin is only reachable through the MCP tools inside a
+      # claude session, so there is nothing to subscribe to from systemd. It
+      # runs hourly and the silence guard does the work - checkin.py drops a
+      # NOTHING reply, so on a normal day this fires 16 times and sends nothing,
+      # then sends once shortly after a run or a lift appears in Garmin.
+      # Bounded to waking hours to keep that cost sane.
+      activity = {
+        description = "morty per-workout response";
         persona = "pt";
-        mode = "daily";
-        onCalendar = "*-*-* 20:00:00 Europe/London";
-      };
-
-      pt-weekly = {
-        description = "morty PT weekly reconciliation";
-        persona = "pt";
-        mode = "weekly";
-        onCalendar = "Sun *-*-* 19:00:00 Europe/London";
+        mode = "activity";
+        onCalendar = "*-*-* 06..22:00:00 Europe/London";
       };
     };
   };

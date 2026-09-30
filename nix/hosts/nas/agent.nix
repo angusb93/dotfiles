@@ -47,6 +47,24 @@ in
   users.groups.vault = { };
   users.users.angus.extraGroups = [ "vault" ];
 
+  # The agent authenticates to Claude with its own long-lived OAuth token
+  # rather than a copy of Angus's credential.
+  #
+  # ⚠️ The first attempt *was* a copy, and it broke within hours. OAuth refresh
+  # tokens rotate: when Angus's interactive session refreshed, it invalidated
+  # the copy, and the agent's own refresh then failed and zeroed its access
+  # token. Two processes cannot share one OAuth credential.
+  #
+  # ⚠️ `claude /login` also cannot work over SSH - it waits for an OAuth
+  # callback on localhost, which over SSH is the *laptop's* localhost, so the
+  # login silently never completes. `claude setup-token` is the headless path.
+  #
+  # The token itself lives outside the flake, alongside the restic, rclone,
+  # NordVPN and Kodi credentials. systemd reads EnvironmentFile as root before
+  # the sandbox applies, so root-only 0600 is both sufficient and correct.
+  systemd.services.telegram-agent.serviceConfig.EnvironmentFile =
+    "/var/lib/morty-backup/claude-agent-token.env";
+
   systemd.tmpfiles.rules = [
     "d ${agentHome} 0750 agent agent -"
     "d ${agentHome}/.claude 0700 agent agent -"
