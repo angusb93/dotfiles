@@ -461,15 +461,7 @@ in
       # /home/angus is explicitly NOT trusted; /fast/vault is.
       WorkingDirectory = "/fast/vault";
       # This is a server, not a TUI - it runs fine with no controlling terminal.
-      #
-      # --permission-mode applies to the sessions this host spawns, not to the
-      # host itself. Without it they inherit settings.json's defaultMode and
-      # stop on permission prompts with nobody at a keyboard; the shift+tab
-      # cycle that would clear them is a TUI affordance these sessions do not
-      # have. The PreToolUse approve-hook still gates Bash and the Google
-      # tools - hooks run ahead of the permission system, so this widens what
-      # runs unattended without touching that gate.
-      ExecStart = "${pkgs.claude-code}/bin/claude remote-control --name morty --permission-mode bypassPermissions";
+      ExecStart = "${pkgs.claude-code}/bin/claude remote-control --name morty";
       Restart = "always";
       RestartSec = 5;
       RestartSteps = 5;
