@@ -117,7 +117,9 @@
             # has to happen where there is a browser, and that is here.
             pkgs.gyb
             pkgs.obsidian
-            pkgs.paseo
+            # paseo: the CLI comes from the `paseo` cask below, not nixpkgs, so
+            # that `paseo` on PATH is the same build as Paseo.app. See the cask
+            # comment for why keeping both is not an option.
             pkgs.pi-coding-agent
             pkgs.postman
             pkgs.slack
@@ -212,6 +214,23 @@
               # gui 8.12.30 vs 8.12.33, cli 2.34.1 vs 2.38.1 (checked 2026-08-14).
               "1password"
               "1password-cli"
+              # Paseo desktop client - the thing that drives `pi` on morty from
+              # this laptop, and the desktop half of the phone workflow in
+              # wiki/concepts/infra/paseo-agent-supervisor.md.
+              #
+              # Cask rather than `pkgs.paseo`, and `pkgs.paseo` is deliberately
+              # gone from systemPackages above. The cask symlinks its own CLI to
+              # $HOMEBREW_PREFIX/bin/paseo, and .zshrc prepends
+              # /run/current-system/sw/bin, so having both means the app is one
+              # version and the `paseo` you type is another - nixpkgs is on
+              # 0.9.1, the cask on 0.10.2, and 0.9.1 is the build whose
+              # `daemon start`/`daemon run` are broken by a missing entry point.
+              # One paseo on the box, matching the app.
+              #
+              # ⚠️ `onActivation.cleanup = "zap"` above: if this line is ever
+              # removed, the zap trashes ~/.paseo - the daemon keypair and every
+              # pairing. Copy it out first.
+              "paseo"
             ];
           };
           system = {
