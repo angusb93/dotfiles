@@ -38,6 +38,13 @@ in
     # ⚠️ Not a list. It becomes HOMEPAGE_ALLOWED_HOSTS verbatim, and a request
     # whose Host header is missing from it is refused outright.
     allowedHosts = lib.concatStringsSep "," [
+      # Through Caddy on :80. It forwards the original Host header untouched,
+      # so these arrive with no port at all - a different string from the
+      # :8082 ones below, and both have to be listed.
+      "morty"
+      "morty.taile1ace0.ts.net"
+      "100.121.123.8"
+      # Direct to :8082, which stays reachable for debugging.
       "morty:8082"
       "morty.taile1ace0.ts.net:8082"
       "100.121.123.8:8082"
@@ -281,6 +288,34 @@ in
         };
       }
     ];
+  };
+
+  # `http://morty/` instead of `http://morty:8082`. The port was the hard part
+  # to remember, not the host.
+  #
+  # Caddy listens on :80 on every interface and is protected by the firewall,
+  # not by a bind address - `tailscale0` is in trustedInterfaces and every
+  # other interface is closed. That is the same posture as Jellyfin and the
+  # rest, and it avoids a boot-order trap: binding to 100.121.123.8 would mean
+  # Caddy could not start until tailscaled had brought the interface up.
+  #
+  # ⚠️ The `http://` prefix on each site address is load-bearing. Without it
+  # Caddy decides the site should be HTTPS and goes looking for a certificate
+  # for a name no public CA will ever issue one for, then retries forever.
+  services.caddy = {
+    enable = true;
+    # One block per name Angus might type. Caddy matches on the Host header, so
+    # a name that is not listed here gets a 404 from Caddy rather than reaching
+    # Homepage at all.
+    virtualHosts = lib.genAttrs
+      [
+        "http://morty"
+        "http://morty.taile1ace0.ts.net"
+        "http://100.121.123.8"
+      ]
+      (_: {
+        extraConfig = "reverse_proxy 127.0.0.1:8082";
+      });
   };
 
   # The module writes every config file into /etc and puts no restartTriggers on
