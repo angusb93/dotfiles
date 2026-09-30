@@ -11,6 +11,15 @@
     # Evaluating this flake therefore needs GitHub SSH access, which is why the
     # NAS is rebuilt with --sudo rather than plain sudo - root has no
     # key of its own.
+    #
+    # ⚠️ The pin is LOAD-BEARING, not incidental. The check-in units configured
+    # in hosts/nas/default.nix reference prompt files that ship inside this
+    # input's package. A lock bump here usually means the prompts changed to
+    # match new config in this repo - the two move together. Reverting an
+    # uncommitted bump builds units that ask for prompts the package no longer
+    # has, and the check-ins die on their next fire. This is not hypothetical:
+    # it happened on 2026-09-30, when the reshaping deploy's uncommitted bump
+    # was backed out as "incidental" and both check-ins went dead for it.
     automations = {
       url = "git+ssh://git@github.com/angusb93/automations";
       inputs.nixpkgs.follows = "nixpkgs";
