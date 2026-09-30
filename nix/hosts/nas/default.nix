@@ -606,6 +606,12 @@ in
       # errored with a 404 until this was set. Slugs verified against OpenRouter's
       # /api/v1/models. The JSON goes through a file so no shell quoting has to
       # survive Nix string escaping.
+      #
+      # `models` REPLACES pi's own list rather than adding to it, so this is the
+      # entire model picker every client sees - a model missing from the phone is
+      # a model missing from here. Anything OpenRouter serves can be added, but
+      # check `supported_parameters` contains `tools` first: an agent with no
+      # tool calls is just a chatbot with a filesystem it cannot reach.
       ExecStartPre = lib.getExe (
         pkgs.writeShellApplication {
           name = "paseo-config";
@@ -626,6 +632,10 @@ in
                       {
                         id = "openrouter/anthropic/claude-opus-5.5";
                         label = "Opus 5.5";
+                      }
+                      {
+                        id = "openrouter/z-ai/glm-5.3";
+                        label = "GLM 5.3";
                       }
                     ];
                   };
