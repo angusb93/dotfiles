@@ -67,4 +67,54 @@
       ExecStart = "${pkgs.python3}/bin/python3 ${./kodi-settings.py}";
     };
   };
+
+  # The TV has gone silent twice in two days after the audio stack sat idle
+  # (2026-09-29: the pipewire sink accepted a stream and never started the
+  # hardware; 2026-09-30: Kodi's own audio engine went stale after ~24h and
+  # could not create a stream at all). Same symptom, different layer. Two
+  # defenses:
+  #
+  # 1. Never suspend the HDMI sink. Suspend-on-idle is the one thing both
+  #    failures share a night with, and an always-open PCM costs effectively
+  #    nothing on a machine that is always on. This is the Arch-wiki-standard
+  #    session.suspend-timeout-seconds = 0, applied to all ALSA outputs
+  #    (there is exactly one here).
+  # 2. Bounce the session at 04:30 daily, before anyone is near the TV, so no
+  #    stale audio state can survive more than a day. Restarting
+  #    display-manager restarts the whole kiosk session - Kodi *and* its
+  #    pipewire - which is the one move that has fixed both failure modes
+  #    (and re-reads the wireplumber config above into the bargain).
+  services.pipewire.wireplumber.configPackages = [
+    (pkgs.writeTextDir "share/wireplumber/wireplumber.conf.d/51-tv-no-suspend.conf" ''
+      monitor.alsa.rules = [
+        {
+          matches = [
+            { node.name = "~alsa_output.*" }
+          ]
+          actions = {
+            update-props = {
+              session.suspend-timeout-seconds = 0
+            }
+          }
+        }
+      ]
+    '')
+  ];
+
+  systemd.services.tv-session-refresh = {
+    description = "Bounce the Kodi kiosk session so no audio state survives more than a day";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.systemd}/bin/systemctl restart display-manager.service";
+    };
+  };
+
+  systemd.timers.tv-session-refresh = {
+    description = "Nightly kiosk session bounce at 04:30";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 04:30:00";
+      Persistent = true;
+    };
+  };
 }
