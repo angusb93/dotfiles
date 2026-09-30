@@ -45,11 +45,16 @@ in
       "127.0.0.1:8082"
     ];
 
-    # Seven API keys as HOMEPAGE_VAR_*, referenced below as {{HOMEPAGE_VAR_x}}.
-    # Root-only 0600 and outside the flake, like every other secret on morty.
-    # systemd reads it as PID 1 before dropping to the DynamicUser, so the
-    # service never needs to be able to read the file itself.
-    environmentFiles = [ "/var/lib/morty-backup/homepage.env" ];
+    # No API keys, because no service card polls anything. The cards are icon,
+    # name, description and an up/down dot, and that is the whole point - the
+    # per-service stats were clutter on a page whose job is "where is
+    # everything".
+    #
+    # The seven keys are still staged in /var/lib/morty-backup/homepage.env
+    # (root-only 0600) if a widget is ever wanted back. Turning one on means
+    # adding `environmentFiles = [ ... ];` here and a `widget` block to the
+    # service. ⚠️ Jellyfin is the exception: see the note in the vault, its
+    # native widget cannot work against Jellyfin 12 at all.
 
     settings = {
       title = "morty";
@@ -142,12 +147,6 @@ in
               href = "${link}:8989";
               description = "TV show collection manager";
               siteMonitor = "${ns}:8989/ping";
-              widget = {
-                type = "sonarr";
-                url = "${ns}:8989";
-                key = "{{HOMEPAGE_VAR_SONARR_KEY}}";
-                enableQueue = true;
-              };
             };
           }
           {
@@ -156,25 +155,14 @@ in
               href = "${link}:7878";
               description = "Movie collection manager";
               siteMonitor = "${ns}:7878/ping";
-              widget = {
-                type = "radarr";
-                url = "${ns}:7878";
-                key = "{{HOMEPAGE_VAR_RADARR_KEY}}";
-                enableQueue = true;
-              };
             };
           }
           {
             Prowlarr = {
               icon = "prowlarr.png";
               href = "${link}:9696";
-              description = "Indexer manager. If grabs dry up, look here first";
+              description = "PVR indexer";
               siteMonitor = "${ns}:9696/ping";
-              widget = {
-                type = "prowlarr";
-                url = "${ns}:9696";
-                key = "{{HOMEPAGE_VAR_PROWLARR_KEY}}";
-              };
             };
           }
           {
@@ -183,11 +171,6 @@ in
               href = "${link}:6767";
               description = "Subtitle manager";
               siteMonitor = "${host}:6767";
-              widget = {
-                type = "bazarr";
-                url = "${host}:6767";
-                key = "{{HOMEPAGE_VAR_BAZARR_KEY}}";
-              };
             };
           }
         ];
@@ -198,13 +181,8 @@ in
             SABnzbd = {
               icon = "sabnzbd.png";
               href = "${link}:8080";
-              description = "Usenet downloader. Speed here is speed through the VPN";
+              description = "Usenet downloader";
               siteMonitor = "${ns}:8080";
-              widget = {
-                type = "sabnzbd";
-                url = "${ns}:8080";
-                key = "{{HOMEPAGE_VAR_SAB_KEY}}";
-              };
             };
           }
         ];
@@ -215,61 +193,16 @@ in
             Jellyfin = {
               icon = "jellyfin.png";
               href = "${link}:8096";
-              description = "The library itself";
+              description = "The free software media system";
               siteMonitor = "${host}:8096";
-              # ⚠️ NOT `type = "jellyfin"`. Homepage 2.3.0's jellyfin widget is
-              # the emby one: it calls `/emby/Sessions?api_key=...`. Jellyfin 12
-              # removed both halves of that - the /emby path alias is a 404 and
-              # api_key as a query parameter is a 401. The widget therefore
-              # cannot work here at all, and its only symptom is a tile reading
-              # "unknown".
-              #
-              # `Authorization: MediaBrowser Token="..."` is the one scheme
-              # Jellyfin 12 still accepts (X-Emby-Token is gone too). customapi
-              # can send it, which also keeps the key out of the URL and so out
-              # of the journal - the native widget logged it in plaintext on
-              # every failure.
-              #
-              # Revisit if homepage ships a Jellyfin-12-aware widget; the
-              # library counts here are a narrower readout than the real one.
-              widget = {
-                type = "customapi";
-                url = "${host}:8096/Items/Counts";
-                method = "GET";
-                headers = {
-                  Authorization = "MediaBrowser Token=\"{{HOMEPAGE_VAR_JELLYFIN_KEY}}\"";
-                };
-                mappings = [
-                  {
-                    field = "MovieCount";
-                    label = "Films";
-                    format = "number";
-                  }
-                  {
-                    field = "SeriesCount";
-                    label = "Shows";
-                    format = "number";
-                  }
-                  {
-                    field = "EpisodeCount";
-                    label = "Episodes";
-                    format = "number";
-                  }
-                ];
-              };
             };
           }
           {
             Jellyseerr = {
               icon = "jellyseerr.png";
               href = "${link}:5055";
-              description = "Request portal. The front door for everyone else";
+              description = "Media request portal";
               siteMonitor = "${host}:5055";
-              widget = {
-                type = "jellyseerr";
-                url = "${host}:5055";
-                key = "{{HOMEPAGE_VAR_SEERR_KEY}}";
-              };
             };
           }
           {
@@ -278,15 +211,13 @@ in
               href = "${link}:2283";
               description = "Self-hosted photo and video library";
               siteMonitor = "${host}:2283";
-              # An immich widget exists upstream but wants its own API key,
-              # which is not staged in homepage.env yet.
             };
           }
           {
             Kodi = {
               icon = "kodi.png";
               href = "${link}:8081";
-              description = "The TV on HDMI, driven from Kore on your phone";
+              description = "TV player on HDMI, driven from Kore";
               # ⚠️ Deliberately no siteMonitor. Kodi's web server answers 401 to
               # everything including /, and homepage 2.3.0 has no
               # expectedStatus option, so a monitor here would paint a red dot
