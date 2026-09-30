@@ -9,7 +9,7 @@
   },
   "model": "claude-opus-5[1m]",
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "bypassPermissions"
   },
   "voice": {
     "enabled": true,
