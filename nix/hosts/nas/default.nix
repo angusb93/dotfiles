@@ -128,6 +128,7 @@ in
     ./homepage.nix
     ./uptime-kuma.nix
     ./paperless.nix
+    ./paperless-ingest.nix
     ./staleness.nix
   ];
 

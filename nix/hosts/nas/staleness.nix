@@ -30,6 +30,7 @@ let
     # Paperless is the only data on morty with no second home, so its portable
     # export is watched like the backups themselves rather than like an app.
     paperless-export = 36;
+    paperless-ingest = 36;
   };
 
   # No hook on the watched units. The first version of this wrote a stamp from

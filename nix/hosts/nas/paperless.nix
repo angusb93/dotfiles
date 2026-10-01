@@ -110,10 +110,11 @@ in
   systemd.timers.paperless-export = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      # 02:45, in the gap between the Google pulls and the 03:30 restic run, so
-      # the night's restic snapshot always contains a fresh export rather than
-      # yesterday's.
-      OnCalendar = "02:45";
+      # 03:05: after paperless-ingest at 02:50 and before restic at 03:30, so
+      # a document that arrived by email today is in tonight's export and
+      # offsite tonight. The full chain is gmail-pull 02:30 -> ingest 02:50 ->
+      # this -> restic 03:30.
+      OnCalendar = "03:05";
       Persistent = true;
       RandomizedDelaySec = "5m";
     };
