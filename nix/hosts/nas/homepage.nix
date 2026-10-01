@@ -29,17 +29,7 @@ let
   # not by homepage, so it is the host's tailnet name in both cases - the
   # namespace address means nothing off-box.
   #
-  # ⚠️ The **fully qualified** name, not the short `morty`. A hostname with no
-  # dot in it is a single-label host, and cookies set by one are dropped rather
-  # than stored. Every service here that logs you in with a session cookie -
-  # Paperless, Jellyfin, Jellyseerr, the *arr apps - then fails at the login
-  # POST with "CSRF cookie not set", which reads exactly like a wrong password.
-  # Proven 2026-10-01: `http://morty:28981` 403s on login, the FQDN 302s to the
-  # dashboard with a sessionid.
-  #
-  # The dashboard itself stays on `http://morty/` because it sets no cookies,
-  # so the short name is safe for the one address worth memorising.
-  link = "http://morty.taile1ace0.ts.net";
+  link = "http://morty";
 in
 {
   services.homepage-dashboard = {
