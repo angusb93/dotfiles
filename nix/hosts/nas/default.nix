@@ -118,6 +118,7 @@ in
     ./snapshots.nix
     ./google-pull.nix
     ./gmail-pull.nix
+    ./takeout-extract.nix
     ./kiwix.nix
     ./kiwix-fetch.nix
     ./immich.nix
