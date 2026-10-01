@@ -53,6 +53,29 @@ in
       # directory tree is still navigable if Paperless itself is ever gone -
       # which is half the point of keeping the originals.
       PAPERLESS_FILENAME_FORMAT = "{created_year}/{correspondent}/{title}";
+
+      # ⚠️ Django rejects a login POST whose Origin is not trusted, and the
+      # NixOS module only sets PAPERLESS_URL when it is also configuring nginx
+      # - which we are not. Unset, the trusted-origin list is empty, so a
+      # browser that reaches Paperless by any name other than the one it first
+      # loaded gets "Forbidden (CSRF cookie not set)" on every attempt. The
+      # page renders fine, so it reads as a wrong password rather than a
+      # configuration problem.
+      PAPERLESS_URL = "http://morty:28981";
+      PAPERLESS_CSRF_TRUSTED_ORIGINS = lib.concatStringsSep "," [
+        "http://morty:28981"
+        "http://morty.taile1ace0.ts.net:28981"
+        "http://100.121.123.8:28981"
+        "http://localhost:28981"
+        "http://127.0.0.1:28981"
+      ];
+      PAPERLESS_ALLOWED_HOSTS = lib.concatStringsSep "," [
+        "morty"
+        "morty.taile1ace0.ts.net"
+        "100.121.123.8"
+        "localhost"
+        "127.0.0.1"
+      ];
     };
   };
 
