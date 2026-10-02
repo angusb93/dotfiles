@@ -101,6 +101,10 @@ let
       }
       trap cleanup EXIT
 
+      if other=$(findmnt -n -o TARGET -S "$(readlink -f ${part})"); then
+        fail "morty-cold is already mounted at $other - something else grabbed it; unmount it first"
+      fi
+
       # No journal: repair anything an earlier unclean unplug left behind
       # before restic writes another byte.
       fsck.exfat -p ${part} || fail "fsck.exfat found errors it could not repair on ${part}"
@@ -151,6 +155,14 @@ let
 in
 {
   environment.systemPackages = [ pkgs.exfatprogs ];
+
+  # The TV kiosk session runs udisks, which auto-mounted the backup partition
+  # for the kiosk user the first time it was plugged in. Neither partition is
+  # any session's business - hide both from udisks entirely.
+  services.udev.extraRules = ''
+    ENV{ID_PART_ENTRY_NAME}=="morty-cold", ENV{UDISKS_IGNORE}="1"
+    ENV{ID_PART_ENTRY_NAME}=="mac-1pux", ENV{UDISKS_IGNORE}="1"
+  '';
 
   systemd.tmpfiles.rules = [ "d /var/cache/cold-copy 0700 root root -" ];
 
