@@ -115,6 +115,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./backup.nix
+    ./cold-copy.nix
     ./snapshots.nix
     ./google-pull.nix
     ./gmail-pull.nix

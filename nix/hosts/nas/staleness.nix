@@ -31,6 +31,10 @@ let
     # export is watched like the backups themselves rather than like an app.
     paperless-export = 36;
     paperless-ingest = 36;
+    # Run by hand when the off-site SSD comes home (cold-copy.nix). Refreshed
+    # every month or two, so overdue after two months - the alert is the
+    # reminder to bring it home.
+    cold-copy = 24 * 62;
   };
 
   # No hook on the watched units. The first version of this wrote a stamp from
