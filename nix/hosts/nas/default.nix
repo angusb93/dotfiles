@@ -424,6 +424,28 @@ in
         mode = "activity";
         onCalendar = "*-*-* 06..22:00:00 Europe/London";
       };
+
+      # A THIRD unit but NOT a third message: the study persona is marked
+      # `silent` in personas.json, so checkin.py writes its artifact and sends
+      # nothing, ever. Its output is /fast/vault/wiki/self/study-queue.md, which
+      # the planner reads at 20:45 and schedules the top item from.
+      #
+      # That indirection is the whole design: a specialist owns a domain and a
+      # file, the planner owns allocation and the one daily message, and no agent
+      # messages another. Adding a domain must not add a notification - four
+      # pushes a day is what got cut on 2026-09-30.
+      #   /fast/vault/wiki/projects/agent-architecture.md
+      #
+      # 19:00 so it lands comfortably before the planner at 20:45. Not later: if
+      # these two ever overlap the planner reads a half-written queue, and the
+      # 105-minute gap covers a slow session against checkin.py's own 30-minute
+      # cap without needing an ordering dependency between the units.
+      study = {
+        description = "morty study queue (silent, writes a file)";
+        persona = "study";
+        mode = "queue";
+        onCalendar = "*-*-* 19:00:00 Europe/London";
+      };
     };
   };
 
