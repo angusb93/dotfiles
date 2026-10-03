@@ -1,4 +1,4 @@
-"""Enforce Kodi's remote-control settings before the session starts.
+"""Enforce Kodi's remote-control and audio settings before the session starts.
 
 Kodi owns guisettings.xml and rewrites it on exit, so these cannot simply be
 placed in the flake. This runs before display-manager, while Kodi is not
@@ -32,6 +32,18 @@ wanted = {
     "services.esallinterfaces": "true",
     "services.esenabled": "true",
     "services.zeroconf": "true",
+
+    # "Keep audio device alive: Always" (153722867 is Kodi's own magic value
+    # for it). The default is 1 minute, which means Kodi tears its sink down
+    # after a minute of silence and has to rebuild it from cold on the next
+    # play. Not the cause of the silent evenings - see the root cause in
+    # tv.nix - but it removes a whole class of cold reopen while the TV is on.
+    #
+    # Note what is deliberately *not* pinned here: audiooutput.audiodevice.
+    # Kodi validates that setting against the live device list at startup and
+    # rewrites it to "Default" whenever the named device is missing, which it
+    # always is while the TV is in standby. Pinning it would erase itself.
+    "audiooutput.streamsilence": "153722867",
 }
 if password:
     wanted["services.webserverpassword"] = password
