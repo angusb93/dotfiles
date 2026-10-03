@@ -272,6 +272,43 @@ in
     };
   };
 
+  # --- the actual trigger: morty switches its own HDMI output off ---
+  #
+  # Found 2026-10-03, after the standby test turned out to be measuring the
+  # wrong thing. X's defaults blank the screen and DPMS the output off after
+  # **600 seconds**, and on amdgpu a DPMS-off output drops HDMI hot-plug
+  # detect: the ELD goes away, ALSA marks every HDMI profile unavailable,
+  # wireplumber flips the card to its `off` profile, and the audio sink is
+  # removed. Kodi then migrates to pipewire's `auto_null` Dummy Output.
+  #
+  # The timing is the giveaway and matches the reports exactly - "audio stops
+  # exactly when 10 minutes have passed after the HDMI audio link was
+  # enabled" (forum.kodi.tv/showthread.php?tid=368397, and tid=222905 for the
+  # DPMS diagnosis; omacom/omarchy#8290 for the amdgpu side). Our own event
+  # was 10m03s after Kodi started.
+  #
+  # A blanked panel is not an unplugged TV, and on a machine whose only job is
+  # to drive that panel there is nothing for DPMS to save. Turning it off is
+  # the fix the whole rest of this file was working around. The common
+  # workaround is a loop calling `xset s off -dpms`; ServerFlags does it once,
+  # declaratively, before X ever starts.
+  services.xserver.serverFlagsSection = ''
+    Option "BlankTime" "0"
+    Option "StandbyTime" "0"
+    Option "SuspendTime" "0"
+    Option "OffTime" "0"
+  '';
+
+  # WirePlumber's own default sink volume is 0.064 (cubic) - about 40% - which
+  # is why the TV always needed turning up. There is one sink on this box and
+  # it feeds a TV with its own volume control, so full scale is the only
+  # sensible default.
+  services.pipewire.wireplumber.extraConfig."52-tv-full-volume" = {
+    "wireplumber.settings" = {
+      "device.routes.default-sink-volume" = 1.0;
+    };
+  };
+
   # --- why the TV goes silent, and what actually fixes it ---
   #
   # Three silent evenings (2026-09-29, 09-30, 10-02) had one cause, found on
