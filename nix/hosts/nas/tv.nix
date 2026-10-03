@@ -47,9 +47,17 @@ let
   # existence of the pipewire HDMI sink follows.
   tv-hdmi-watch = pkgs.writeShellApplication {
     name = "tv-hdmi-watch";
-    runtimeInputs = [ pkgs.gnugrep pkgs.coreutils ];
+    runtimeInputs = [
+      pkgs.alsa-utils
+      pkgs.pipewire
+      pkgs.util-linux
+      pkgs.gnugrep
+      pkgs.coreutils
+    ];
     text = ''
       set -uo pipefail
+
+      uid=$(id -u kiosk)
 
       present() {
         for f in /proc/asound/card*/eld#*; do
@@ -61,25 +69,57 @@ let
         return 1
       }
 
+      # The condition that actually matters: wireplumber has republished the
+      # HDMI sink. Waiting for *this* rather than sleeping a fixed guess means
+      # the bounce lands as early as it can and never lands too early.
+      sink_present() {
+        XDG_RUNTIME_DIR=/run/user/$uid runuser -u kiosk -- pw-dump 2>/dev/null \
+          | grep -q 'alsa_output\..*hdmi'
+      }
+
+      react() {
+        echo "TV HDMI audio link came up; waiting for the sink"
+        for _ in $(seq 1 30); do
+          if sink_present; then
+            # wireplumber has the sink; give it a moment to finish wiring the
+            # default-node links before Kodi enumerates.
+            sleep 2
+            ${tv-session-bounce}/bin/tv-session-bounce
+            return
+          fi
+          sleep 1
+        done
+        echo "sink never appeared after 30s - leaving it for tv-watchdog" >&2
+      }
+
       # `unknown` on the first pass, so starting this service does not itself
       # bounce the TV - only a genuine off -> on transition does.
       prev=unknown
-
-      while :; do
+      check() {
         if present; then cur=on; else cur=off; fi
-
-        if [ "$prev" = off ] && [ "$cur" = on ]; then
-          echo "TV HDMI audio link came up; letting the sink appear, then bouncing"
-          # wireplumber needs a moment to see the HDMI profile become
-          # available again and publish the sink. Bouncing before that just
-          # reproduces the bug this is here to fix.
-          sleep 15
-          ${tv-session-bounce}/bin/tv-session-bounce
-        fi
-
+        [ "$prev" = off ] && [ "$cur" = on ] && react
         prev=$cur
-        sleep 5
-      done
+      }
+
+      check
+
+      # ALSA publishes the HDMI jack as a kcontrol ('HDMI/DP,pcm=3 Jack' and
+      # three siblings), and `alsactl monitor` blocks until one of them
+      # changes - so this reacts the instant the TV offers audio instead of
+      # discovering it up to a poll-interval late. The 60s read timeout is a
+      # heartbeat, not a poll: it only exists so a missed or coalesced event
+      # cannot strand the TV until someone presses play.
+      while :; do
+        rc=0
+        read -r -t 60 _event || rc=$?
+        if [ "$rc" -eq 0 ] || [ "$rc" -gt 128 ]; then
+          # 0 = a jack control changed, >128 = the heartbeat timeout
+          check
+        else
+          echo "alsactl monitor ended (rc=$rc); exiting for a restart" >&2
+          exit 1
+        fi
+      done < <(alsactl monitor hw:0)
     '';
   };
 
