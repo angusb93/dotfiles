@@ -157,12 +157,15 @@ in
 {
   environment.systemPackages = [ pkgs.exfatprogs ];
 
-  # The TV kiosk session runs udisks, which auto-mounted the backup partition
-  # for the kiosk user the first time it was plugged in. Neither partition is
-  # any session's business - hide both from udisks entirely.
+  # The TV kiosk session auto-mounted the backup partition for the kiosk user
+  # the first time it was plugged in, and UDISKS_IGNORE alone did not stop it:
+  # Kodi asks udisks to mount removable filesystems itself rather than waiting
+  # for a desktop to offer them. Marking the partitions as system devices moves
+  # the mount behind polkit's admin check, which the kiosk user cannot pass.
+  # Neither partition is any session's business.
   services.udev.extraRules = ''
-    ENV{ID_PART_ENTRY_NAME}=="morty-cold", ENV{UDISKS_IGNORE}="1"
-    ENV{ID_PART_ENTRY_NAME}=="mac-1pux", ENV{UDISKS_IGNORE}="1"
+    ENV{ID_PART_ENTRY_NAME}=="morty-cold", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_SYSTEM}="1", ENV{UDISKS_AUTO}="0"
+    ENV{ID_PART_ENTRY_NAME}=="mac-1pux", ENV{UDISKS_IGNORE}="1", ENV{UDISKS_SYSTEM}="1", ENV{UDISKS_AUTO}="0"
   '';
 
   systemd.tmpfiles.rules = [ "d /var/cache/cold-copy 0700 root root -" ];
