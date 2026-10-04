@@ -73,6 +73,7 @@ let
       restic
       rclone
       jq
+      gawk
       config.boot.zfs.package
       morty-alert
     ];
