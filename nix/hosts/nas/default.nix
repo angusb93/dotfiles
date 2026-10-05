@@ -120,6 +120,7 @@ in
     ./google-pull.nix
     ./gmail-pull.nix
     ./takeout-extract.nix
+    ./takeout-photos-sync.nix
     ./kiwix.nix
     ./kiwix-fetch.nix
     ./immich.nix

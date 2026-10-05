@@ -26,6 +26,14 @@ in
     # tank, not the root filesystem, at both ends.
     after = [ "zfs.target" ];
 
+    # Extracting is only half the job: until Immich's importPaths are refreshed
+    # and the album structure rebuilt, a new export is on disk but invisible.
+    # Chained rather than left to a human so the two cannot drift apart.
+    # ⚠️ `wants`, not `requires`: a failure there must not retroactively fail a
+    # good extract, and the sync is safely re-runnable on its own.
+    wants = [ "takeout-photos-sync.service" ];
+    before = [ "takeout-photos-sync.service" ];
+
     # Does nothing rather than failing if there is no export waiting, so a
     # mistimed run is a no-op instead of a red unit.
     unitConfig.ConditionPathExists = "/tank/backup/google/takeout/archives";
