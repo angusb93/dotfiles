@@ -1,9 +1,9 @@
 # Immich: the real-time photo path from the phone.
 #
-# Google Photos Takeout can only be scheduled every two months and each run is a
-# full ~180 GB export, so a photo taken today is not on tank for up to two
-# months. That is the weak link in the whole backup plan
-# (wiki/projects/data-migration-weekend.md). Immich closes it: the phone app
+# Google Photos Takeout is scheduled monthly and each run is a full ~180 GB
+# export, so a photo taken today is not on tank for up to a month. That is the
+# weak link in the whole backup plan
+# (wiki/projects/archived/data-migration-weekend.md). Immich closes it: the phone app
 # uploads every new photo in original quality straight to morty over Tailscale
 # as it is taken, and Takeout drops back to an occasional catch-all for
 # Google-side edits and albums.
