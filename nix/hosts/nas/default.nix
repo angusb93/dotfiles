@@ -838,13 +838,8 @@ in
   # --- Shell ---
   programs.zsh.enable = true;
 
-  # ssh forwards the client's TERM, so a Mac running ghostty arrives here as
-  # TERM=xterm-ghostty. Without a matching terminfo entry zle cannot look up the
-  # cursor-left capability and echoes a space for every backspace instead of
-  # erasing, which makes the delete key append characters rather than remove
-  # them. This installs the terminfo database for the common emulators (ghostty,
-  # kitty, alacritty, wezterm, foot, tmux) so any client shell behaves.
-  environment.enableAllTerminfo = true;
+  # Client terminfo is installed per emulator in environment.systemPackages
+  # below - see the comment there for why it is not enableAllTerminfo.
 
   # --- nix-ld: run prebuilt dynamic binaries on NixOS ---
   # The Claude Agent SDK bundles a prebuilt Claude Code binary; NixOS needs
@@ -895,6 +890,30 @@ in
 
   # --- CLI environment (the reusable core, shared in spirit with the Mac) ---
   environment.systemPackages = with pkgs; [
+    # Client terminfo. ssh forwards the client's TERM, so a Mac running ghostty
+    # arrives here as TERM=xterm-ghostty; with no matching terminfo entry zle
+    # cannot look up the cursor-left capability and echoes a space for every
+    # backspace instead of erasing, so the delete key appends characters rather
+    # than removing them.
+    #
+    # Named one by one rather than `environment.enableAllTerminfo = true`,
+    # which is what this was until 2026-10-06. That option harvests terminfo
+    # from *every* terminal emulator in nixpkgs, which means building every one
+    # of them - on a headless NAS, to obtain some text files. It worked until it
+    # stopped the box updating at all: `contour` fails to compile on nixpkgs
+    # aa48d34 (a simd::static_simd_cast error in vtbackend/Image.cpp), that
+    # failed system-path, and system-path failed the whole generation. A
+    # terminal emulator nobody here runs blocked a full system update.
+    #
+    # Each `.terminfo` is the terminfo-only derivation, not the emulator, so
+    # this is both narrower and cheaper. Add one when connecting from something
+    # new; tmux and the xterm family come from ncurses, always present.
+    ghostty.terminfo # the Mac's terminal
+    kitty.terminfo
+    alacritty.terminfo
+    wezterm.terminfo
+    foot.terminfo
+
     # shell & terminal
     bash
     btop
