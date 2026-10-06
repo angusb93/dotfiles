@@ -110,6 +110,26 @@ let
       "-W 0,70,75"
     ]
   );
+
+  smartd-sas = lib.concatStringsSep " " (
+    smartd-common
+    ++ [
+      "-W 0,50,55"
+    ]
+  );
+
+  # The six He10s, named by WWN rather than by /dev/sd?. This list replaces
+  # DEVICESCAN - see the comment on services.smartd below for why autodetection
+  # had to go. The WWN is also what the bay map in the vault joins to a tray
+  # label, so a drive that needs pulling can be found from the alert alone.
+  smartd-pool-drives = [
+    "wwn-0x5000cca2527de52c" # sda
+    "wwn-0x5000cca2527b72fc" # sdb
+    "wwn-0x5000cca2527d6998" # sdc
+    "wwn-0x5000cca2527a2964" # sdd
+    "wwn-0x5000cca2527dea2c" # sde
+    "wwn-0x5000cca2527da5a8" # sdf
+  ];
 in
 {
   imports = [
@@ -201,8 +221,9 @@ in
   };
 
   # smartd reports what the drives say before ZFS notices: SMART health failing,
-  # a growing defect list, failed self-tests, over-temperature. It scans every
-  # disk: the six SAS drives, plus the two NVMe (Intel 660p boot, KIOXIA pool).
+  # a growing defect list, failed self-tests, over-temperature. It watches the
+  # eight fitted disks: the six SAS drives, plus the two NVMe (Intel 660p boot,
+  # KIOXIA pool). Removable drives are deliberately not watched.
   # - `-s`: short self-test daily at 02:00, long self-test on the 15th at 03:00,
   #   clear of the monthly scrub on the 1st. A long test is a full sequential
   #   read, about 12h per drive, and the drives run it in parallel.
@@ -211,20 +232,38 @@ in
   #
   # `-W DIFF,INFO,CRIT` is per drive class, because flash and spinning rust do
   # not share a temperature scale:
-  # - SAS (via DEVICESCAN), 50/55: the He10s are rated to 60C and the fan curve
+  # - SAS, 50/55: the He10s are rated to 60C and the fan curve
   #   is flat out at 45C, so 55C means cooling has failed.
-  # - NVMe (listed explicitly), 70/75: the boot SSD idles at 27C but touches
+  # - NVMe, 70/75: the boot SSD idles at 27C but touches
   #   56C most nights with nothing running, and the pool NVMe sits at ~46C
   #   constantly. Both are unremarkable for flash - the kernel reports
   #   composite critical at 79.85C for the 660p and 84.85C for the KIOXIA - but
   #   50/55 alerted on them nightly, which is how a monitor gets ignored.
   #
-  # The explicit entries come before DEVICESCAN, which then covers the SAS
-  # drives. Worth a look after a drive change: `journalctl -u smartd | grep
-  # 'Adding to'` should list each device exactly once.
+  # Worth a look after a drive change: `journalctl -u smartd | grep 'Adding to'`
+  # should list exactly eight devices and no others.
+  # No DEVICESCAN: every device is listed. Autodetection ran once at daemon
+  # start and took whatever was attached at that moment, which on 2026-09-29
+  # included the cold-copy SSD on USB. smartd added it as `/dev/sdg [SAT]` and
+  # kept probing it for the next week - through every unplug, since the scan
+  # never runs again - so it alerted four ways at once (FailedHealthCheck,
+  # FailedReadSmartData, FailedReadSmartSelfTestLog, FailedReadSmartErrorLog)
+  # twice an hour, plus FailedOpenDevice while the disk was in a bag at work.
+  # None of it was about a disk: a USB-NVMe bridge answers neither ATA nor NVMe
+  # SMART, so the reads could never have succeeded. Note what those messages
+  # say - "not capable of SMART self-check", "failed to read" - that is "I
+  # cannot ask", not "the answer was bad". A dying drive reports reallocated
+  # sectors instead.
+  #
+  # Listing the drives fixes both halves. Removable disks are never monitored,
+  # because a cold drive has no wwn- alias; and the pool drives are named by
+  # WWN instead of by a /dev/sd? that reshuffles between boots. The cost is
+  # that a new drive must be added here by hand, which is the right trade for
+  # six drives in fixed bays - and a silent new drive is a far smaller problem
+  # than a monitor everyone has learned to ignore.
   services.smartd = {
     enable = true;
-    autodetect = true;
+    autodetect = false;
     # The module turns X11 popups on whenever xserver is enabled (GNOME, here),
     # and that injects its own `-m`/`-M exec` ahead of ours on every line.
     notifications.x11.enable = false;
@@ -238,13 +277,11 @@ in
         device = "/dev/nvme1";
         options = smartd-nvme;
       }
-    ];
-    defaults.autodetected = lib.concatStringsSep " " (
-      smartd-common
-      ++ [
-        "-W 0,50,55"
-      ]
-    );
+    ]
+    ++ map (id: {
+      device = "/dev/disk/by-id/${id}";
+      options = smartd-sas;
+    }) smartd-pool-drives;
   };
 
   # --- Drive-chamber fans follow HDD temperature ---
