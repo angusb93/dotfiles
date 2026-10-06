@@ -68,6 +68,11 @@ in
   systemd.tmpfiles.rules = [
     "d ${agentHome} 0750 agent agent -"
     "d ${agentHome}/.claude 0700 agent agent -"
+    # pi's state: model catalogue, sessions, and the project-trust lock it takes
+    # on every run. ProtectSystem=strict can only make an existing directory
+    # writable, so it has to be created here rather than by pi on first use.
+    "d ${agentHome}/.pi 0700 agent agent -"
+    "d ${agentHome}/.pi/agent 0700 agent agent -"
     "d ${agentHome}/.cache 0700 agent agent -"
     "d ${agentHome}/.config 0700 agent agent -"
     "d ${agentHome}/.local 0700 agent agent -"
