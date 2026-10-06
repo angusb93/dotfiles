@@ -44,6 +44,7 @@
   lib,
   pkgs,
   morty-alert,
+  backup-stamp,
   ...
 }:
 let
@@ -128,6 +129,7 @@ let
         gawk
         config.boot.zfs.package
         morty-alert
+        backup-stamp
       ];
       text = ''
         export RESTIC_PASSWORD_FILE=${pass}
@@ -202,6 +204,12 @@ let
         cleanup
         trap - EXIT
         mountpoint -q ${mnt} && fail "Copy finished but ${mnt} would not unmount - do not unplug"
+
+        # Only reached when every step above succeeded and the disk unmounted
+        # cleanly, so this is the one honest record that the copy happened.
+        # staleness.nix reads it because systemd does not keep a usable one for
+        # a unit with no timer - see the cold-copy note in its watched table.
+        backup-stamp ${name}
 
         printf '%s\n\nUnmounted - safe to unplug and ${where}.\n' "$summary" \
           | morty-alert "Cold copy (${label}) done"

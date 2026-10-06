@@ -34,6 +34,15 @@ let
     # Run by hand when the off-site SSD comes home (cold-copy.nix). Refreshed
     # every month or two, so overdue after two months - the alert is the
     # reminder to bring it home.
+    #
+    # The only watched unit that writes its own stamp, via backup-stamp below,
+    # because it is the only one with no timer. A timer holds a reference to its
+    # service, which keeps the unit loaded; an inactive unit that nothing refers
+    # to is garbage-collected, and systemd's record of its last run goes with
+    # it. So `systemctl show cold-copy` reported an empty InactiveEnterTimestamp
+    # the morning after a clean 63-minute run, this check could never write a
+    # stamp, and it alerted "no success ever recorded" every day from
+    # 2026-10-02 to 2026-10-06 regardless of what the drive had actually done.
     cold-copy = 24 * 62;
   };
 
@@ -50,6 +59,18 @@ let
   table = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (unit: hours: "${unit} ${toString hours}") watched
   );
+
+  # For jobs systemd cannot vouch for - see cold-copy in the table above. Kept
+  # here rather than in cold-copy.nix so stampDir has exactly one definition.
+  stamp = pkgs.writeShellApplication {
+    name = "backup-stamp";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      [ $# -eq 1 ] || { echo "usage: backup-stamp <unit>" >&2; exit 2; }
+      mkdir -p ${stampDir}
+      date +%s > ${stampDir}/"$1"
+    '';
+  };
 
   check = pkgs.writeShellApplication {
     name = "backup-staleness";
@@ -103,6 +124,10 @@ let
   };
 in
 {
+  # cold-copy.nix stamps itself with this; stampDir lives here, so the helper
+  # does too. Same one-definition reasoning as morty-alert in default.nix.
+  _module.args.backup-stamp = stamp;
+
   # Created here rather than by the stamp script: a hardened unit can write
   # inside a ReadWritePaths directory but cannot create it.
   systemd.tmpfiles.rules = [
