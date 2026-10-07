@@ -32,6 +32,14 @@ let
       set -uo pipefail
       uid=$(id -u kiosk)
 
+      # One stamp, written here rather than by each caller, because a bounce
+      # is itself visible to the watchers: stopping the session drops the
+      # HDMI output, so tv-hdmi-watch sees an off -> on transition and bounces
+      # again. That double-bounce happened for real on 2026-10-07. Everything
+      # that can trigger a bounce consults this file first.
+      mkdir -p /var/lib/tv-session
+      date +%s > /var/lib/tv-session/last-bounce
+
       echo "bouncing the kiosk session (Kodi + pipewire)"
       systemctl stop display-manager.service
       systemctl stop "user@$uid.service" || true
@@ -78,6 +86,15 @@ let
       }
 
       react() {
+        # A bounce drops the HDMI output on its way down, so the link coming
+        # back is often *our own* doing. Reacting to that is how 2026-10-07
+        # produced two bounces three seconds apart.
+        stamp=/var/lib/tv-session/last-bounce
+        if [ -f "$stamp" ] && [ "$(( $(date +%s) - $(cat "$stamp") ))" -lt 120 ]; then
+          echo "HDMI link returned within 120s of a bounce - that was us, ignoring"
+          return
+        fi
+
         echo "TV HDMI audio link came up; waiting for the sink"
         for _ in $(seq 1 30); do
           if sink_present; then
@@ -135,7 +152,7 @@ let
       log=/var/lib/kiosk/.kodi/temp/kodi.log
       state=''${STATE_DIRECTORY:-/var/lib/tv-watchdog}
       offset_file=$state/offset
-      stamp=$state/last-bounce
+      stamp=/var/lib/tv-session/last-bounce
       stranded=$state/stranded-passes
 
       bounce_if_allowed() {
@@ -148,7 +165,6 @@ let
           echo "detected: $reason - bounced less than 15 min ago, leaving it alone" >&2
           exit 0
         fi
-        echo "$now" > "$stamp"
         echo "detected: $reason - bouncing"
         ${tv-session-bounce}/bin/tv-session-bounce
         exit 0
@@ -188,7 +204,29 @@ let
           ;;
       esac
 
-      # 2. Kodi's own report, read forward from wherever the last pass got to.
+      # 2. pipewire restarted underneath Kodi. A `nixos-rebuild` that changes
+      #    pipewire restarts the kiosk *user units* - Kodi is a GDM session,
+      #    not a unit, so nothing restarts it, and it holds a dead client
+      #    connection forever: `OpenSink - no sink was returned`, every 5s,
+      #    with a perfectly healthy sink sitting there. This happened on
+      #    2026-10-07 after a 1.6.8 -> 1.6.9 bump, and there had been 59
+      #    rebuilds in four days, so it will happen again.
+      #
+      #    Comparing start times catches every cause of it - rebuild, crash,
+      #    manual restart - without depending on a log string.
+      kodi_pid=$(pgrep -u kiosk -f 'kodi-x11|kodi.bin' | head -1 || true)
+      pw_pid=$(pgrep -u kiosk -x pipewire | head -1 || true)
+      if [ -n "$kodi_pid" ] && [ -n "$pw_pid" ]; then
+        kodi_age=$(ps -o etimes= -p "$kodi_pid" | tr -d ' ')
+        pw_age=$(ps -o etimes= -p "$pw_pid" | tr -d ' ')
+        # Older process = larger etimes. pipewire younger than Kodi by more
+        # than a session's startup skew means it came back without Kodi.
+        if [ "$kodi_age" -gt "$((pw_age + 60))" ]; then
+          bounce_if_allowed "pipewire restarted $((kodi_age - pw_age))s into Kodi's run - its client is dead"
+        fi
+      fi
+
+      # 3. Kodi's own report, read forward from wherever the last pass got to.
       [ -f "$log" ] || exit 0
       size=$(stat -c %s "$log")
       offset=0
@@ -205,6 +243,8 @@ let
           bounce_if_allowed "Kodi could not create an audio stream" ;;
         *"AddPacketsRenderer - timeout"*)
           bounce_if_allowed "the audio sink took a stream and stalled" ;;
+        *"OpenSink - no sink was returned"*)
+          bounce_if_allowed "Kodi cannot open any sink - stale pipewire client" ;;
       esac
     '';
   };
