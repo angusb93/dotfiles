@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791292692,
-        "narHash": "sha256-jF/vjqmlUUH3Fkvw5AFyFx8P94hG4xzjAMWWihm+t9g=",
+        "lastModified": 1791368454,
+        "narHash": "sha256-wjwRLMpa7iz35cTKRJx716wefpGJmJgcOg8a4TdbanA=",
         "ref": "refs/heads/main",
-        "rev": "38c733ac2903f0f02ac07c512928df96e91b1b06",
-        "revCount": 18,
+        "rev": "1ccdb5395e2dc813226c350d7f6e9fd9d8b7e2a1",
+        "revCount": 19,
         "type": "git",
         "url": "ssh://git@github.com/angusb93/automations"
       },
