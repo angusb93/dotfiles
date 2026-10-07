@@ -76,6 +76,11 @@ in
     "d ${agentHome}/.cache 0700 agent agent -"
     "d ${agentHome}/.config 0700 agent agent -"
     "d ${agentHome}/.local 0700 agent agent -"
+    # npx's cache, for MCP servers launched with `npx -y` (Google Calendar).
+    # Same constraint as .pi: ReadWritePaths can only widen an existing
+    # directory, so npm cannot create this itself inside the sandbox.
+    "d ${agentHome}/.npm 0700 agent agent -"
+    "d ${agentHome}/.config/google-calendar-mcp 0700 agent agent -"
     "d ${agentHome}/telegram-agent 0700 agent agent -"
   ];
 }
