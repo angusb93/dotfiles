@@ -11,7 +11,7 @@
 # It needs no offsite copy of its own. The phone uploads the same photo to
 # Google Photos as well, so Google is the second home - rule 0 is satisfied
 # without morty sending anything back out.
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   media = "/tank/media/photos";
   # Immich keeps thumbnails under mediaLocation, which would put a few tens of
@@ -78,4 +78,56 @@ in
   # and invisible - the failure that looks like "Immich regenerates every
   # thumbnail on restart".
   systemd.services.immich-server.unitConfig.RequiresMountsFor = [ media "${media}/thumbs" ];
+
+  # A 30-minute keepalive for Immich's ML job queues (ocr, smartSearch).
+  #
+  # ⚠️ The original comment here said the queues "pause silently" - that was a
+  # misdiagnosis (2026-09-30), corrected 2026-10-14. The 18.8k "pending" assets
+  # counted that day were overwhelmingly `visibility = hidden` **videos** -
+  # 18.7k of them live-photo MOV components paired to a visible still - which
+  # `streamForOcrJob` excludes by design. Zero hidden images. The image library
+  # was OCR-complete all along; new uploads OCR inline. The queues never paused.
+  #
+  # What the timer is actually for: `start` re-queues every asset whose OCR/CLIP
+  # job previously *failed* (the 172 stragglers - missing preview files, etc.),
+  # so a failed index entry self-heals within 30 minutes instead of sitting
+  # until someone notices. It also re-kicks the queues after ML restarts. It
+  # treats a busy queue (400 "already running") as healthy and stays quiet.
+  # ⚠️ A deliberate queue pause in the UI loses to this timer within 30 minutes;
+  # a wanted pause should stop the timer instead.
+  systemd.services.immich-queue-keepalive = {
+    description = "Re-kick Immich's ML job queues (ocr, smartSearch)";
+    after = [ "immich-server.service" ];
+    wants = [ "immich-server.service" ];
+    path = [ pkgs.curl ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "immich-queue-keepalive" ''
+        key=$(cat /var/lib/morty-backup/immich-pipeline.key) || {
+          echo "immich-queue-keepalive: no API key file" >&2; exit 0;
+        }
+        for queue in ocr smartSearch; do
+          out=$(curl -sS -w '\n%{http_code}' -X PUT "http://127.0.0.1:2283/api/jobs/$queue" \
+            -H "x-api-key: $key" -H "Content-Type: application/json" \
+            -d '{"command":"start"}' 2>&1) || {
+            echo "immich-queue-keepalive: $queue: request failed (server up?)" >&2; continue;
+          }
+          code=$(echo "$out" | tail -n1)
+          if [ "$code" != "200" ] && ! echo "$out" | grep -q "already running"; then
+            echo "immich-queue-keepalive: $queue: HTTP $code" >&2
+          fi
+        done
+      '';
+    };
+  };
+
+  systemd.timers.immich-queue-keepalive = {
+    description = "Keep Immich's ML job queues running";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5min";
+      OnUnitActiveSec = "30min";
+      Persistent = true;
+    };
+  };
 }
