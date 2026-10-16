@@ -260,6 +260,14 @@ in
               siteMonitor = "${host}:8090";
             };
           }
+          {
+            "Calibre-Web" = {
+              icon = "calibre-web.png";
+              href = "${link}:8083";
+              description = "Ebook library and OPDS catalog for the Kindle";
+              siteMonitor = "${host}:8083";
+            };
+          }
         ];
       }
     ];
