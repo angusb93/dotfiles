@@ -28,15 +28,26 @@
   ...
 }:
 let
-  state = "/fast/data/calibre-web";
-  library = "${state}/library";
+  # Layout:
+  #   root/      0755 - traversable, so the inbox below is reachable
+  #     app/     0700 - dataDir: app.db (users, passwords), gdrive.db, .key
+  #     library/ 2750 - the Calibre library
+  #     inbox/   2770 - the drop folder
+  #
+  # ⚠️ dataDir is a *subdirectory* of root, not root itself. The module chmods
+  # dataDir to 0700 through its own tmpfiles.settings, so when dataDir was the
+  # parent nothing could traverse into a sibling inbox no matter how it was
+  # permissioned - the inbox looked group-writable and was simply unreachable.
+  root = "/fast/data/calibre-web";
+  state = "${root}/app";
+  library = "${root}/library";
 
   # Where things get dropped to be filed into the library. Calibre-Web has no
   # watched-folder feature of its own - that is a Calibre thing, not a
   # Calibre-Web thing - so the watcher below supplies it. This is the drop
   # point the claw agent's epub pipeline is specced against
   # (wiki/projects/claw-agent.md).
-  inbox = "${state}/inbox";
+  inbox = "${root}/inbox";
 
   # The LAN NIC. 192.168.1.96/24 on wutangLAN; the Kindle is on the same /24.
   lanInterface = "enp5s0";
@@ -86,13 +97,115 @@ in
   # directory writable, so they have to be created here rather than on first
   # use. ${state} is deliberately absent: declaring it twice in tmpfiles is a
   # duplicate-path conflict, and the module's own entry already covers it.
+  #
+  # The inbox is 2770: group-writable so Angus can drop a book in without sudo,
+  # and setgid so what he drops is group-owned calibre-web and the watcher can
+  # read and delete it. Without the setgid bit a file arrives owned angus:users
+  # and the add fails on a directory the service cannot clean up.
   systemd.tmpfiles.rules = [
-    "d ${library} 0750 calibre-web calibre-web -"
-    "d ${inbox} 0770 calibre-web calibre-web -"
+    # 0755 so a non-owner can traverse into library/ and inbox/ below. It holds
+    # no secrets itself - app/ keeps its own 0700 from the module.
+    "d ${root} 0755 calibre-web calibre-web -"
+    # 2750: readable by the calibre-web group, setgid so anything calibredb
+    # writes stays group-owned.
+    "d ${library} 2750 calibre-web calibre-web -"
+    "d ${inbox} 2770 calibre-web calibre-web -"
   ];
 
-  # calibredb, for the watcher below and for filing books in by hand.
-  environment.systemPackages = [ config.services.calibre-web.calibrePackage ];
+  # The other half of that: group membership. /fast/data is otherwise
+  # root-owned, so dropping a book in would need sudo on every single book.
+  users.users.angus.extraGroups = [ "calibre-web" ];
+
+  environment.systemPackages = [
+    # calibredb, for the watcher and for filing books in by hand.
+    config.services.calibre-web.calibrePackage
+
+    # Pull a book out of the 71.6 GiB Gutenberg ZIM on tank and drop it in the
+    # inbox. The ZIM holds a real .epub per book, but kiwix-serve's OPDS
+    # catalogue advertises the three ZIM *files* rather than their contents, so
+    # KOReader cannot browse it directly - this is the bridge between the two.
+    (pkgs.writeShellApplication {
+      name = "gutenberg-add";
+      runtimeInputs = [
+        pkgs.curl
+        pkgs.gnused
+        pkgs.gnugrep
+        pkgs.coreutils
+      ];
+      text = ''
+        if [ $# -eq 0 ]; then
+          echo "usage: gutenberg-add <search terms>" >&2
+          exit 2
+        fi
+
+        kiwix="http://127.0.0.1:8090"
+        inbox="${inbox}"
+
+        # Checked up front and named plainly. Without this, an unwritable inbox
+        # surfaces as curl failing to create its output file, which the fetch
+        # below would otherwise report as "no epub in the ZIM" - the wrong
+        # cause entirely. Group membership only takes effect on a new login,
+        # so this is the expected state in the shell you were already in when
+        # calibre-web was first deployed.
+        if [ ! -w "$inbox" ]; then
+          echo "Cannot write to $inbox." >&2
+          echo "You are in: $(id -nG)" >&2
+          echo "If 'calibre-web' is missing, log out and back in; if it is there," >&2
+          echo "this shell predates the group change - run: exec sg calibre-web newgrp" >&2
+          exit 1
+        fi
+
+        # The ZIM is served, not unpacked: kiwix-serve is already holding it
+        # open, so going through HTTP costs nothing and avoids a 71.6 GiB
+        # zimdump pass just to read one file.
+        query=$(printf '%s' "$*" | sed 's/ /+/g')
+        mapfile -t hits < <(
+          curl -sf --max-time 30 \
+            "$kiwix/search?books.name=gutenberg&pattern=$query&pageLength=10" \
+          | grep -oE 'href="/content/gutenberg/[^"]+\.html"' \
+          | sed 's|href="/content/gutenberg/||; s|\.html"$||'
+        )
+
+        if [ ''${#hits[@]} -eq 0 ]; then
+          echo "No matches for: $*" >&2
+          exit 1
+        fi
+
+        echo "Matches:"
+        for i in "''${!hits[@]}"; do
+          # The entry name is URL-encoded and ends in .<gutenberg id>; show it
+          # back as something readable.
+          pretty=$(printf '%s' "''${hits[$i]}" \
+            | sed 's/%20/ /g; s/%2C/,/g; s/%3B/;/g; s/%27/'"'"'/g; s/%21/!/g; s/%3F/?/g')
+          printf '  %2d) %s\n' "$((i + 1))" "$pretty"
+        done
+
+        printf 'Which one? [1-%d, or q] ' "''${#hits[@]}"
+        read -r choice
+        case "$choice" in
+          q | Q | "") echo "Nothing added."; exit 0 ;;
+        esac
+        if ! [ "$choice" -ge 1 ] 2>/dev/null || [ "$choice" -gt "''${#hits[@]}" ]; then
+          echo "Not a valid choice: $choice" >&2
+          exit 1
+        fi
+
+        entry="''${hits[$((choice - 1))]}"
+        out="$inbox/''${entry//%20/_}.epub"
+
+        if ! curl -sf --max-time 180 -o "$out" "$kiwix/content/gutenberg/$entry.epub"; then
+          echo "That book has no .epub in the ZIM (some only ship HTML)." >&2
+          rm -f "$out"
+          exit 1
+        fi
+
+        # ⚠️ Apparent size, not du: on ZFS the blocks are not allocated yet when
+        # this runs, so `du` reports a freshly written 700 KB epub as "1.0K".
+        echo "Dropped $(numfmt --to=iec < <(stat -c %s "$out")) in the inbox."
+        echo "Calibre-Web will file it within ~10s - check http://morty:8083"
+      '';
+    })
+  ];
 
   # --- The watched folder Calibre-Web does not have ---
   #
