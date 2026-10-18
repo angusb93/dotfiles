@@ -485,6 +485,18 @@ in
         mode = "queue";
         onCalendar = "*-*-* 19:00:00 Europe/London";
       };
+
+      # Second-hand finds, judged against /fast/vault/wiki/self/scout-brief.md.
+      # Twice a day because good Vinted listings go within hours. It is a
+      # push, but a guarded one like `activity`: the silence guard drops every
+      # run without a genuine find, so most days it sends nothing. Its own
+      # "Scout" topic keeps it out of the Daily thread.
+      scout = {
+        description = "morty second-hand scout";
+        persona = "scout";
+        mode = "hunt";
+        onCalendar = "*-*-* 08,18:30:00 Europe/London";
+      };
     };
   };
 
