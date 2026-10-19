@@ -124,87 +124,10 @@ in
     # inbox. The ZIM holds a real .epub per book, but kiwix-serve's OPDS
     # catalogue advertises the three ZIM *files* rather than their contents, so
     # KOReader cannot browse it directly - this is the bridge between the two.
-    (pkgs.writeShellApplication {
-      name = "gutenberg-add";
-      runtimeInputs = [
-        pkgs.curl
-        pkgs.gnused
-        pkgs.gnugrep
-        pkgs.coreutils
-      ];
-      text = ''
-        if [ $# -eq 0 ]; then
-          echo "usage: gutenberg-add <search terms>" >&2
-          exit 2
-        fi
-
-        kiwix="http://127.0.0.1:8090"
-        inbox="${inbox}"
-
-        # Checked up front and named plainly. Without this, an unwritable inbox
-        # surfaces as curl failing to create its output file, which the fetch
-        # below would otherwise report as "no epub in the ZIM" - the wrong
-        # cause entirely. Group membership only takes effect on a new login,
-        # so this is the expected state in the shell you were already in when
-        # calibre-web was first deployed.
-        if [ ! -w "$inbox" ]; then
-          echo "Cannot write to $inbox." >&2
-          echo "You are in: $(id -nG)" >&2
-          echo "If 'calibre-web' is missing, log out and back in; if it is there," >&2
-          echo "this shell predates the group change - run: exec sg calibre-web newgrp" >&2
-          exit 1
-        fi
-
-        # The ZIM is served, not unpacked: kiwix-serve is already holding it
-        # open, so going through HTTP costs nothing and avoids a 71.6 GiB
-        # zimdump pass just to read one file.
-        query=$(printf '%s' "$*" | sed 's/ /+/g')
-        mapfile -t hits < <(
-          curl -sf --max-time 30 \
-            "$kiwix/search?books.name=gutenberg&pattern=$query&pageLength=10" \
-          | grep -oE 'href="/content/gutenberg/[^"]+\.html"' \
-          | sed 's|href="/content/gutenberg/||; s|\.html"$||'
-        )
-
-        if [ ''${#hits[@]} -eq 0 ]; then
-          echo "No matches for: $*" >&2
-          exit 1
-        fi
-
-        echo "Matches:"
-        for i in "''${!hits[@]}"; do
-          # The entry name is URL-encoded and ends in .<gutenberg id>; show it
-          # back as something readable.
-          pretty=$(printf '%s' "''${hits[$i]}" \
-            | sed 's/%20/ /g; s/%2C/,/g; s/%3B/;/g; s/%27/'"'"'/g; s/%21/!/g; s/%3F/?/g')
-          printf '  %2d) %s\n' "$((i + 1))" "$pretty"
-        done
-
-        printf 'Which one? [1-%d, or q] ' "''${#hits[@]}"
-        read -r choice
-        case "$choice" in
-          q | Q | "") echo "Nothing added."; exit 0 ;;
-        esac
-        if ! [ "$choice" -ge 1 ] 2>/dev/null || [ "$choice" -gt "''${#hits[@]}" ]; then
-          echo "Not a valid choice: $choice" >&2
-          exit 1
-        fi
-
-        entry="''${hits[$((choice - 1))]}"
-        out="$inbox/''${entry//%20/_}.epub"
-
-        if ! curl -sf --max-time 180 -o "$out" "$kiwix/content/gutenberg/$entry.epub"; then
-          echo "That book has no .epub in the ZIM (some only ship HTML)." >&2
-          rm -f "$out"
-          exit 1
-        fi
-
-        # ⚠️ Apparent size, not du: on ZFS the blocks are not allocated yet when
-        # this runs, so `du` reports a freshly written 700 KB epub as "1.0K".
-        echo "Dropped $(numfmt --to=iec < <(stat -c %s "$out")) in the inbox."
-        echo "Calibre-Web will file it within ~10s - check http://morty:8083"
-      '';
-    })
+    (pkgs.writers.writePython3Bin "gutenberg-add" { flakeIgnore = [ "E501" ]; } (
+      builtins.replaceStrings [ "@INBOX@" ] [ inbox ]
+        (builtins.readFile ./gutenberg-add.py)
+    ))
   ];
 
   # --- The watched folder Calibre-Web does not have ---
