@@ -6,5 +6,5 @@
 set -euo pipefail
 PATH="$PATH:/run/current-system/sw/bin:/opt/homebrew/bin"
 export OP_SERVICE_ACCOUNT_TOKEN="$(<"$HOME/.config/op/service-account-token")"
-token="$(op read --no-newline "op://6ozvud25wxpywiml26e3a53hxu/exco-posthog-key/credential")"
+token="$(op read --no-newline "op://6ozvud25wxpywiml26e3a53hxu/posthog-api-key/credential")"
 printf '{"Authorization":"Bearer %s","x-posthog-read-only":"true"}\n' "$token"
