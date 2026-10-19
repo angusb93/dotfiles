@@ -152,6 +152,7 @@ in
     ./uptime-kuma.nix
     ./paperless.nix
     ./calibre-web.nix
+    ./bindery.nix
     ./paperless-ingest.nix
     ./staleness.nix
   ];
