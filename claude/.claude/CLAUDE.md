@@ -19,6 +19,27 @@ These are common instructions for Angus's agents across all scenarios.
 - Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
   If you see one, even if it is not caused by what you are working on right now, still get it fixed.
 
+## Communication
+
+How you report the work matters as much as the work.
+These rules apply to every response, including the reports subagents hand back.
+
+- Lead with the answer.
+  Put the conclusion, recommendation, or result in the first sentence, then give the reasoning behind it.
+  Never make Angus read a build-up to find out what you decided.
+- Use the shortest form that carries the information.
+  A `file.ts:42` reference, a short list, or a small table beats a paragraph describing the same thing.
+  Three tight sentences beat a well-organised page.
+- Report outcomes, not process.
+  Do not narrate which tools you are about to use, and do not recount the steps you took.
+  The exception is when something went wrong and the path you took is what explains it.
+- Cut the padding.
+  Skip preambles, restatements of the question, and closing summaries of what you just said.
+- Explain a term the first time you use it if it is specific to this codebase, this tool, or this domain.
+  Prefer plain language wherever it is just as precise as the jargon.
+- When an answer has to be long, structure it to be skimmed.
+  Lead each bullet or section with its point, not with the context for the point.
+
 ## Angus's Opinions
 
 When you are working on something that would benefit from being informed by Angus's viewpoints, read ~/OPINIONS.md to understand them.
