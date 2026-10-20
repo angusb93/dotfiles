@@ -31,10 +31,17 @@ let
   # apiece, against keeping both tools' invariants intact.
   books = "${state}/books";
 
-  # Where SABnzbd puts finished book downloads. Under the existing downloads
-  # tree so a hardlink import stays on one dataset, same constraint as the
-  # other arrs (see media.nix).
-  downloads = "/tank/media/library/downloads/complete/books";
+  # SABnzbd's completed-downloads tree, mounted at the SAME path inside the
+  # container. SABnzbd reports absolute host paths when Bindery asks where a
+  # finished job landed, so any other mount point means Bindery is handed a
+  # path it cannot see and every import is unverified. Identical paths on both
+  # sides is the standard arr-stack convention for exactly this reason, and it
+  # removes the need for a remap string that has to be kept in sync by hand.
+  #
+  # Under the existing downloads tree so a hardlink import stays on one
+  # dataset, same constraint as the other arrs (see media.nix).
+  sabComplete = "/tank/media/library/downloads/complete";
+  downloads = "${sabComplete}/books";
 
   port = 8787;
 
@@ -64,12 +71,23 @@ in
       environment = {
         BINDERY_LOG_LEVEL = "info";
         TZ = "Europe/London";
+
+        # ⚠ These default to /downloads and /books. The download dir has to
+        # be the real host path, not a container-local one: SABnzbd reports
+        # absolute host paths when asked where a finished job landed, so a
+        # mismatch leaves every import "unverified" with nothing obviously
+        # broken. The mount uses the same path on both sides for this reason.
+        BINDERY_DOWNLOAD_DIR = downloads;
+        BINDERY_LIBRARY_DIR = "/books";
+
+        # Nothing on this box phones home.
+        BINDERY_TELEMETRY_DISABLED = "true";
       };
 
       volumes = [
         "${state}/config:/config"
         "${books}:/books"
-        "${downloads}:/downloads"
+        "${sabComplete}:${sabComplete}"
         "${calibreInbox}:/calibre-inbox"
       ];
 
@@ -97,6 +115,16 @@ in
     "d ${downloads} 2775 root media -"
   ];
 
+  # ⚠ The SABnzbd download client's health will read **"unknown - Bindery
+  # cannot check where sabnzbd puts completed downloads, so imports are
+  # unverified"**, and that is correct, not a misconfiguration. Only
+  # qbittorrent, nzbget and rtorrent expose a completed-downloads path for
+  # introspection (internal/downloader/pathcheck.go, the `case` at line 65);
+  # every other client type returns PathUnknown so the Test degrades to
+  # connection-only. "Connection verified" in the test response is the part
+  # that matters. Do not go looking for a path bug here - the paths are
+  # mounted identically on both sides precisely so there is nothing to find.
+  #
   # Prowlarr and SABnzbd live in the VPN namespace and are reached across the
   # veth, not on localhost:
   #   Prowlarr  http://10.200.0.2:9696

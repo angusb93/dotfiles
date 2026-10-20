@@ -174,6 +174,16 @@ in
             };
           }
           {
+            Bindery = {
+              # No bindery icon in dashboard-icons, and readarr.png would
+              # misname it - this is its replacement, not Readarr.
+              icon = "mdi-book-arrow-down";
+              href = "${link}:8787";
+              description = "Books - author monitoring and acquisition";
+              siteMonitor = "${host}:8787";
+            };
+          }
+          {
             Bazarr = {
               icon = "bazarr.png";
               href = "${link}:6767";
