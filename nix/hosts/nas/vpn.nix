@@ -9,7 +9,7 @@
 # "leaking to the LAN", it simply has nowhere to send a packet.
 # Nothing has to notice the tunnel dropped for the protection to hold.
 #
-# What is in it: Sonarr, Radarr, Prowlarr, SABnzbd.
+# What is in it: Sonarr, Radarr, Prowlarr, SABnzbd, qBittorrent.
 # Prowlarr is not enough on its own - it syncs indexer definitions *into*
 # Sonarr and Radarr over their APIs, and from then on those two query the
 # indexers themselves.
@@ -24,8 +24,15 @@
 # 📎 On Usenet specifically: the download itself is TLS to a paid provider and
 # no peers ever see the IP, so this hides *that Usenet is in use* from the ISP
 # rather than closing an exposure to strangers.
-# That calculus changes completely the day a torrent client is added, which is
-# the case this is really built for.
+# That calculus changed on 2026-10-20, when qBittorrent was added for books
+# (qbittorrent.nix) - a torrent swarm shows the IP to every peer in it, which
+# is the case this namespace was really built for.
+#
+# ⚠️ One thing the namespace cannot give qBittorrent: an inbound port.
+# NordVPN does not offer port forwarding, so the client is permanently "not
+# connectable" and only ever uploads to peers that connect out to us.
+# A provider that forwards a port is a separate decision; the note is here so
+# it is not mistaken for a bug in this file.
 { config, lib, pkgs, morty-alert, ... }:
 let
   ns = "vpn";
@@ -61,9 +68,12 @@ let
 
   # Web UIs that must stay reachable from the tailnet even though the service
   # itself lives in the namespace.
-  forwardedPorts = [ 8989 7878 9696 8080 ];
+  #
+  # 8089 is qBittorrent, deliberately not its default 8080 - SABnzbd already
+  # holds that inside this namespace.
+  forwardedPorts = [ 8989 7878 9696 8080 8089 ];
 
-  nsServices = [ "sonarr" "radarr" "prowlarr" "sabnzbd" ];
+  nsServices = [ "sonarr" "radarr" "prowlarr" "sabnzbd" "qbittorrent" ];
 
   iptables = "${pkgs.iptables}/bin/iptables";
   ip6tables = "${pkgs.iptables}/bin/ip6tables";

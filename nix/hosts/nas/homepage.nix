@@ -203,6 +203,14 @@ in
               siteMonitor = "${ns}:8080";
             };
           }
+          {
+            qBittorrent = {
+              icon = "qbittorrent.png";
+              href = "${link}:8089";
+              description = "Torrent downloader - books";
+              siteMonitor = "${ns}:8089";
+            };
+          }
         ];
       }
       {
