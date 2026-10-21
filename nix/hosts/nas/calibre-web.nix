@@ -159,12 +159,22 @@ in
       ];
       # calibredb wants somewhere to put its own config; without this it tries
       # the service user's home, which ProtectHome has made unavailable.
+      # ebook-convert also writes a fair amount of scratch while converting, so
+      # PrivateTmp gives it a /tmp of its own rather than the host's.
       Environment = [ "HOME=%T" ];
+      PrivateTmp = true;
     };
 
+    # ⚠️ NixOS prepends `set -e` to a `script` block of its own accord, so the
+    # flow below is written to survive it: every command whose failure is
+    # expected is wrapped in an `if`, never left bare.
     script = ''
-      set -euo pipefail
+      set -uo pipefail
       shopt -s nullglob
+
+      calibredb=${config.services.calibre-web.calibrePackage}/bin/calibredb
+      convert=${config.services.calibre-web.calibrePackage}/bin/ebook-convert
+      grep=${pkgs.gnugrep}/bin/grep
 
       # ⚠️ Wait for writes to finish. A path unit fires on the first byte, so
       # adding immediately can file a half-copied epub - which calibredb
@@ -173,17 +183,78 @@ in
 
       for f in ${inbox}/*; do
         [ -f "$f" ] || continue
-        if ${config.services.calibre-web.calibrePackage}/bin/calibredb add \
-             --library-path=${library} "$f"; then
+
+        # ⚠️ Never reprocess our own rejects. The path unit fires on
+        # DirectoryNotEmpty, so a .failed file left in place is a file the unit
+        # picks up, fails on, and renames again - .failed.failed, forever. This
+        # is the guard that makes the reject path terminal.
+        case "$f" in *.failed) continue ;; esac
+
+        rc=0
+        out=$($calibredb add --library-path=${library} "$f" 2>&1) || rc=$?
+        echo "$out"
+
+        # ⚠️ calibredb exits NON-ZERO for a duplicate, which is not a failure -
+        # it means the book is already in the library. Treated as done, and the
+        # inbox copy dropped, or every re-drop of a book we already hold would
+        # be quarantined as a reject.
+        if printf '%s' "$out" | $grep -q 'already exist in the database'; then
+          echo "already in the library: $(basename "$f")"
           rm -f "$f"
-        else
-          # Leave a failure where it can be seen rather than deleting the only
-          # copy. Renamed so the unit does not retry it forever - the path unit
-          # fires on DirectoryNotEmpty, and a file it can never consume would
-          # otherwise loop.
-          mv "$f" "$f.failed"
-          echo "calibredb add failed for $f - renamed to $f.failed" >&2
+          continue
         fi
+
+        if [ "$rc" -ne 0 ]; then
+          # Leave a failure where it can be seen rather than deleting the only
+          # copy, and in a name the loop above will not pick up again.
+          mv -- "$f" "$f.failed" || echo "could not quarantine $f" >&2
+          echo "calibredb add failed for $f - renamed to $f.failed" >&2
+          continue
+        fi
+
+        id=$(printf '%s' "$out" | $grep -oP 'Added book ids:\s*\K[0-9]+' | head -1 || true)
+
+        # --- make sure every book has an epub ---
+        #
+        # KOReader is the only reader on the Kindle and its AZW3/MOBI/LIT
+        # handling is unreliable. Two books arrived unreadable before this
+        # existed: Atlas Shrugged as a 2009 .lit, and a MacKay .azw3 whose
+        # internal container name was Amazon's own `CR!...`, which rendered as
+        # random characters on the device. Both were fine once converted, so
+        # the conversion happens here rather than by hand each time.
+        #
+        # The original is kept too: add_format attaches the epub to the SAME
+        # book, so OPDS offers both and nothing is thrown away.
+        lower=''${f,,}
+        case "$lower" in
+          *.epub)
+            : ;;
+          *.pdf|*.cbz|*.cbr)
+            # ⚠️ Deliberately not converted. PDF and comic archives are fixed
+            # layout, and ebook-convert reflows them into something worse than
+            # the original.
+            echo "left $(basename "$f") as-is: fixed-layout format" ;;
+          *)
+            if [ -z "$id" ]; then
+              echo "no book id in calibredb output; skipped converting $(basename "$f")" >&2
+            else
+              tmpdir=$(mktemp -d)
+              if $convert "$f" "$tmpdir/converted.epub" >/dev/null 2>&1; then
+                if $calibredb add_format --library-path=${library} "$id" "$tmpdir/converted.epub"; then
+                  echo "converted $(basename "$f") to epub on book $id"
+                else
+                  echo "converted $(basename "$f") but add_format failed on book $id" >&2
+                fi
+              else
+                # Not fatal: the original is in the library and readable on
+                # something. Say so and carry on.
+                echo "ebook-convert failed for $(basename "$f") - original kept, no epub" >&2
+              fi
+              rm -rf "$tmpdir"
+            fi ;;
+        esac
+
+        rm -f "$f"
       done
     '';
   };
