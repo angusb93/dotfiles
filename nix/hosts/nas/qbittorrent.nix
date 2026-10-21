@@ -43,11 +43,40 @@ let
   # diagnostics means something.
   torrentingPort = 51413;
 
+  # ⚠️ The client version is tracker-constrained, not a free choice.
+  # MyAnonaMouse only permits clients on its approved list, and at the time of
+  # writing its site banner reads "qBittorrent 5.3.0 just released, don't
+  # update yet". The package comes from nixpkgs, so a routine `nix flake
+  # update` would carry a new version in silently and leave an unapproved
+  # client talking to the tracker without anyone touching this file.
+  #
+  # The assertion below turns that into a build failure instead. It does not
+  # pin the source - it makes an unexpected bump loud, so a person decides.
+  # To clear it: check MAM's approved-client list, then raise this string.
+  approvedVersion = "5.2.4";
+
+  # The MAM session cookie. Kept out of the flake for the same reason
+  # qBittorrent has no password in it: this repository is public.
+  mamSession = "/var/lib/morty-backup/mam-session.id";
+
   categoriesJson = pkgs.writeText "qbittorrent-categories.json" (
     builtins.toJSON { books = { save_path = complete; }; }
   );
 in
 {
+  assertions = [
+    {
+      assertion = pkgs.qbittorrent-nox.version == approvedVersion;
+      message = ''
+        qbittorrent-nox is ${pkgs.qbittorrent-nox.version}, but ${approvedVersion} is the
+        version approved on MyAnonaMouse (see qbittorrent.nix). Running an
+        unapproved client gets grabs rejected with "Unauthorized Client" and
+        is a rule 2.3 breach. Check MAM's approved-client list before raising
+        `approvedVersion`.
+      '';
+    }
+  ];
+
   services.qbittorrent = {
     enable = true;
 
@@ -112,6 +141,16 @@ in
         # some trackers read as a client trying to hide and which breaks
         # nothing here. The VPN is the anonymity layer.
         AnonymousModeEnabled = false;
+
+        # Bind to the tunnel itself, not merely to whatever the routing table
+        # says. The namespace already has no route out except wg0, so this is
+        # defence in depth rather than the kill switch: with the interface
+        # named, a missing wg0 means qBittorrent refuses to bind at all,
+        # instead of relying on the absence of a route to stop it. Both keys
+        # are set because qBittorrent matches on the system name and displays
+        # the friendly one.
+        Interface = "wg0";
+        InterfaceName = "wg0";
       };
 
       Preferences = {
@@ -180,6 +219,105 @@ in
     # would make that write fail.
     "C ${state}/qBittorrent/config/categories.json 0644 qbittorrent media - ${categoriesJson}"
   ];
+
+  # --- MyAnonaMouse: keep this machine's IP authorised ---
+  #
+  # The problem, in MAM's own words: a home server behind a VPN, browsed from
+  # a different address, has to call their Dynamic Seedbox API "to keep this
+  # device's IP address authorized to download". Without it the tracker
+  # answers Unrecognized Host / Passkey errors and nothing downloads.
+  #
+  # ⚖️ This is sanctioned automation, not a workaround. MAM rule 1.7 bans
+  # automating site functions "except those specifically listed in the API
+  # Documentation", and this endpoint is one of them - it authenticates with
+  # exactly the mam_id session cookie that page tells you to generate.
+  #
+  # Runs INSIDE the namespace, which is the whole point: the call has to come
+  # from the address being authorised, and that is the tunnel's exit, not
+  # morty's.
+  #
+  # ⚠️ Deliberately not a blind hourly POST. The exit IP is stable while the
+  # tunnel holds, so hammering a third party's API every hour to tell it
+  # nothing changed is rude and is the sort of traffic rule 1.7 exists to stop.
+  # It calls only when the exit IP has actually moved, or when the last
+  # success is over 12h old - at most twice a day when idle.
+  systemd.services.mam-seedbox = {
+    description = "Keep morty's VPN IP authorised on MyAnonaMouse";
+    after = [ "netns-vpn.service" ];
+    bindsTo = [ "netns-vpn.service" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      NetworkNamespacePath = "/var/run/netns/vpn";
+      BindReadOnlyPaths = [ "/etc/netns/vpn/resolv.conf:/etc/resolv.conf" ];
+
+      # The session cookie is root-only in the secret store, and its only
+      # other copy is the 1Password Morty vault - /var/lib/morty-backup is
+      # excluded from restic by design (backup.nix).
+      LoadCredential = [ "mam:${mamSession}" ];
+      StateDirectory = "mam-seedbox";
+
+      # No reason for this to reach anything but the tracker.
+      PrivateTmp = true;
+      ProtectHome = true;
+      ProtectSystem = "strict";
+      NoNewPrivileges = true;
+    };
+
+    path = [ pkgs.curl pkgs.coreutils pkgs.gnugrep ];
+
+    script = ''
+      set -uo pipefail
+      state="$STATE_DIRECTORY/last"
+      now=$(date +%s)
+
+      ip=$(curl -fsS --max-time 20 https://ipinfo.io/ip || true)
+      if [ -z "$ip" ]; then
+        echo "no egress from the vpn namespace; the tunnel is down" >&2
+        exit 0          # netns-vpn and vpn-check own that failure, not this.
+      fi
+
+      last_ip=""; last_at=0
+      if [ -r "$state" ]; then read -r last_ip last_at < "$state" || true; fi
+
+      if [ "$ip" = "$last_ip" ] && [ $((now - last_at)) -lt 43200 ]; then
+        echo "exit ip unchanged ($ip) and refreshed recently; nothing to do"
+        exit 0
+      fi
+
+      out=$(curl -fsS --max-time 30 \
+        --cookie "mam_id=$(cat "$CREDENTIALS_DIRECTORY/mam")" \
+        https://t.myanonamouse.net/json/dynamicSeedbox.php || true)
+
+      if [ -z "$out" ]; then
+        echo "no response from the dynamic seedbox API" >&2
+        exit 1
+      fi
+
+      # ⚠️ Matched case-insensitively on purpose: the endpoint answers
+      # {"Success":true,...} with a capital S, and a lowercase-only match
+      # reports every successful authorisation as a refusal.
+      if printf '%s' "$out" | grep -qiE '"success"[[:space:]]*:[[:space:]]*true'; then
+        printf '%s %s\n' "$ip" "$now" > "$state"
+        echo "authorised $ip on MyAnonaMouse"
+      else
+        # Their errors clear by themselves within 24h, and a failure here
+        # must not take the unit into a restart loop against a third party.
+        echo "dynamic seedbox API refused: $out" >&2
+        exit 1
+      fi
+    '';
+  };
+
+  systemd.timers.mam-seedbox = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "3m";
+      OnUnitActiveSec = "1h";
+      RandomizedDelaySec = "5m";
+      Persistent = true;
+    };
+  };
 
   # State lives under /fast/data, so the nightly restic run to Drive, the
   # syncoid leg to tank/backup/morty/data and sanoid's policy cover it with no
