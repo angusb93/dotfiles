@@ -170,7 +170,10 @@ in
   # nixos-generate-config has written the "cryptroot" device into
   # hardware-configuration.nix. Declaring these without that device fails to
   # evaluate, which is why they cannot land before the reinstall.
-  boot.initrd.systemd.enable = true; # required for TPM2 unlock
+  # initrd is systemd-only in this nixpkgs - scripted initrd is removed
+  # upstream, so boot.initrd.systemd.enable became a no-op option and setting
+  # it now fails eval. Nothing to choose anymore: the TPM2 unlock below rides
+  # the systemd initrd that is now the only path.
   boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = [ "tpm2-device=auto" ];
   boot.kernelModules = [
     "amd64_edac" # ECC monitoring (PRO 4650G + ECC UDIMM)
