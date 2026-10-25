@@ -662,11 +662,17 @@ in
     environment = {
       PASEO_HOME = "/home/angus/.paseo";
       # Both default to on with the "local" provider, which makes the daemon
-      # download ~700 MB of sherpa speech models (parakeet, kokoro) in the
-      # background the first time it starts. Nothing on a headless NAS dictates
-      # into it, and that download would compete with the Google pulls.
+      # download sherpa speech models in the background on first start. Voice
+      # mode stays off: it pulls the kokoro TTS models too, and nothing on a
+      # headless NAS talks back - that download would compete with the Google
+      # pulls. Dictation is on (2026-10-20): the paired phone dictates into
+      # the agent prompt, which needs only the parakeet STT model - one
+      # background download into ~/.paseo/models/local-speech/, transcribed
+      # daemon-side, no third party. The env var beats features.dictation in
+      # config.json (the speech resolver reads it first), so this is the only
+      # real switch - see wiki/concepts/infra/paseo-agent-supervisor.md.
       PASEO_VOICE_MODE_ENABLED = "false";
-      PASEO_DICTATION_ENABLED = "false";
+      PASEO_DICTATION_ENABLED = "true";
       # Stable profile path, not a /nix/store path, so the agents paseo spawns
       # keep a working PATH across rebuilds - paseo resolves `pi` and `claude`
       # from it. /run/wrappers/bin first: it holds the setuid sudo.
