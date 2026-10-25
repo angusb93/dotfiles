@@ -171,9 +171,10 @@
             };
           };
 
-          # Dim the external monitor with the sun. Runs periodically (not a
-          # daemon), reading the tunable brightness curve from the script in
-          # ~/.config/scripts. Adjust ADAPTIVE_* to change location/range/fade.
+          # Drive the external monitor's brightness from the sun and the waking
+          # day. Runs periodically (not a daemon), reading the curve from the
+          # script in ~/.config/scripts. MAX applies while awake with the sun
+          # up, EVENING while awake after dark, MIN overnight.
           launchd.user.agents.adaptive-brightness = {
             serviceConfig = {
               Label = "adaptive-brightness";
@@ -188,7 +189,10 @@
                 ADAPTIVE_LAT = "51.5074";
                 ADAPTIVE_LON = "-0.1278";
                 ADAPTIVE_MAX = "100";
+                ADAPTIVE_EVENING = "35";
                 ADAPTIVE_MIN = "5";
+                ADAPTIVE_WAKE = "07:00";
+                ADAPTIVE_SLEEP = "23:00";
                 ADAPTIVE_FADE = "60";
               };
               StandardOutPath = "/tmp/adaptive-brightness.log";
