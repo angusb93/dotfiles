@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792701906,
-        "narHash": "sha256-hLkjDNdh3d1lZ6aaYOcTaYc6mb7ZL3mUmPUsOGZxNpc=",
+        "lastModified": 1792962916,
+        "narHash": "sha256-9U/633DWkQYWmKKxxzf0uLqxM/scU3HiJgHZE5RCJ0k=",
         "ref": "refs/heads/main",
-        "rev": "8f13e6d6984ba85854ecc110ec4e201b6467dff3",
-        "revCount": 28,
+        "rev": "181e7f4b308fc81a27da0be58c65b873dd89a486",
+        "revCount": 29,
         "type": "git",
         "url": "ssh://git@github.com/angusb93/automations"
       },
@@ -92,12 +92,29 @@
         "type": "github"
       }
     },
+    "nixpkgs-approved": {
+      "locked": {
+        "lastModified": 1792116957,
+        "narHash": "sha256-EjZqHKObBfIOeHZnMRVV87HB3pPq/WBkmRJWyFxmZu8=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f20cd90e28fe0403873f473b29e42662cd86e8c4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f20cd90e28fe0403873f473b29e42662cd86e8c4",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "automations": "automations",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "nixpkgs-approved": "nixpkgs-approved"
       }
     }
   },

@@ -19,7 +19,7 @@
 # connectable**. Downloads work; seeding only ever reaches peers who connect
 # out to us. That makes ratio-building on a private tracker hard and is a
 # provider question, not a config one - documented rather than worked around.
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, nixpkgsApproved, ... }:
 let
   state = "/fast/data/qbittorrent";
 
@@ -55,6 +55,20 @@ let
   # To clear it: check MAM's approved-client list, then raise this string.
   approvedVersion = "5.2.4";
 
+  # ⚠️ TEMPORARY PIN (2026-10-25): this nixpkgs carries qbittorrent-nox
+  # 5.3.0, and 5.3.0's MAM approval is UNVERIFIED - the session cookie below
+  # (dated 2026-10-21) is stale and bounces to login.php even from inside the
+  # vpn namespace, so the approved-client list could not be read. Rather than
+  # raise approvedVersion on a guess, the client stays on the
+  # last-known-approved 5.2.4 via the nixpkgs-approved flake input (rev
+  # f20cd90e28fe - what the running system was built from, so the store paths
+  # were already local). A fetchTarball pin is NOT the shape for this: github
+  # regenerates archive bytes, so a file-hash pin rots (seen same-day,
+  # 2026-10-25); the flake input locks the narHash instead. To clear: with a
+  # fresh MAM session, check the approved-client list - if 5.3.0 is approved,
+  # raise approvedVersion above and delete this pin and the input; the
+  # assertion guards either way.
+
   # The MAM session cookie. Kept out of the flake for the same reason
   # qBittorrent has no password in it: this repository is public.
   mamSession = "/var/lib/morty-backup/mam-session.id";
@@ -66,7 +80,11 @@ in
 {
   assertions = [
     {
-      assertion = pkgs.qbittorrent-nox.version == approvedVersion;
+      # The EFFECTIVE package (services.qbittorrent.package), not ambient
+      # pkgs: since the 5.2.4 pin above, what nixpkgs ships and what this
+      # service runs can differ, and what MAM sees is what runs. With the pin
+      # removed this is identical to the old pkgs.qbittorrent-nox check.
+      assertion = config.services.qbittorrent.package.version == approvedVersion;
       message = ''
         qbittorrent-nox is ${pkgs.qbittorrent-nox.version}, but ${approvedVersion} is the
         version approved on MyAnonaMouse (see qbittorrent.nix). Running an
@@ -79,6 +97,10 @@ in
 
   services.qbittorrent = {
     enable = true;
+
+    # The pin above - read it before changing. Upstream default would be
+    # pkgs.qbittorrent-nox (5.3.0), which is not verified approved.
+    package = nixpkgsApproved.legacyPackages.${pkgs.stdenv.hostPlatform.system}.qbittorrent-nox;
 
     # qbittorrent:media. The media group is what lets Bindery - which runs as
     # calibre-web with `--group-add media` - read a finished torrent in order
