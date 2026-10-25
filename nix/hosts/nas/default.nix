@@ -538,8 +538,20 @@ in
       # the workspace trust dialog with nobody at a keyboard to answer it.
       # /home/angus is explicitly NOT trusted; /fast/vault is.
       WorkingDirectory = "/fast/vault";
-      # This is a server, not a TUI - it runs fine with no controlling terminal.
-      ExecStart = "${pkgs.claude-code}/bin/claude remote-control --name morty";
+      # This is a server, not a TUI - it runs fine with no controlling terminal,
+      # but it still redraws its status screen every second. stdout goes through
+      # claude-rc-log-filter.awk so only changed lines reach the journal; stderr
+      # (fatal startup errors) goes straight there. exec keeps claude as MainPID,
+      # which the healthcheck below relies on - the filter becomes its child.
+      ExecStart = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "claude-rc-host";
+          text = ''
+            exec ${pkgs.claude-code}/bin/claude remote-control --name morty \
+              > >(${lib.getExe pkgs.gawk} -f ${./claude-rc-log-filter.awk})
+          '';
+        }
+      );
       Restart = "always";
       RestartSec = 5;
       RestartSteps = 5;
@@ -592,8 +604,9 @@ in
               exit 0
             fi
 
-            # Never interrupt sessions that are actually doing work.
-            if pgrep -P "$main_pid" >/dev/null 2>&1; then
+            # Never interrupt sessions that are actually doing work. Match spawned
+            # sessions by their --sdk-url flag: the log filter is a child too.
+            if pgrep -P "$main_pid" -f -- '--sdk-url' >/dev/null 2>&1; then
               echo "no bridge connection, but spawned sessions are active; deferring restart"
               exit 0
             fi
