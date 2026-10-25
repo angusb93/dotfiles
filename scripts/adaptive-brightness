@@ -1,20 +1,41 @@
 #!/usr/bin/env python3
-"""Set external monitor brightness based on the sun.
+"""Set external monitor brightness from the sun and the waking day.
 
-Ramps the Dell's DDC luminance between a daytime max and a night-time min.
-Each transition *completes* at the solar event and begins FADE minutes before
-it: the screen reaches full brightness by sunrise and is back down to the
-night level by the moment of sunset. Because sunrise/sunset are computed from
-latitude/longitude for the current date, the curve shifts with the seasons
-automatically.
+Two independent facts drive the Dell's DDC luminance: whether the sun is up,
+and whether you are awake. Treating them separately is the whole point. The sun
+sets at 16:00 in a London December but the evening's work carries on for hours
+after that, so "the sun is down" must not mean "dim the screen to its overnight
+floor".
+
+That gives three levels:
+
+  MAX      awake, sun up          - full daylight brightness
+  EVENING  awake, sun down        - comfortable after dark
+  MIN      asleep                 - overnight floor, whatever the sun is doing
+
+Rather than special-casing the order of sunrise, sunset, waking and sleeping
+(which shuffles with the seasons - midsummer sunrise beats the alarm, midwinter
+sunrise lags it), the two facts are evaluated as independent 0-1 gates and
+composed:
+
+  brightness = MIN + awake * ((EVENING - MIN) + sun_up * (MAX - EVENING))
+
+Each gate ramps linearly over FADE minutes, and every ramp *completes* at its
+event: the screen is at full brightness by sunrise and already down to EVENING
+by the moment of sunset. Because the gates are independent, a summer sunrise
+before the alarm simply leaves the screen at MIN until the alarm, then brings it
+straight to MAX, with no dip through EVENING on the way.
 
 Tunables are read from the environment (with sensible defaults) so they can be
 adjusted in the launchd agent without editing this file:
 
-  ADAPTIVE_LAT      latitude in degrees   (default 51.5074, London)
-  ADAPTIVE_LON      longitude in degrees  (default -0.1278, London)
-  ADAPTIVE_MAX      daytime luminance 0-100   (default 100)
-  ADAPTIVE_MIN      night luminance 0-100     (default 20)
+  ADAPTIVE_LAT      latitude in degrees        (default 51.5074, London)
+  ADAPTIVE_LON      longitude in degrees       (default -0.1278, London)
+  ADAPTIVE_MAX      awake, sun up, 0-100       (default 100)
+  ADAPTIVE_EVENING  awake, sun down, 0-100     (default 35)
+  ADAPTIVE_MIN      asleep, 0-100              (default 5)
+  ADAPTIVE_WAKE     start of the waking day    (default 07:00, local)
+  ADAPTIVE_SLEEP    end of the waking day      (default 23:00, local)
   ADAPTIVE_FADE     transition length, minutes (default 60)
 
 Requires `m1ddc` on PATH. Exits quietly if no external display is connected.
@@ -35,11 +56,25 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
+def _env_clock(name: str, default: str) -> datetime.time:
+    """Parse an "HH:MM" local wall-clock time from the environment."""
+    raw = os.environ.get(name, default)
+    try:
+        hour, minute = (int(part) for part in raw.split(":", 1))
+        return datetime.time(hour, minute)
+    except (ValueError, TypeError):
+        hour, minute = (int(part) for part in default.split(":", 1))
+        return datetime.time(hour, minute)
+
+
 LAT = _env_float("ADAPTIVE_LAT", 51.5074)
 LON = _env_float("ADAPTIVE_LON", -0.1278)
 MAX_B = _env_float("ADAPTIVE_MAX", 100)
-MIN_B = _env_float("ADAPTIVE_MIN", 20)
+EVENING_B = _env_float("ADAPTIVE_EVENING", 35)
+MIN_B = _env_float("ADAPTIVE_MIN", 5)
 FADE_MIN = _env_float("ADAPTIVE_FADE", 60)
+WAKE = _env_clock("ADAPTIVE_WAKE", "07:00")
+SLEEP = _env_clock("ADAPTIVE_SLEEP", "23:00")
 
 
 def _solar_event(lat: float, lon: float, date: datetime.date, rising: bool):
@@ -93,34 +128,103 @@ def _solar_event(lat: float, lon: float, date: datetime.date, rising: bool):
     )
 
 
-def _ramp(now, start, span_minutes, from_b, to_b):
-    """Linear interpolate brightness across a transition window."""
-    elapsed = (now - start).total_seconds() / 60.0
-    frac = max(0.0, min(1.0, elapsed / span_minutes))
-    return from_b + (to_b - from_b) * frac
+def _local(date: datetime.date, clock: datetime.time) -> datetime.datetime:
+    """Resolve a local wall-clock time on `date` to an absolute instant.
+
+    Going through a naive datetime makes the system time zone apply the DST
+    offset in force on that date, so 07:00 stays 07:00 either side of a clock
+    change.
+    """
+    return datetime.datetime.combine(date, clock).astimezone()
+
+
+def _window_value(now, start, end, fade_minutes):
+    """Position of `now` in a window as 0-1, with ramps completing at each edge.
+
+    The rise finishes at `start`, so the window opens already at full value, and
+    the fall finishes at `end`.
+    """
+    if fade_minutes <= 0:
+        return 1.0 if start <= now < end else 0.0
+
+    fade = datetime.timedelta(minutes=fade_minutes)
+    span = fade.total_seconds()
+
+    if now < start - fade or now >= end:
+        return 0.0
+    if now < start:
+        return (now - (start - fade)).total_seconds() / span
+    if now < end - fade:
+        return 1.0
+    # A window shorter than two fades never plateaus: the falling ramp takes
+    # over early so the window peaks once instead of overshooting.
+    return max(0.0, 1.0 - (now - (end - fade)).total_seconds() / span)
+
+
+def _gate(now, windows, fade_minutes) -> float:
+    """Highest value `now` takes across a set of (start, end) windows.
+
+    Windows are generated for yesterday, today and tomorrow, so a window that
+    crosses midnight needs no special handling.
+    """
+    return max(
+        (_window_value(now, s, e, fade_minutes) for s, e in windows),
+        default=0.0,
+    )
+
+
+def _awake_windows(dates):
+    out = []
+    for date in dates:
+        start = _local(date, WAKE)
+        end = _local(date, SLEEP)
+        if end <= start:
+            end = _local(date + datetime.timedelta(days=1), SLEEP)
+        out.append((start, end))
+    return out
+
+
+def _polar_day(lat: float, date: datetime.date) -> bool:
+    """Whether a date with no sunrise/sunset is midnight sun rather than polar night.
+
+    The sun clears the horizon for a whole day when the latitude and the solar
+    declination lean the same way and together reach past the pole's 90 degrees.
+    """
+    n = date.timetuple().tm_yday
+    declination = 23.44 * math.sin(math.radians(360 * (n - 81) / 365.0))
+    return (lat * declination > 0) and (abs(lat) + abs(declination) > 90)
+
+
+def _sun_windows(dates):
+    """Daylight windows, one per date, as (sunrise, sunset) instants.
+
+    A polar day contributes a window covering the whole date so the gate stays
+    open; a polar night contributes nothing, leaving the evening level while
+    awake.
+    """
+    out = []
+    for date in dates:
+        sunrise = _solar_event(LAT, LON, date, rising=True)
+        sunset = _solar_event(LAT, LON, date, rising=False)
+        if sunrise is None or sunset is None:
+            if _polar_day(LAT, date):
+                out.append((
+                    _local(date, datetime.time(0, 0)),
+                    _local(date + datetime.timedelta(days=1), datetime.time(0, 0)),
+                ))
+            continue
+        out.append((sunrise, sunset))
+    return out
 
 
 def target_brightness(now: datetime.datetime) -> float:
-    today = now.date()
-    sunrise = _solar_event(LAT, LON, today, rising=True)
-    sunset = _solar_event(LAT, LON, today, rising=False)
-
-    # Polar edge cases: no sunrise -> stay dim; no sunset -> stay bright.
-    if sunrise is None or sunset is None:
-        return MIN_B if sunrise is None else MAX_B
-
-    # Each transition finishes at the solar event, starting FADE_MIN before it:
-    # fully bright by sunrise, fully dim by sunset.
-    fade = datetime.timedelta(minutes=FADE_MIN)
-    if now < sunrise - fade:
-        return MIN_B
-    if now < sunrise:
-        return _ramp(now, sunrise - fade, FADE_MIN, MIN_B, MAX_B)
-    if now < sunset - fade:
-        return MAX_B
-    if now < sunset:
-        return _ramp(now, sunset - fade, FADE_MIN, MAX_B, MIN_B)
-    return MIN_B
+    dates = [
+        now.astimezone().date() + datetime.timedelta(days=offset)
+        for offset in (-1, 0, 1)
+    ]
+    awake = _gate(now, _awake_windows(dates), FADE_MIN)
+    sun_up = _gate(now, _sun_windows(dates), FADE_MIN)
+    return MIN_B + awake * ((EVENING_B - MIN_B) + sun_up * (MAX_B - EVENING_B))
 
 
 def _read_luminance(m1ddc: str):
