@@ -776,13 +776,30 @@ in
           # cannot help here: resolve the key once at start and let paseo pass it
           # down to the agents it launches. Failing to read it is not fatal -
           # claude-code sessions authenticate through ~/.claude and still work.
+          #
+          # Retry the read for up to ~2 minutes. The `after =
+          # network-online.target` above does nothing for a user unit - the user
+          # manager never sees the system's network target - so at boot this
+          # races the network. On 2026-10-25 the read ran 2s before the system
+          # reached network-online, failed, and the daemon came up keyless: pi
+          # agents errored "No API key found for openrouter" and the picker
+          # showed only the agent profile's model.
           text = ''
             token_file="$HOME/.config/op/service-account-token"
             key_ref="op://6ozvud25wxpywiml26e3a53hxu/esxkxlfzue6n6iwnk6s4udvmp4/credential"
 
             if [ -s "$token_file" ]; then
-              if key=$(OP_SERVICE_ACCOUNT_TOKEN="$(cat "$token_file")" \
-                         op read --no-newline "$key_ref" 2>/dev/null); then
+              key=""
+              for attempt in $(seq 1 24); do
+                if key=$(OP_SERVICE_ACCOUNT_TOKEN="$(cat "$token_file")" \
+                           op read --no-newline "$key_ref" 2>/dev/null); then
+                  break
+                fi
+                key=""
+                echo "OpenRouter key read failed (attempt $attempt/24); retrying in 5s" >&2
+                sleep 5
+              done
+              if [ -n "$key" ]; then
                 export OPENROUTER_API_KEY="$key"
               else
                 echo "could not read the OpenRouter key from 1Password; starting without it" >&2
