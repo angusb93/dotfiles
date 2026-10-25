@@ -67,10 +67,18 @@ in
     "d ${pgDataDir} 0750 postgres postgres -"
   ];
 
+  # tank's datasets keep non-legacy mountpoints, so they have no mount units for
+  # path-based ordering to latch onto - zfs-mount.service mounts them all. Without
+  # this explicit dependency the bind won the race at boot, then zfs-mount stacked
+  # tank/media/photos on top and hid it: Immich crash-looped on a missing
+  # thumbs/.immich after every reboot on 2026-10-25.
   fileSystems."${media}/thumbs" = {
     device = thumbs;
     fsType = "none";
-    options = [ "bind" ];
+    options = [
+      "bind"
+      "x-systemd.requires=zfs-mount.service"
+    ];
   };
 
   # Without this the server can start before the bind mount is up and write
