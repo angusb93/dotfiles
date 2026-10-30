@@ -7,9 +7,7 @@
     "commit": "",
     "pr": ""
   },
-  "model": "claude-opus-5[1m]",
   "permissions": {
-    "defaultMode": "auto",
     "deny": [
       "mcp__Sanity__publish_documents",
       "mcp__Sanity__unpublish_documents",
@@ -25,19 +23,10 @@
       "mcp__Sanity__add_cors_origin",
       "mcp__Sanity__cors_origins_delete",
       "mcp__Sanity__run_sanity_cli"
-    ]
+    ],
+    "defaultMode": "auto"
   },
-  "voice": {
-    "enabled": true,
-    "mode": "hold"
-  },
-  "skipDangerousModePermissionPrompt": true,
-  "editorMode": "vim",
-  "voiceEnabled": true,
-  "remoteControlAtStartup": true,
-  "outputStyle": "concise",
-  "tui": "fullscreen",
-  "theme": "dark",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -51,5 +40,27 @@
       }
     ]
   },
-  "agentPushNotifEnabled": true
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "outputStyle": "concise",
+  "tui": "fullscreen",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "editorMode": "vim",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": true,
+  "enabledPlugins": {
+    "figma@claude-plugins-official": true
+  }
 }
