@@ -171,10 +171,10 @@
             };
           };
 
-          # Drive the external monitor's brightness from the sun and the waking
-          # day. Runs periodically (not a daemon), reading the curve from the
-          # script in ~/.config/scripts. MAX applies while awake with the sun
-          # up, EVENING while awake after dark, MIN overnight.
+          # Drive the external monitor's brightness from a curve of anchors.
+          # Runs periodically (not a daemon), reading the curve from the script
+          # in ~/.config/scripts. MAX through daylight, EVENING on at sunset,
+          # then a slide down to MIN by WIND_DOWN, held until WAKE.
           launchd.user.agents.adaptive-brightness = {
             serviceConfig = {
               Label = "adaptive-brightness";
@@ -192,7 +192,7 @@
                 ADAPTIVE_EVENING = "35";
                 ADAPTIVE_MIN = "5";
                 ADAPTIVE_WAKE = "07:00";
-                ADAPTIVE_SLEEP = "23:00";
+                ADAPTIVE_WIND_DOWN = "21:30";
                 ADAPTIVE_FADE = "60";
               };
               StandardOutPath = "/tmp/adaptive-brightness.log";
