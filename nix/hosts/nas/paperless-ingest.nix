@@ -9,14 +9,20 @@
 # and that backup-staleness already watches.
 { config, pkgs, ... }:
 let
-  script = pkgs.writers.writePython3Bin "paperless-ingest" { libraries = [ ]; doCheck = false; }
-    (builtins.readFile ./paperless-ingest.py);
+  script = pkgs.writers.writePython3Bin "paperless-ingest" {
+    libraries = [ ];
+    doCheck = false;
+  } (builtins.readFile ./paperless-ingest.py);
 in
 {
   systemd.services.paperless-ingest = {
     description = "Import new document PDFs and document photos into Paperless";
     # zfs.target because both sources live on pools, not on the root filesystem.
-    after = [ "paperless-web.service" "immich-server.service" "zfs.target" ];
+    after = [
+      "paperless-web.service"
+      "immich-server.service"
+      "zfs.target"
+    ];
 
     # Until both API credentials are in place this does nothing rather than
     # failing nightly and training everyone to ignore it - the same bargain
@@ -27,7 +33,11 @@ in
     ];
 
     # runuser and psql for the Immich OCR query, find for the mtime scan.
-    path = with pkgs; [ postgresql util-linux findutils ];
+    path = with pkgs; [
+      postgresql
+      util-linux
+      findutils
+    ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -44,7 +54,10 @@ in
       # The only thing it writes is its own state: the two seen-sets and the
       # watermark. Everything else is read-only.
       ReadWritePaths = [ "/fast/data/paperless-backfill" ];
-      ReadOnlyPaths = [ "/tank/backup/google/mail" "/var/lib/morty-backup" ];
+      ReadOnlyPaths = [
+        "/tank/backup/google/mail"
+        "/var/lib/morty-backup"
+      ];
     };
   };
 

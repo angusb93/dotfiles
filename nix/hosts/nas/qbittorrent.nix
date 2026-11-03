@@ -19,7 +19,13 @@
 # connectable**. Downloads work; seeding only ever reaches peers who connect
 # out to us. That makes ratio-building on a private tracker hard and is a
 # provider question, not a config one - documented rather than worked around.
-{ config, lib, pkgs, nixpkgsApproved, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  nixpkgsApproved,
+  ...
+}:
 let
   state = "/fast/data/qbittorrent";
 
@@ -74,7 +80,11 @@ let
   mamSession = "/var/lib/morty-backup/mam-session.id";
 
   categoriesJson = pkgs.writeText "qbittorrent-categories.json" (
-    builtins.toJSON { books = { save_path = complete; }; }
+    builtins.toJSON {
+      books = {
+        save_path = complete;
+      };
+    }
   );
 in
 {
@@ -286,7 +296,11 @@ in
       NoNewPrivileges = true;
     };
 
-    path = [ pkgs.curl pkgs.coreutils pkgs.gnugrep ];
+    path = [
+      pkgs.curl
+      pkgs.coreutils
+      pkgs.gnugrep
+    ];
 
     script = ''
       set -uo pipefail

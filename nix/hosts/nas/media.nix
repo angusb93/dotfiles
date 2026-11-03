@@ -10,7 +10,12 @@
 # wires the software. Which indexers Prowlarr talks to, and which Usenet
 # provider SABnzbd authenticates against, are Angus's to enter and are not
 # configured here.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   library = "/tank/media/library";
   state = "/fast/data";
@@ -29,7 +34,13 @@ let
   # Always exits 0 - a cosmetic audio-flag failure must never fail an import.
   prefer-english-audio = pkgs.writeShellApplication {
     name = "prefer-english-audio";
-    runtimeInputs = with pkgs; [ ffmpeg mkvtoolnix-cli jq coreutils findutils ];
+    runtimeInputs = with pkgs; [
+      ffmpeg
+      mkvtoolnix-cli
+      jq
+      coreutils
+      findutils
+    ];
     text = ''
       set -uo pipefail
       target=''${1:-}
@@ -126,7 +137,10 @@ in
   # VAAPI on the 4650G's Vega iGPU: free hardware transcoding for H.264 and
   # HEVC including 10-bit. jellyfin needs the render node to use it.
   hardware.graphics.enable = true;
-  users.users.jellyfin.extraGroups = [ "render" "video" ];
+  users.users.jellyfin.extraGroups = [
+    "render"
+    "video"
+  ];
 
   # --- acquisition ---
   # Every one of these is tailnet-only: no openFirewall anywhere. They are

@@ -29,8 +29,10 @@
 #     sudo takeout-photos-sync --apply --include-locked
 { pkgs, ... }:
 let
-  script = pkgs.writers.writePython3Bin "takeout-photos-sync" { libraries = [ ]; doCheck = false; }
-    (builtins.readFile ./takeout-photos-sync.py);
+  script = pkgs.writers.writePython3Bin "takeout-photos-sync" {
+    libraries = [ ];
+    doCheck = false;
+  } (builtins.readFile ./takeout-photos-sync.py);
 in
 {
   # Available by hand for the locked-folder pass and for dry runs.
@@ -38,7 +40,10 @@ in
 
   systemd.services.takeout-photos-sync = {
     description = "Rebuild Google Photos albums inside Immich from the Takeout tree";
-    after = [ "immich-server.service" "zfs.target" ];
+    after = [
+      "immich-server.service"
+      "zfs.target"
+    ];
     requires = [ "immich-server.service" ];
 
     # Without a Takeout tree there is nothing to read, and without the key
@@ -52,7 +57,10 @@ in
     # psql for the asset index: reading 72k rows over the API would be many
     # paginated calls, and writes still go through the API so Immich maintains
     # its own invariants.
-    path = with pkgs; [ postgresql util-linux ];
+    path = with pkgs; [
+      postgresql
+      util-linux
+    ];
 
     serviceConfig = {
       Type = "oneshot";
@@ -70,7 +78,10 @@ in
       # Its own seen-set is the only thing it writes directly; everything else
       # goes through Immich's API.
       ReadWritePaths = [ "/fast/data/takeout-photos-sync" ];
-      ReadOnlyPaths = [ "/tank/backup/google/photos" "/var/lib/morty-backup" ];
+      ReadOnlyPaths = [
+        "/tank/backup/google/photos"
+        "/var/lib/morty-backup"
+      ];
     };
   };
 

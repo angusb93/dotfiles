@@ -11,7 +11,12 @@
 # It needs no offsite copy of its own. The phone uploads the same photo to
 # Google Photos as well, so Google is the second home - rule 0 is satisfied
 # without morty sending anything back out.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   media = "/tank/media/photos";
   # Immich keeps thumbnails under mediaLocation, which would put a few tens of
@@ -85,7 +90,10 @@ in
   # thumbnails onto the array underneath it, where they would then be shadowed
   # and invisible - the failure that looks like "Immich regenerates every
   # thumbnail on restart".
-  systemd.services.immich-server.unitConfig.RequiresMountsFor = [ media "${media}/thumbs" ];
+  systemd.services.immich-server.unitConfig.RequiresMountsFor = [
+    media
+    "${media}/thumbs"
+  ];
 
   # A 30-minute keepalive for Immich's ML job queues (ocr, smartSearch).
   #

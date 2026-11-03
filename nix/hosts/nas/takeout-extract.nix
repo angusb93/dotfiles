@@ -38,7 +38,14 @@ in
     # mistimed run is a no-op instead of a red unit.
     unitConfig.ConditionPathExists = "/tank/backup/google/takeout/archives";
 
-    path = with pkgs; [ gnutar gzip unzip rsync findutils coreutils ];
+    path = with pkgs; [
+      gnutar
+      gzip
+      unzip
+      rsync
+      findutils
+      coreutils
+    ];
 
     serviceConfig = {
       Type = "oneshot";

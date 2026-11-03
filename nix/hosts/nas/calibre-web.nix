@@ -125,8 +125,7 @@ in
     # catalogue advertises the three ZIM *files* rather than their contents, so
     # KOReader cannot browse it directly - this is the bridge between the two.
     (pkgs.writers.writePython3Bin "gutenberg-add" { flakeIgnore = [ "E501" ]; } (
-      builtins.replaceStrings [ "@INBOX@" ] [ inbox ]
-        (builtins.readFile ./gutenberg-add.py)
+      builtins.replaceStrings [ "@INBOX@" ] [ inbox ] (builtins.readFile ./gutenberg-add.py)
     ))
   ];
 

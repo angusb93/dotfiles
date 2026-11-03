@@ -19,7 +19,10 @@
   # difference between a sync and a backup.
   systemd.services.drive-pull = {
     description = "Pull Google Drive down to tank/backup/google/drive";
-    after = [ "network-online.target" "zfs.target" ];
+    after = [
+      "network-online.target"
+      "zfs.target"
+    ];
     wants = [ "network-online.target" ];
 
     serviceConfig = {
@@ -33,20 +36,25 @@
         # Takeout is pulled separately and is hundreds of GB; morty-backup is
         # morty's own restic repository, so pulling it would be a copy of a
         # copy of this machine.
-        "--exclude" "Takeout/**"
-        "--exclude" "morty-backup/**"
+        "--exclude"
+        "Takeout/**"
+        "--exclude"
+        "morty-backup/**"
         # Google Docs/Sheets/Slides have no native download format, so they
         # come down as Office files. Stated rather than left to the default so
         # the restored shape of the backup does not change under us.
-        "--drive-export-formats" "docx,xlsx,pptx,svg"
+        "--drive-export-formats"
+        "docx,xlsx,pptx,svg"
         # One recursive listing instead of one call per directory - a large
         # difference on a Drive this deep, and it stays well inside quota.
         "--fast-list"
-        "--transfers" "8"
+        "--transfers"
+        "8"
         # Deletions applied only once every transfer has succeeded, so an
         # interrupted run never leaves the copy shorter than the source.
         "--delete-after"
-        "--stats" "1m"
+        "--stats"
+        "1m"
         "--stats-one-line"
         "-v"
       ];

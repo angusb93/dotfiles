@@ -33,7 +33,13 @@
 # connectable" and only ever uploads to peers that connect out to us.
 # A provider that forwards a port is a separate decision; the note is here so
 # it is not mistaken for a bug in this file.
-{ config, lib, pkgs, morty-alert, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  morty-alert,
+  ...
+}:
 let
   ns = "vpn";
   nsPath = "/var/run/netns/${ns}";
@@ -64,16 +70,31 @@ let
   # Using them rather than the LAN's means DNS for anything inside the
   # namespace does not go to the ISP either - a DNS leak tells the same story a
   # traffic leak does.
-  nsDns = [ "103.86.96.100" "103.86.99.100" ];
+  nsDns = [
+    "103.86.96.100"
+    "103.86.99.100"
+  ];
 
   # Web UIs that must stay reachable from the tailnet even though the service
   # itself lives in the namespace.
   #
   # 8089 is qBittorrent, deliberately not its default 8080 - SABnzbd already
   # holds that inside this namespace.
-  forwardedPorts = [ 8989 7878 9696 8080 8089 ];
+  forwardedPorts = [
+    8989
+    7878
+    9696
+    8080
+    8089
+  ];
 
-  nsServices = [ "sonarr" "radarr" "prowlarr" "sabnzbd" "qbittorrent" ];
+  nsServices = [
+    "sonarr"
+    "radarr"
+    "prowlarr"
+    "sabnzbd"
+    "qbittorrent"
+  ];
 
   iptables = "${pkgs.iptables}/bin/iptables";
   ip6tables = "${pkgs.iptables}/bin/ip6tables";
@@ -84,8 +105,9 @@ in
   # below get the file through BindReadOnlyPaths instead - easy to miss, and
   # the symptom is a service that resolves nothing while the namespace works
   # perfectly by hand.
-  environment.etc."netns/${ns}/resolv.conf".text =
-    lib.concatMapStrings (s: "nameserver ${s}\n") nsDns;
+  environment.etc."netns/${ns}/resolv.conf".text = lib.concatMapStrings (
+    s: "nameserver ${s}\n"
+  ) nsDns;
 
   systemd.services = {
     "netns-${ns}" = {
@@ -103,7 +125,12 @@ in
         RemainAfterExit = true;
       };
 
-      path = [ pkgs.iproute2 pkgs.wireguard-tools pkgs.gnugrep pkgs.coreutils ];
+      path = [
+        pkgs.iproute2
+        pkgs.wireguard-tools
+        pkgs.gnugrep
+        pkgs.coreutils
+      ];
 
       script = ''
         set -euo pipefail
@@ -168,7 +195,13 @@ in
       requires = [ "netns-${ns}.service" ];
       restartIfChanged = false;
       serviceConfig.Type = "oneshot";
-      path = [ pkgs.iproute2 pkgs.curl pkgs.jq pkgs.systemd morty-alert ];
+      path = [
+        pkgs.iproute2
+        pkgs.curl
+        pkgs.jq
+        pkgs.systemd
+        morty-alert
+      ];
       script = ''
         set -uo pipefail
 

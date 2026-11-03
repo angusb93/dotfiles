@@ -22,7 +22,10 @@ in
 {
   systemd.services.kiwix-fetch = {
     description = "Download and verify the Kiwix ZIMs in tank/reference/kiwix";
-    after = [ "network-online.target" "zfs.target" ];
+    after = [
+      "network-online.target"
+      "zfs.target"
+    ];
     wants = [ "network-online.target" ];
 
     serviceConfig = {
@@ -32,11 +35,14 @@ in
       ExecStart = pkgs.writeShellScript "kiwix-fetch" ''
         set -u
         export PATH=${
-          pkgs.lib.makeBinPath (with pkgs; [
-            wget
-            curl
-            coreutils
-          ])
+          pkgs.lib.makeBinPath (
+            with pkgs;
+            [
+              wget
+              curl
+              coreutils
+            ]
+          )
         }
 
         mkdir -p ${dir}

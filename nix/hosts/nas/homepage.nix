@@ -350,15 +350,16 @@ in
     # One block per name Angus might type. Caddy matches on the Host header, so
     # a name that is not listed here gets a 404 from Caddy rather than reaching
     # Homepage at all.
-    virtualHosts = lib.genAttrs
-      [
-        "http://morty"
-        "http://morty.taile1ace0.ts.net"
-        "http://100.121.123.8"
-      ]
-      (_: {
-        extraConfig = "reverse_proxy 127.0.0.1:8082";
-      });
+    virtualHosts =
+      lib.genAttrs
+        [
+          "http://morty"
+          "http://morty.taile1ace0.ts.net"
+          "http://100.121.123.8"
+        ]
+        (_: {
+          extraConfig = "reverse_proxy 127.0.0.1:8082";
+        });
   };
 
   # The module writes every config file into /etc and puts no restartTriggers on

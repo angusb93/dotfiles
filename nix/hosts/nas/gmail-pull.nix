@@ -47,7 +47,10 @@ in
     # finishes. Changes land on the next timer instead, which is the right
     # moment for a backup job to pick them up anyway.
     restartIfChanged = false;
-    after = [ "network-online.target" "zfs.target" ];
+    after = [
+      "network-online.target"
+      "zfs.target"
+    ];
     wants = [ "network-online.target" ];
 
     # Until the token has been placed by hand this unit does nothing at all,
@@ -66,7 +69,18 @@ in
       LogRateLimitBurst = 200;
       ExecStart = pkgs.writeShellScript "gmail-pull" ''
         set -u
-        export PATH=${pkgs.lib.makeBinPath (with pkgs; [ gyb coreutils findutils gnugrep gawk ])}
+        export PATH=${
+          pkgs.lib.makeBinPath (
+            with pkgs;
+            [
+              gyb
+              coreutils
+              findutils
+              gnugrep
+              gawk
+            ]
+          )
+        }
 
         dir=/tank/backup/google/mail
         target=""

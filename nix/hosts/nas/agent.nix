@@ -18,7 +18,12 @@
 # The cost is that the agent needs its own Claude Code credential, because the
 # module shares the running user's: "Home directory holding the agent's Claude
 # auth and caches."
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   agentHome = "/var/lib/agent";
 in

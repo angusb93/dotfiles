@@ -14,7 +14,12 @@
 # the library, the arr stack or [[vpn-network-namespace]] changes. If this
 # turns out to be worse than a £40 streaming stick, deleting this file is the
 # whole rollback.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   # The one recovery primitive. Restarting the kiosk session while the TV is
   # *on* is the move that has fixed every silent evening (2026-09-29, 09-30,
@@ -27,7 +32,10 @@ let
   # restarted them. Stopping user@ explicitly is what makes the refresh real.
   tv-session-bounce = pkgs.writeShellApplication {
     name = "tv-session-bounce";
-    runtimeInputs = [ pkgs.systemd pkgs.coreutils ];
+    runtimeInputs = [
+      pkgs.systemd
+      pkgs.coreutils
+    ];
     text = ''
       set -uo pipefail
       uid=$(id -u kiosk)
@@ -145,7 +153,12 @@ let
   # the process table, so this checks for all three.
   tv-watchdog = pkgs.writeShellApplication {
     name = "tv-watchdog";
-    runtimeInputs = [ pkgs.systemd pkgs.coreutils pkgs.procps pkgs.gnugrep ];
+    runtimeInputs = [
+      pkgs.systemd
+      pkgs.coreutils
+      pkgs.procps
+      pkgs.gnugrep
+    ];
     text = ''
       set -uo pipefail
 
@@ -258,7 +271,11 @@ in
     # No wheel. No password either: autologin goes through PAM's autologin
     # path, so a locked account is both sufficient and preferable - it cannot
     # be used to log in from a console or over SSH.
-    extraGroups = [ "audio" "video" "render" ];
+    extraGroups = [
+      "audio"
+      "video"
+      "render"
+    ];
   };
 
   services.xserver.desktopManager.kodi = {
@@ -272,7 +289,10 @@ in
     # dead: Kodi starts fine, the addon's settings dialog opens with every
     # field blank, and the only evidence is a ModuleNotFoundError buried in
     # kodi.log. Upstream bug, one-line workaround here.
-    package = pkgs.kodi.withPackages (p: [ p.jellyfin p.typing_extensions ]);
+    package = pkgs.kodi.withPackages (p: [
+      p.jellyfin
+      p.typing_extensions
+    ]);
   };
 
   services.displayManager.autoLogin = {
