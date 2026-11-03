@@ -52,3 +52,15 @@ knock it down.
   Aligned `key = value` lists only when enumerating concrete state.
 - Acknowledges the cost of his own proposal instead of selling past it.
   "Thats true this is major baggage".
+
+
+## Register: replying to developers in a thread
+
+For answering a technical question or challenge from engineers who already have the context.
+
+- Three or four short paragraphs at most. No lists, no numbers or measurements unless asked, no sign-off, no @-mentions, no soliciting dissent.
+- Lead with the reason, not with agreement or a restatement of their point.
+- One line of justification per point. Assume they can fill in the rest.
+- Mention an alternative he already considered, with its tradeoff in one sentence ("I did talk about X. Though that is Y, though much more Z").
+- Agree briefly and plainly when they are right ("X is a good shout"), then say what the best design is.
+- The proposal register's set pieces (the voiced objection, the self-aware name, "knock it down") do not belong here.
