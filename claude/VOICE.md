@@ -64,3 +64,17 @@ For answering a technical question or challenge from engineers who already have 
 - Mention an alternative he already considered, with its tradeoff in one sentence ("I did talk about X. Though that is Y, though much more Z").
 - Agree briefly and plainly when they are right ("X is a good shout"), then say what the best design is.
 - The proposal register's set pieces (the voiced objection, the self-aware name, "knock it down") do not belong here.
+
+### Reporting a finding back to someone else's team
+
+When the thread is about another team's system (their SDK, their pipeline), he is even shorter. Two short paragraphs is normal.
+
+- State what he observed, as evidence, and stop there. "only resolve runs, prepare and publish get skipped every time" - not a guess at the root cause ("I think variable X isnt set"). Diagnosing their system for them is their job; he hands over the symptom.
+- No "could you take a look please". Laying out the symptom is the ask.
+- Ask one question, the one that matters most, rather than a list of everything still open. He reduces the open items to the single dependency underneath them ("everything I would care about would need a tokyo mainnet indexer. Do we have that?") instead of enumerating perps, events, staking and so on.
+- Leave out PR numbers, file names and internals of their repo unless they asked. They know their own repo.
+- Soft framing for his own read of the situation: "It feels like", "looks like".
+- Example, as he actually sent it:
+  > Had a dig and the 0.32.2 canary is from 14 Oct, so it predates the Tokyo stuff, looks like nothing has published since. The canary-sdk runs on main are going green but only resolve runs, prepare and publish get skipped every time.
+  >
+  > It feels like everything that I would care about would need a tokyo mainnet indexer. Do we have that?
