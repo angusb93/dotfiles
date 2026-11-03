@@ -14,9 +14,18 @@ mkdir -p "$HOME/bin"
 # migrating (~/.ssh/config especially, since host entries are deliberately
 # untracked here and belong in ~/.ssh/config.d/*.conf). Only the named file is
 # touched - never the directory - so ssh keys and known_hosts are left alone.
+repo_root=$(pwd -P)
 for f in .zshrc .ssh/config .config/mise/config.toml; do
   target="${HOME:?}/$f"
   [[ -e "$target" && ! -L "$target" ]] || continue
+  # $target itself is not a symlink, but a PARENT of it can be: stow folds
+  # ~/.config/mise into a single link to ../dotfiles/mise, which makes
+  # ~/.config/mise/config.toml a real file living inside this repo. Moving that
+  # aside deletes the tracked config instead of a pre-dotfiles leftover - it
+  # did, on 2026-11-03, and the repo lost mise/config.toml on a plain re-run.
+  # Resolve through the parent links and skip anything already in the repo.
+  resolved="$(cd "$(dirname "$target")" && pwd -P)/$(basename "$target")"
+  [[ "$resolved" == "$repo_root"/* ]] && continue
   backup="$target.pre-dotfiles"
   [[ -e "$backup" ]] && backup="$backup.$(date +%Y%m%d%H%M%S)"
   echo "Backing up pre-existing $f -> ${backup#"$HOME/"}"
