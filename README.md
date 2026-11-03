@@ -94,7 +94,17 @@ git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
 
 Then inside tmux: press `prefix` (`Ctrl+A`), then `I` to install plugins.
 
-### 7. Restart
+### 7. Authenticate CodeRabbit
+
+```bash
+coderabbit auth login
+```
+
+One-time, per machine.
+The CLI is installed by the flake but stays inert until this runs; the `ship` skill uses it to review a branch locally before anything is pushed.
+Skip it on a machine with no code checkouts.
+
+### 8. Restart
 
 Ensures all system changes (dock, trackpad, etc.) take effect.
 

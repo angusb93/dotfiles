@@ -61,6 +61,7 @@
   "agentPushNotifEnabled": true,
   "voiceEnabled": true,
   "enabledPlugins": {
-    "figma@claude-plugins-official": true
+    "figma@claude-plugins-official": true,
+    "coderabbit@claude-plugins-official": true
   }
 }

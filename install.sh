@@ -146,6 +146,18 @@ if command -v claude &>/dev/null; then
   claude mcp add -s user playwright bunx @playwright/mcp 2>/dev/null || true
 fi
 
+# Fetch the Claude Code plugins declared in the repo settings. Enabling a plugin
+# in settings.json only flips a flag - the plugin itself still has to be pulled
+# from its marketplace, which otherwise means running /plugin install by hand on
+# every machine. Idempotent: an already-installed plugin is a no-op.
+if command -v claude &>/dev/null; then
+  while read -r plugin; do
+    [[ -n "$plugin" ]] || continue
+    claude plugin install "$plugin" &>/dev/null ||
+      echo "⚠ could not install Claude Code plugin $plugin (continuing)"
+  done < <(jq -r '.enabledPlugins // {} | to_entries[] | select(.value) | .key' "$claude_settings_repo")
+fi
+
 # Switch gh account if specified
 if command -v gh &>/dev/null && [[ -n "${GH_DEFAULT_USER:-}" ]]; then
   gh auth switch --user "$GH_DEFAULT_USER"

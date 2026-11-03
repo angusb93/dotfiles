@@ -226,6 +226,13 @@
               "figma"
               "spotify"
               "google-chrome"
+              # CodeRabbit CLI - the local pre-push review pass that the ship
+              # skill runs before anything leaves the machine. Cask rather than
+              # nixpkgs because nixpkgs has no package for it; this cask is the
+              # vendor's own distribution. The binary is inert until
+              # `coderabbit auth login` has run on the machine, so carrying it
+              # on a Mac with no work checkouts costs nothing.
+              "coderabbit"
               # 1Password: cask rather than nixpkgs `_1password-gui`, which does
               # support aarch64-darwin. Two reasons. (1) The macOS app must live
               # in /Applications for browser integration and Touch ID unlock;

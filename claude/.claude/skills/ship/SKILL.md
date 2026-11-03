@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Review committed changes with fresh eyes, open or update a PR, watch CI and merge conflicts until green, then drive Copilot review comments to resolution. Use when the user asks to ship, ship it, push safely, babysit a PR, handle Copilot comments, or invokes /ship.
+description: Review committed changes locally with CodeRabbit and with fresh eyes, open or update a PR, watch CI and merge conflicts until green, then drive Copilot review comments to resolution. Use when the user asks to ship, ship it, push safely, babysit a PR, handle Copilot comments, or invokes /ship.
 ---
 
 # ship
@@ -57,11 +57,33 @@ Finally, capture the intent: what the user set out to accomplish, in their terms
 You know this from the conversation; do not re-read files to reconstruct it.
 The reviewer in phase 1 and the PR body both need it, and it is what separates "deliberate choice" from "mistake" in every judgment call below.
 
-## Phase 1: Fresh-eyes review
+## Phase 1: Pre-push review
 
-Review the branch before it leaves the machine.
-You wrote this code, so do not review it yourself: launch one subagent with no authoring context.
-Do not run the diff in your own context; the subagent produces and reads it.
+Review the branch before it leaves the machine, from two angles at once.
+Nothing is pushed until both are clean.
+You wrote this code, so do not review it yourself, and do not run the diff in your own context; both reviewers produce and read it in theirs.
+
+Launch these two in parallel, in one message:
+
+### 1a: CodeRabbit
+
+CodeRabbit is the same reviewer that comments on the PR, run locally.
+Every finding it returns here is a review round that never happens on GitHub, which is the whole point of running it before the push.
+
+Prefer its own subagent, which keeps the review out of your context:
+
+- Launch the `coderabbit:code-reviewer` subagent and ask it for the findings on the branch's **committed** changes against `<default-branch>`.
+  Scope matters: CodeRabbit reviews the whole worktree by default, which would pull in the unrelated local edits phase 0 told you to preserve and report them as branch findings.
+- If that subagent is not available (the plugin is not installed on this machine), launch a plain subagent to run `coderabbit review --committed --base <default-branch>` and report back only the findings - never pipe that output into your own context.
+- If the `coderabbit` binary is missing or `coderabbit auth status` fails, say so in one line and carry on with 1b alone.
+  Do not try to install or authenticate it yourself; it is declared in the nix flake and `coderabbit auth login` is the user's to run.
+
+CodeRabbit does not run tests, by design.
+CI does that, and phase 3 reads the results.
+
+### 1b: Fresh eyes
+
+Launch one subagent with no authoring context.
 
 Give the subagent:
 
@@ -73,7 +95,10 @@ Give the subagent:
   - `note`: informational; no action needed.
 - Instructions to judge against the intent: something the user explicitly chose is not a finding, however unusual it looks in the diff.
 
-Then act on the findings in one pass:
+### Acting on both
+
+Merge the two findings lists, dropping duplicates where CodeRabbit and the fresh-eyes reviewer caught the same thing, and classify anything CodeRabbit returned by the same `fix` / `intent` / `note` scheme.
+Then act on the merged list in one pass:
 
 - Fix every `fix` finding yourself and commit on the same branch.
   Do not launch a second review subagent to re-check; the test suite is the recheck.
@@ -195,7 +220,7 @@ After 2 rounds with comments still arriving, stop and summarize what remains rat
 Report to the user in one readable summary:
 
 - The PR link and its state (checks green, mergeable, Copilot threads resolved).
-- What the fresh-eyes review found and fixed before push, each CI failure fixed, and each conflict rebased away.
+- What the pre-push review found and fixed, CodeRabbit and fresh eyes counted separately, plus each CI failure fixed and each conflict rebased away.
 - Each Copilot comment with a one-line verdict: fixed, or rejected and why.
 - Any judgment call made on their behalf while running unattended.
 
