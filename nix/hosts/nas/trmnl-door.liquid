@@ -2,7 +2,10 @@
 <style>
   /* Sizes are CSS px; LaraPaper scales the page up about 1.8x for the X's
      1872x1404 panel. One font, big numbers, small grey labels around them. */
-  .d { height: 100%; display: grid; grid-template-columns: 1.55fr 1fr; column-gap: 30px;
+  /* Pinned to the full panel: the framework's .layout centres its child, so
+     without an explicit width the grid shrinks to its content on quiet days. */
+  .d { width: 100%; box-sizing: border-box; height: 100%; display: grid;
+       grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); column-gap: 30px;
        padding: 6px 8px 0; font-family: "Inter", sans-serif; color: #000; }
   .d-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; min-height: 0; }
   .d-col + .d-col { border-left: 1px solid #777; padding-left: 30px; }
@@ -29,12 +32,12 @@
   .ev .w { grid-column: 2; font-size: 14px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Weather: a huge temperature, one glanceable sentence, small stats around it */
-  .wx { display: flex; align-items: center; gap: 10px; }
+  .wx { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .wx .icf { width: 92px; height: 92px; }
   .wx .temp { font-size: 112px; font-weight: 300; line-height: 0.85; letter-spacing: -0.05em; }
-  .glance { font-size: 25px; font-weight: 700; line-height: 1.15; margin-top: 12px; letter-spacing: -0.01em; }
-  .sub { font-size: 15px; color: #222; margin-top: 3px; font-variant-numeric: tabular-nums; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 14px; }
+  .glance { font-size: 25px; font-weight: 700; line-height: 1.15; margin-top: 12px; letter-spacing: -0.01em; text-align: center; }
+  .sub { font-size: 15px; color: #222; margin-top: 3px; font-variant-numeric: tabular-nums; text-align: center; }
+  .stats { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; gap: 10px 8px; margin-top: 14px; }
   .stat { display: flex; align-items: center; gap: 7px; }
   .stat .ic { width: 20px; height: 20px; }
   .stat .v { font-size: 18px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
