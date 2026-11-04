@@ -5,28 +5,28 @@
   .d { height: 100%; display: grid; grid-template-columns: 1.55fr 1fr; column-gap: 30px;
        padding: 6px 8px 0; font-family: "Inter", sans-serif; color: #000; }
   .d-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; min-height: 0; }
-  .d-col + .d-col { border-left: 1px solid #bbb; padding-left: 30px; }
+  .d-col + .d-col { border-left: 1px solid #777; padding-left: 30px; }
 
-  .lbl { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: #666;
+  .lbl { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: #333;
          letter-spacing: 0.02em; margin-bottom: 8px; }
-  .lbl .ic { width: 17px; height: 17px; opacity: 0.75; }
-  .none { font-size: 17px; color: #666; }
+  .lbl .ic { width: 17px; height: 17px; }
+  .none { font-size: 17px; color: #333; }
 
   /* Headlines */
   .lead { font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em;
           display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .src { font-size: 12px; color: #666; margin-top: 4px; }
+  .src { font-size: 12px; color: #333; margin-top: 4px; }
   .heds { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 14px; }
   .hed { font-size: 15px; font-weight: 600; line-height: 1.25;
          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
   /* Calendar */
-  .day { font-size: 13px; font-weight: 600; color: #666; margin: 12px 0 2px; }
+  .day { font-size: 13px; font-weight: 600; color: #333; margin: 12px 0 2px; }
   .day:first-of-type { margin-top: 0; }
   .ev { display: grid; grid-template-columns: 64px 1fr; column-gap: 14px; padding: 5px 0; align-items: baseline; }
-  .ev .t { font-size: 16px; font-weight: 500; color: #444; font-variant-numeric: tabular-nums; }
+  .ev .t { font-size: 16px; font-weight: 500; color: #222; font-variant-numeric: tabular-nums; }
   .ev .n { font-size: 20px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ev .w { grid-column: 2; font-size: 14px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev .w { grid-column: 2; font-size: 14px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Weather: the temperature is the point */
   .wx { display: flex; align-items: flex-start; gap: 18px; }
@@ -34,26 +34,26 @@
   .wx .side { padding-top: 6px; }
   .wx .sum { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 600; }
   .wx .sum .ic { width: 28px; height: 28px; }
-  .wx .hl { font-size: 16px; color: #444; margin-top: 4px; font-variant-numeric: tabular-nums; }
-  .wx .rain { font-size: 14px; color: #666; margin-top: 8px; line-height: 1.35; }
+  .wx .hl { font-size: 16px; color: #222; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .wx .rain { font-size: 14px; color: #333; margin-top: 8px; line-height: 1.35; }
   .hours { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 16px; text-align: center;
            font-variant-numeric: tabular-nums; }
-  .hours .h { font-size: 12px; color: #666; }
+  .hours .h { font-size: 12px; color: #333; }
   .hours .ic { width: 20px; height: 20px; margin: 4px auto 0; display: block; }
   .hours .v { font-size: 20px; font-weight: 600; margin: 2px 0; }
-  .hours .r { font-size: 11px; color: #666; }
+  .hours .r { font-size: 11px; color: #333; }
 
   /* Trains */
-  .trains { border-top: 1px solid #bbb; padding-top: 18px; }
+  .trains { border-top: 1px solid #777; padding-top: 18px; }
   .line { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; }
   .line .n { font-size: 17px; font-weight: 600; }
-  .line .s { font-size: 17px; color: #444; }
+  .line .s { font-size: 17px; color: #222; }
   .line .s.bad { background: #000; color: #fff; font-weight: 700; padding: 1px 8px; border-radius: 5px; }
-  .reason { font-size: 12px; line-height: 1.35; color: #333; margin: 2px 0 4px;
+  .reason { font-size: 12px; line-height: 1.35; color: #111; margin: 2px 0 4px;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .dir { font-size: 13px; font-weight: 600; color: #666; margin: 12px 0 2px; }
+  .dir { font-size: 13px; font-weight: 600; color: #333; margin: 12px 0 2px; }
   .updated { position: absolute; right: 10px; bottom: 6px; font-family: "Inter", sans-serif;
-             font-size: 10px; color: #888; }
+             font-size: 10px; color: #555; }
   .times { display: flex; gap: 20px; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
   /* Lucide icons (ISC licence), inlined so the renderer needs no extra fetch. */
   .ic { display: inline-block; background: center / contain no-repeat; flex: none; }
