@@ -175,54 +175,97 @@ def icon(code: int, is_day: int) -> str:
     return "rain"
 
 
+def glance(now: dt.datetime, current_code: int, hours: list[dict]) -> str:
+    """One sentence for the next twelve hours, readable from across the hall."""
+    def first(pred) -> dict | None:
+        return next((h for h in hours if pred(h)), None)
+
+    precip = lambda code: code >= 51 and code not in (95, 96, 99)  # noqa: E731
+    word = "Snow" if current_code in (71, 73, 75, 77, 85, 86) else "Rain"
+
+    if current_code >= 95:
+        return "Thunderstorms now"
+    storm = first(lambda h: h["code"] >= 95 and h["chance"] >= 30)
+    if storm:
+        return f"Thunderstorms likely from {storm['time']}"
+    if precip(current_code):
+        easing = first(lambda h: h["chance"] < 30)
+        if easing:
+            return f"{word} now, easing by {easing['time']}"
+        return f"{word} for the next few hours"
+    likely = first(lambda h: h["chance"] >= RAIN_LIKELY)
+    if likely:
+        word = "Snow" if likely["code"] in (71, 73, 75, 77, 85, 86) else "Rain"
+        return f"{word} likely from {likely['time']}"
+    if any(h["chance"] >= 30 for h in hours):
+        return "Chance of showers later"
+    return "Dry tonight" if now.hour >= 17 else "Dry all day"
+
+
 def weather(now: dt.datetime) -> dict:
     r = requests.get(
         "https://api.open-meteo.com/v1/forecast",
         params={
             "latitude": LAT,
             "longitude": LON,
-            "current": "temperature_2m,weather_code,is_day",
+            "current": "temperature_2m,apparent_temperature,relative_humidity_2m,"
+                       "wind_speed_10m,weather_code,is_day",
             "hourly": "precipitation_probability,temperature_2m,weather_code,is_day",
-            "forecast_hours": 12,
-            "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunset",
+            "forecast_hours": 13,
+            "daily": "weather_code,temperature_2m_max,temperature_2m_min,"
+                     "precipitation_probability_max,precipitation_sum,uv_index_max,"
+                     "sunrise,sunset",
+            "wind_speed_unit": "mph",
             "timezone": "Europe/London",
-            "forecast_days": 1,
+            "forecast_days": 2,
         },
         timeout=20,
     )
     r.raise_for_status()
     d = r.json()
+    cur, daily, hourly = d["current"], d["daily"], d["hourly"]
 
-    # The first hour from now when rain is more likely than not.
-    rain_from = ""
-    hourly = d["hourly"]
-    for when, chance in zip(hourly["time"], hourly["precipitation_probability"]):
-        hour = dt.datetime.fromisoformat(when).replace(tzinfo=LONDON)
-        if hour >= now.replace(minute=0, second=0, microsecond=0) and (chance or 0) >= RAIN_LIKELY:
-            rain_from = hour.strftime("%H:%M")
-            break
-
-    # Every other hour for the next ten, for the strip under the headline figure.
-    hours = []
+    upcoming = []
     for when, temp, code, chance, is_day in zip(
         hourly["time"], hourly["temperature_2m"], hourly["weather_code"],
         hourly["precipitation_probability"], hourly["is_day"],
     ):
         hour = dt.datetime.fromisoformat(when).replace(tzinfo=LONDON)
-        if hour > now and hour.hour % 2 == 0 and len(hours) < 5:
-            hours.append({"time": hour.strftime("%H"), "temp": round(temp),
-                          "rain": chance or 0, "icon": icon(code, is_day)})
+        if hour > now:
+            upcoming.append({"time": hour.strftime("%H:%M"), "temp": round(temp),
+                             "code": code, "chance": chance or 0,
+                             # A dry code with a likely chance of rain still
+                             # gets a rain icon, so the strip agrees with the
+                             # glance sentence above it.
+                             "icon": icon(code, is_day) if code >= 51 or (chance or 0) < RAIN_LIKELY
+                             else "drizzle"})
 
     return {
-        "now": round(d["current"]["temperature_2m"]),
-        "hours": hours,
-        "sunset": d["daily"]["sunset"][0][-5:],
-        "summary": WMO.get(d["current"]["weather_code"], ""),
-        "icon": icon(d["current"]["weather_code"], d["current"]["is_day"]),
-        "high": round(d["daily"]["temperature_2m_max"][0]),
-        "low": round(d["daily"]["temperature_2m_min"][0]),
-        "rain_chance": d["daily"]["precipitation_probability_max"][0] or 0,
-        "rain_from": rain_from,
+        "now": round(cur["temperature_2m"]),
+        "feels": round(cur["apparent_temperature"]),
+        "humidity": cur["relative_humidity_2m"],
+        "wind": round(cur["wind_speed_10m"]),
+        "summary": WMO.get(cur["weather_code"], ""),
+        "icon": icon(cur["weather_code"], cur["is_day"]),
+        "glance": glance(now, cur["weather_code"], upcoming),
+        "high": round(daily["temperature_2m_max"][0]),
+        "low": round(daily["temperature_2m_min"][0]),
+        "uv": round(daily["uv_index_max"][0] or 0),
+        "sunrise": daily["sunrise"][0][-5:],
+        "sunset": daily["sunset"][0][-5:],
+        # Every other hour, for the strip under the headline figure.
+        "hours": [
+            {"time": h["time"][:2], "temp": h["temp"], "rain": h["chance"], "icon": h["icon"]}
+            for h in upcoming if int(h["time"][:2]) % 2 == 0
+        ][:5],
+        "tomorrow": {
+            "summary": WMO.get(daily["weather_code"][1], ""),
+            "icon": icon(daily["weather_code"][1], 1),
+            "high": round(daily["temperature_2m_max"][1]),
+            "low": round(daily["temperature_2m_min"][1]),
+            "rain": daily["precipitation_probability_max"][1] or 0,
+            "mm": daily["precipitation_sum"][1] or 0,
+        },
     }
 
 
