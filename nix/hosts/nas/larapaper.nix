@@ -25,6 +25,11 @@ let
   # restored alongside the database it encrypts. Not in the flake because the
   # flake is public.
   envFile = "${state}/app.env";
+
+  doorPython = pkgs.python3.withPackages (p: [
+    p.google-auth
+    p.requests
+  ]);
 in
 {
   virtualisation.oci-containers.containers.larapaper = {
@@ -69,6 +74,39 @@ in
     "d ${state}/database 0750 82 82 -"
     "d ${state}/generated 0750 82 82 -"
   ];
+
+  # The door screen. trmnl-door.liquid is the Door plugin's markup; LaraPaper
+  # keeps its own copy in its database, so a change there is pasted into the
+  # plugin (or pushed with tinker), not deployed by this flake.
+  #
+  # Its feed (trmnl-door.py): calendar, weather, Windrush and,
+  # once Miniflux exists, headlines, pushed to the "Door" webhook plugin.
+  #
+  # A user unit for angus because the 1Password service account token lives in
+  # ~angus/.config/op, the same arrangement as paseo-daemon in default.nix.
+  # The webhook URL is in ~/.config/trmnl-door/env, not here: the plugin UUID
+  # is the only thing guarding that endpoint, and this flake is public.
+  systemd.user.services.trmnl-door = {
+    description = "Push calendar, weather and trains to the TRMNL door screen";
+    serviceConfig = {
+      Type = "oneshot";
+      EnvironmentFile = "%h/.config/trmnl-door/env";
+    };
+    script = ''
+      OP_SERVICE_ACCOUNT_TOKEN="$(cat "$HOME/.config/op/service-account-token")" \
+        ${pkgs._1password-cli}/bin/op document get trmnl-calendar-sa --vault Morty \
+        | ${doorPython}/bin/python3 -I ${./trmnl-door.py}
+    '';
+  };
+
+  systemd.user.timers.trmnl-door = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      # Matches the device's 5-minute refresh, so each wake finds fresh data.
+      OnCalendar = "*:0/5";
+      Persistent = true;
+    };
+  };
 
   systemd.services.docker-larapaper = {
     after = [ "network-online.target" ];

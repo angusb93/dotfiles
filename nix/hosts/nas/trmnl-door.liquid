@@ -1,0 +1,148 @@
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=block" rel="stylesheet">
+<style>
+  /* Sizes are CSS px; LaraPaper scales the page up about 1.8x for the X's
+     1872x1404 panel. One font, big numbers, small grey labels around them. */
+  .d { height: 100%; display: grid; grid-template-columns: 1.55fr 1fr; column-gap: 30px;
+       padding: 6px 8px 0; font-family: "Inter", sans-serif; color: #000; }
+  .d-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; min-height: 0; }
+  .d-col + .d-col { border-left: 1px solid #bbb; padding-left: 30px; }
+
+  .lbl { font-size: 13px; font-weight: 600; color: #666; letter-spacing: 0.02em; margin-bottom: 8px; }
+  .none { font-size: 17px; color: #666; }
+
+  /* Headlines */
+  .lead { font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em;
+          display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .src { font-size: 12px; color: #666; margin-top: 4px; }
+  .heds { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-top: 14px; }
+  .hed { font-size: 15px; font-weight: 600; line-height: 1.25;
+         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* Calendar */
+  .day { font-size: 13px; font-weight: 600; color: #666; margin: 12px 0 2px; }
+  .day:first-of-type { margin-top: 0; }
+  .ev { display: grid; grid-template-columns: 64px 1fr; column-gap: 14px; padding: 5px 0; align-items: baseline; }
+  .ev .t { font-size: 16px; font-weight: 500; color: #444; font-variant-numeric: tabular-nums; }
+  .ev .n { font-size: 20px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev .w { grid-column: 2; font-size: 14px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Weather: the temperature is the point */
+  .wx { display: flex; align-items: flex-start; gap: 18px; }
+  .wx .temp { font-size: 112px; font-weight: 300; line-height: 0.85; letter-spacing: -0.05em; }
+  .wx .side { padding-top: 6px; }
+  .wx .sum { font-size: 22px; font-weight: 600; }
+  .wx .hl { font-size: 16px; color: #444; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .wx .rain { font-size: 14px; color: #666; margin-top: 8px; line-height: 1.35; }
+  .hours { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 16px; text-align: center;
+           font-variant-numeric: tabular-nums; }
+  .hours .h { font-size: 12px; color: #666; }
+  .hours .v { font-size: 20px; font-weight: 600; margin: 2px 0; }
+  .hours .r { font-size: 11px; color: #666; }
+
+  /* Trains */
+  .status { font-size: 22px; font-weight: 700; }
+  .status.bad { display: inline-block; background: #000; color: #fff; padding: 3px 10px; border-radius: 6px; }
+  .reason { font-size: 13px; line-height: 1.35; color: #333; margin-top: 6px;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .dir { font-size: 13px; font-weight: 600; color: #666; margin: 12px 0 2px; }
+  .dep { display: grid; grid-template-columns: 82px 1fr; column-gap: 12px; align-items: baseline; padding: 2px 0;
+         font-variant-numeric: tabular-nums; }
+  .dep .t { font-size: 24px; font-weight: 600; }
+  .dep .x { font-size: 15px; color: #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .times { display: flex; gap: 20px; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="view view--{{ size }}">
+  <div class="layout">
+    <div class="d">
+
+      <div class="d-col">
+        {% if headlines.size > 0 %}
+          <section>
+            <div class="lbl">Headlines</div>
+            <div class="lead">{{ headlines[0].title }}</div>
+            <div class="src">{{ headlines[0].source }}</div>
+            <div class="heds">
+              {% for h in headlines offset:1 limit:4 %}
+                <div><div class="hed">{{ h.title }}</div><div class="src">{{ h.source }}</div></div>
+              {% endfor %}
+            </div>
+          </section>
+          {% assign max_events = 5 %}
+        {% else %}
+          {% assign max_events = 10 %}
+        {% endif %}
+
+        <section>
+          <div class="lbl">{{ date }}</div>
+          {% if events.size == 0 %}
+            <div class="none">Nothing in the calendar this week.</div>
+          {% endif %}
+          {% assign last_day = "" %}
+          {% for e in events limit: max_events %}
+            {% if e.day != last_day %}
+              <div class="day">{{ e.day }}</div>
+              {% assign last_day = e.day %}
+            {% endif %}
+            <div class="ev">
+              <span class="t">{{ e.time }}</span>
+              <span class="n">{{ e.title }}</span>
+              {% if e.where != "" %}<span class="w">{{ e.where }}</span>{% endif %}
+            </div>
+          {% endfor %}
+        </section>
+      </div>
+
+      <div class="d-col">
+        <section>
+          <div class="wx">
+            <span class="temp">{{ weather.now }}°</span>
+            <div class="side">
+              <div class="sum">{{ weather.summary }}</div>
+              <div class="hl">H {{ weather.high }}°&nbsp; L {{ weather.low }}°</div>
+              <div class="rain">
+                {% if weather.rain_from != "" %}Rain from {{ weather.rain_from }}{% elsif weather.rain_chance >= 30 %}{{ weather.rain_chance }}% chance of rain{% else %}Dry today{% endif %}<br>Sunset {{ weather.sunset }}
+              </div>
+            </div>
+          </div>
+          {% if weather.hours.size > 0 %}
+            <div class="hours">
+              {% for h in weather.hours %}
+                <div><div class="h">{{ h.time }}:00</div><div class="v">{{ h.temp }}°</div><div class="r">{% if h.rain >= 20 %}{{ h.rain }}%{% else %}&nbsp;{% endif %}</div></div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </section>
+
+        <section>
+          <div class="lbl">Windrush · Canonbury</div>
+          {% if windrush.good %}
+            <div class="status">Good service</div>
+          {% else %}
+            <div class="status bad">{{ windrush.status }}</div>
+            {% if windrush.reason != "" %}<div class="reason">{{ windrush.reason }}</div>{% endif %}
+          {% endif %}
+
+          <div class="dir">Southbound</div>
+          {% for d in windrush.south %}
+            <div class="dep"><span class="t">{{ d.time }}</span><span class="x">{{ d.dest }}</span></div>
+          {% else %}
+            <div class="none">No trains listed</div>
+          {% endfor %}
+
+          <div class="dir">To Highbury &amp; Islington</div>
+          {% if windrush.north.size > 0 %}
+            <div class="times">{% for d in windrush.north %}<span>{{ d.time }}</span>{% endfor %}</div>
+          {% else %}
+            <div class="none">No trains listed</div>
+          {% endif %}
+        </section>
+      </div>
+
+    </div>
+  </div>
+  <div class="title_bar">
+    <span class="title">Canonbury</span>
+    <span class="instance">Updated {{ updated }}</span>
+  </div>
+</div>
