@@ -153,6 +153,7 @@ in
     ./paperless.nix
     ./calibre-web.nix
     ./bindery.nix
+    ./larapaper.nix
     ./qbittorrent.nix
     ./paperless-ingest.nix
     ./staleness.nix
