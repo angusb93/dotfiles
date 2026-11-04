@@ -37,6 +37,9 @@ in
       APP_URL = "http://${lanAddr}:${toString port}";
       DB_DATABASE = "database/storage/database.sqlite";
       PHP_OPCACHE_ENABLE = "1";
+
+      # Closed: the admin account exists, and the port is open on the LAN.
+      REGISTRATION_ENABLED = "false";
       PHP_DATE_TIMEZONE = "Europe/London";
       TZ = "Europe/London";
     };
