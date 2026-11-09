@@ -335,6 +335,24 @@
 
           # Allow unfree packages
           nixpkgs.config.allowUnfree = true;
+
+          # ⚠️ TEMPORARY WORKAROUND (2026-11-09), uncommitted on purpose.
+          # dotnetCorePackages.dotnet_9.vmr.aarch64-darwin has been failing on
+          # Hydra since 2026-11-06 (dep failure in swift-build), so nothing is
+          # in the binary cache and marksman compiles the whole .NET VMR from
+          # source locally - hours per lock bump. The prebuilt runtime gives up
+          # source-build CVE propagation into .NET, so drop this as soon as that
+          # Hydra job is green again.
+          nixpkgs.overlays = [
+            (final: prev: {
+              dotnetCorePackages = prev.dotnetCorePackages.overrideScope (
+                f: p: {
+                  sdk_9_0 = p.sdk_9_0-bin;
+                  runtime_9_0 = p.runtime_9_0-bin;
+                }
+              );
+            })
+          ];
         };
     in
     {
