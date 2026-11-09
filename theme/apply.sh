@@ -61,6 +61,14 @@ set -g window-status-current-format '#[fg=#$BASE08,bg=#$BASE00]#[fg=#$BASE00,bg=
 set -g window-status-separator ' '
 set -g message-style 'bg=#$BASE02,fg=#$BASE05'
 set -g mode-style 'bg=#$BASE02,fg=#$BASE05'
+set -g message-command-style 'bg=#$BASE02,fg=#$BASE05'
+# tmux 3.8 ships a built-in theme that greys popups and menus; pin them to the palette
+set -g popup-style 'bg=#$BASE00,fg=#$BASE05'
+set -g popup-border-style 'bg=#$BASE00,fg=#$BASE03'
+set -g menu-style 'bg=#$BASE00,fg=#$BASE05'
+set -g menu-selected-style 'bg=#$BASE08,fg=#$BASE00,bold'
+set -g menu-border-style 'bg=#$BASE00,fg=#$BASE03'
+set -g display-panes-border-style 'bg=#$BASE00,fg=#$BASE03'
 # [/theme:generated]
 EOF
 echo "✓ Tmux theme.conf generated"
