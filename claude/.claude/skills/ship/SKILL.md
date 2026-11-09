@@ -1,13 +1,15 @@
 ---
 name: ship
-description: Review committed changes locally with CodeRabbit and with fresh eyes, open or update a PR, watch CI and merge conflicts until green, then drive Copilot review comments to resolution. Use when the user asks to ship, ship it, push safely, babysit a PR, handle Copilot comments, or invokes /ship.
+description: Review committed changes locally with fresh eyes then CodeRabbit, open or update a PR, watch CI and merge conflicts until green, then drive CodeRabbit and Copilot review comments on the PR to resolution. Use when the user asks to ship, ship it, push safely, babysit a PR, handle review comments, or invokes /ship.
 ---
 
 # ship
 
-Validate the current branch's changes, get them onto a PR, and babysit that PR until CI is green and every Copilot review comment is resolved.
+Validate the current branch's changes, get them onto a PR, and babysit that PR until CI is green and every CodeRabbit and Copilot review thread is resolved.
 You drive everything yourself with `git` and `gh`.
+
 Never merge the PR; merging is the user's call.
+If the user wants the PR driven all the way into the default branch, that is the `ship-merge` skill, which runs this whole pipeline and then keeps going.
 
 ## Token discipline
 
@@ -20,8 +22,8 @@ Follow these rules throughout:
   Filter every `gh` call with `--jq` down to the exact fields you need.
 - Send bulky reading (the diff, failing CI logs) to a subagent and keep only its conclusions.
 
-Work through the four phases in order.
-Phases 3 and 4 loop: a push made while handling Copilot comments sends you back to the CI watch before re-requesting review.
+Work through the phases in order.
+Phases 3 and 4 loop: a push made while handling review comments sends you back to the CI watch before re-requesting review.
 
 ## Phase 0: Preconditions
 
@@ -41,7 +43,7 @@ Phases 3 and 4 loop: a push made while handling Copilot comments sends you back 
   Do not trust `origin/HEAD`; it is frequently stale and can point at a branch the repo has stopped using.
 
 Then rebase onto the current default branch, before the review and before anything is pushed.
-This is what makes the branch mergeable, and it means the phase 1 review and CI both run against the base the PR will actually merge into:
+This is what makes the branch mergeable, and it means the phase 1 reviews and CI both run against the base the PR will actually merge into:
 
 ```sh
 git fetch origin
@@ -55,33 +57,12 @@ git rebase origin/<default-branch>
 
 Finally, capture the intent: what the user set out to accomplish, in their terms, plus the deliberate decisions and tradeoffs made along the way.
 You know this from the conversation; do not re-read files to reconstruct it.
-The reviewer in phase 1 and the PR body both need it, and it is what separates "deliberate choice" from "mistake" in every judgment call below.
+Both reviewers below and the PR body all need it, and it is what separates "deliberate choice" from "mistake" in every judgment call below.
 
-## Phase 1: Pre-push review
+## Phase 1: Adversarial review
 
-Review the branch before it leaves the machine, from two angles at once.
-Nothing is pushed until both are clean.
-You wrote this code, so do not review it yourself, and do not run the diff in your own context; both reviewers produce and read it in theirs.
-
-Launch these two in parallel, in one message:
-
-### 1a: CodeRabbit
-
-CodeRabbit is the same reviewer that comments on the PR, run locally.
-Every finding it returns here is a review round that never happens on GitHub, which is the whole point of running it before the push.
-
-Prefer its own subagent, which keeps the review out of your context:
-
-- Launch the `coderabbit:code-reviewer` subagent and ask it for the findings on the branch's **committed** changes against `<default-branch>`.
-  Scope matters: CodeRabbit reviews the whole worktree by default, which would pull in the unrelated local edits phase 0 told you to preserve and report them as branch findings.
-- If that subagent is not available (the plugin is not installed on this machine), launch a plain subagent to run `coderabbit review --committed --base <default-branch>` and report back only the findings - never pipe that output into your own context.
-- If the `coderabbit` binary is missing or `coderabbit auth status` fails, say so in one line and carry on with 1b alone.
-  Do not try to install or authenticate it yourself; it is declared in the nix flake and `coderabbit auth login` is the user's to run.
-
-CodeRabbit does not run tests, by design.
-CI does that, and phase 3 reads the results.
-
-### 1b: Fresh eyes
+Review the branch with fresh eyes before anything else.
+You wrote this code, so do not review it yourself, and do not run the diff in your own context; the reviewer produces and reads it in theirs.
 
 Launch one subagent with no authoring context.
 
@@ -89,33 +70,56 @@ Give the subagent:
 
 - The command to produce the diff: `git diff $(git merge-base origin/<default-branch> HEAD)...HEAD`.
 - The intent paragraph from phase 0.
+- Instructions to review adversarially: assume the change is wrong somewhere and go looking for it.
+  Correctness, reliability, security, broken edge cases, missing tests, things the diff claims to do but does not.
 - Instructions to return only a findings list (no diff excerpts beyond the minimal offending lines), each with a severity (`error`, `warning`, `info`), file and line, a one-to-two sentence description, and a classification:
-  - `fix`: a genuine defect or omission; correctness, reliability, security, or a broken edge case.
+  - `fix`: a genuine defect or omission.
   - `intent`: the finding challenges a decision the intent says was deliberate, or changes product behavior.
   - `note`: informational; no action needed.
 - Instructions to judge against the intent: something the user explicitly chose is not a finding, however unusual it looks in the diff.
 
-### Acting on both
+### Responding to it
 
-Merge the two findings lists, dropping duplicates where CodeRabbit and the fresh-eyes reviewer caught the same thing, and classify anything CodeRabbit returned by the same `fix` / `intent` / `note` scheme.
-Then act on the merged list in one pass:
+Act on the list in one pass before moving on:
 
 - Fix every `fix` finding yourself and commit on the same branch.
   Do not launch a second review subagent to re-check; the test suite is the recheck.
-- Bring `intent` findings to the user verbatim before pushing and let them decide, unless they asked you to run unattended, in which case use your judgment and flag the decision in the final summary.
+- Bring `intent` findings to the user verbatim and let them decide, unless they asked you to run unattended, in which case use your judgment and flag the decision in the final summary.
 - If the repo has test and lint commands, run them now and fix what fails.
-  Do not push with a locally failing suite.
 
-## Phase 2: Push and PR
+## Phase 2: CodeRabbit review
+
+Only once phase 1 is fully responded to, run CodeRabbit locally.
+CodeRabbit is the same reviewer that comments on the PR; every finding it returns here is a review round that never happens on GitHub, which is the whole point of running it before the push.
+Running it after the adversarial fixes means it reviews the code you will actually push, not a draft.
+
+Prefer its own subagent, which keeps the review out of your context:
+
+- Launch the `coderabbit:code-reviewer` subagent and ask it for the findings on the branch's **committed** changes against `<default-branch>`.
+  Scope matters: CodeRabbit reviews the whole worktree by default, which would pull in the unrelated local edits phase 0 told you to preserve and report them as branch findings.
+- If that subagent is not available (the plugin is not installed on this machine), launch a plain subagent to run `coderabbit review --committed --base <default-branch>` and report back only the findings - never pipe that output into your own context.
+- If the `coderabbit` binary is missing or `coderabbit auth status` fails, say so in one line and skip to phase 3.
+  Do not try to install or authenticate it yourself; it is declared in the nix flake and `coderabbit auth login` is the user's to run.
+
+CodeRabbit does not run tests, by design.
+CI does that, and phase 4 reads the results.
+
+### Responding to it
+
+Classify its findings by the same `fix` / `intent` / `note` scheme and act on them exactly as in phase 1.
+Drop anything that duplicates a phase 1 finding you already handled.
+Re-run tests and lint after the fixes, and do not push with a locally failing suite.
+
+## Phase 3: Push and PR
 
 - Push the branch: `git push -u origin HEAD`.
   If the phase 0 rebase rewrote history on an already-pushed branch, use `git push --force-with-lease -u origin HEAD` instead.
   Never use a bare `--force`.
 - If no PR exists (`gh pr view` fails), create one with `gh pr create`.
-  Structure the body as: `## Intent` (the phase 0 paragraph), `## What changed`, `## Testing` (what you ran and what the review found).
+  Structure the body as: `## Intent` (the phase 0 paragraph), `## What changed`, `## Testing` (what you ran and what the reviews found).
 - If a PR already exists, the push updates it; refresh the body with `gh pr edit --body` only if the change's shape moved materially.
 
-## Phase 3: CI and merge conflicts
+## Phase 4: CI and merge conflicts
 
 Watch until checks are green and the PR is mergeable.
 
@@ -147,35 +151,37 @@ Watch until checks are green and the PR is mergeable.
    On `CONFLICTING` or `DIRTY`: repeat the phase 0 rebase, resolve conflicts with the smallest correct resolution, then `git push --force-with-lease`, and return to step 1.
    A PR that is merely behind but clean needs nothing.
 
-## Phase 4: Copilot review loop
+## Phase 5: PR review loop
 
-Drive Copilot review comments to resolution automatically.
+Drive the bots' review comments on the PR to resolution.
+Both CodeRabbit and Copilot review the PR itself, and both are handled in the same loop because they produce the same kind of thread.
 Repeat this loop until a round produces no new actionable comments, up to 2 rounds.
 
-1. Count existing Copilot reviews, then request one:
+1. Count existing bot reviews, then request a fresh round from both:
 
    ```sh
    gh api repos/{owner}/{repo}/pulls/{pr}/reviews \
-     --jq '[.[] | select(.user.login == "copilot-pull-request-reviewer[bot]")] | length'
+     --jq '[.[] | select(.user.login | test("copilot-pull-request-reviewer\\[bot\\]|coderabbitai\\[bot\\]"))] | length'
    gh pr edit --add-reviewer @copilot
+   gh pr comment --body '@coderabbitai review'
    ```
 
-   Re-requesting only triggers a fresh review when the head has new commits since Copilot's last review; on an unchanged head treat "no new review appears" as done, not as a failure.
-   If the request itself errors, Copilot review is not available on this repo; say so and finish.
-2. Wait for the review to land in one Bash call, not repeated polls:
+   Re-requesting only triggers a fresh review when the head has new commits since the last one; on an unchanged head treat "no new review appears" as done, not as a failure.
+   If either request errors, that reviewer is not available on this repo; say so in one line and carry on with the other.
+2. Wait for a review to land in one Bash call, not repeated polls:
 
    ```sh
    n=<count-from-step-1>; t=0
    while [ "$t" -lt 600 ]; do
      c=$(gh api repos/{owner}/{repo}/pulls/{pr}/reviews \
-       --jq '[.[] | select(.user.login == "copilot-pull-request-reviewer[bot]")] | length')
+       --jq '[.[] | select(.user.login | test("copilot-pull-request-reviewer\\[bot\\]|coderabbitai\\[bot\\]"))] | length')
      [ "$c" -gt "$n" ] && { echo "REVIEW LANDED"; exit 0; }
      sleep 30; t=$((t+30))
    done
    echo "TIMEOUT"
    ```
 
-   On timeout, tell the user Copilot never responded and finish with the PR link.
+   On timeout, tell the user which reviewer never responded and carry on with whatever did land.
 3. Fetch the actionable threads, letting `--jq` trim the response before it reaches you:
 
    ```sh
@@ -194,14 +200,16 @@ Repeat this loop until a round produces no new actionable comments, up to 2 roun
      }' -f owner=<owner> -f repo=<repo> -F pr=<number> \
      --jq '.data.repository.pullRequest.reviewThreads.nodes
            | map(select((.isResolved or .isOutdated) | not)
-                 | select(.comments.nodes[0].author.login == "copilot-pull-request-reviewer[bot]")
-                 | {id, path, line, commentId: .comments.nodes[0].databaseId, body: .comments.nodes[0].body})'
+                 | {id, path, line, author: .comments.nodes[0].author.login,
+                    commentId: .comments.nodes[0].databaseId, body: .comments.nodes[0].body})'
    ```
 
-4. Judge each comment on its merits against the intent; Copilot is frequently wrong or pedantic, and agreeing with a bad suggestion is worse than pushing back.
+   This returns human threads too.
+   Fix or reply to those on their merits as well, but never resolve a human's thread: leave it for them.
+4. Judge each bot comment on its merits against the intent; both bots are frequently wrong or pedantic, and agreeing with a bad suggestion is worse than pushing back.
    - Valid point: fix it in code.
    - Wrong, or challenging a deliberate decision: no code change; the reply explains why, citing the intent.
-5. For each handled thread, reply and resolve in the same Bash call, keeping only a one-line confirmation:
+5. For each handled bot thread, reply and resolve in the same Bash call, keeping only a one-line confirmation:
 
    ```sh
    gh api repos/{owner}/{repo}/pulls/{pr}/comments/<commentId>/replies -f body='...' --jq '.id'
@@ -210,7 +218,7 @@ Repeat this loop until a round produces no new actionable comments, up to 2 roun
      -f id=<thread-id> --jq '.data.resolveReviewThread.thread.isResolved'
    ```
 
-6. If step 4 produced code changes: commit, push, run phase 3 again, then return to step 1 for a re-review.
+6. If step 4 produced code changes: commit, push, run phase 4 again, then return to step 1 for a re-review.
    If it produced no code changes, the loop is done.
 
 After 2 rounds with comments still arriving, stop and summarize what remains rather than looping forever.
@@ -219,9 +227,10 @@ After 2 rounds with comments still arriving, stop and summarize what remains rat
 
 Report to the user in one readable summary:
 
-- The PR link and its state (checks green, mergeable, Copilot threads resolved).
-- What the pre-push review found and fixed, CodeRabbit and fresh eyes counted separately, plus each CI failure fixed and each conflict rebased away.
-- Each Copilot comment with a one-line verdict: fixed, or rejected and why.
+- The PR link and its state (checks green, mergeable, review threads resolved).
+- What each pre-push review found and fixed, the adversarial review and CodeRabbit counted separately, plus each CI failure fixed and each conflict rebased away.
+- Each PR review comment with a one-line verdict: fixed, or rejected and why.
+- Any open human review threads, left alone for them.
 - Any judgment call made on their behalf while running unattended.
 
 Then hand over: the user reviews and merges.
