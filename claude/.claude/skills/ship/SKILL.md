@@ -155,7 +155,7 @@ Watch until checks are green and the PR is mergeable.
 
 Drive the bots' review comments on the PR to resolution.
 Both CodeRabbit and Copilot review the PR itself, and both are handled in the same loop because they produce the same kind of thread.
-Repeat this loop until a round produces no new actionable comments, up to 2 rounds.
+Repeat this loop until a round produces no new actionable comments, up to 10 rounds.
 
 1. Count existing bot reviews, then request a fresh round from both:
 
@@ -221,7 +221,8 @@ Repeat this loop until a round produces no new actionable comments, up to 2 roun
 6. If step 4 produced code changes: commit, push, run phase 4 again, then return to step 1 for a re-review.
    If it produced no code changes, the loop is done.
 
-After 2 rounds with comments still arriving, stop and summarize what remains rather than looping forever.
+After 10 rounds with comments still arriving, stop and summarize what remains rather than looping forever.
+Ten rounds is deliberately generous: the bots routinely need several passes, and stopping early leaves the PR in a worse state than not starting.
 
 ## Finish
 
