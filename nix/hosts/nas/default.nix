@@ -1020,6 +1020,7 @@ in
     uv
     nodejs_22
     claude-code
+    codex
     # pi is the agent; paseo supervises it (and claude-code) so the phone can
     # drive a session on morty - see the paseo unit below. paseo ships no agent
     # of its own, it launches whatever CLI is on PATH.
