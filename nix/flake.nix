@@ -6,31 +6,6 @@
     nix-darwin.url = "github:LnL7/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
-
-    # ⚠️ TEMPORARY PIN (2026-10-25): qbittorrent-nox 5.2.4 - the version
-    # approved on MyAnonaMouse - kept reachable after the nixpkgs-unstable
-    # bump carried 5.3.0, whose MAM approval is unverified. Read the whole
-    # story and the removal conditions in hosts/nas/qbittorrent.nix before
-    # touching this. Pinned by rev in the URL, so a lock bump keeps it here.
-    nixpkgs-approved.url = "github:NixOS/nixpkgs/f20cd90e28fe0403873f473b29e42662cd86e8c4";
-
-    # Private: the personal automations monorepo (telegram-agent lives here).
-    # Evaluating this flake therefore needs GitHub SSH access, which is why the
-    # NAS is rebuilt with --sudo rather than plain sudo - root has no
-    # key of its own.
-    #
-    # ⚠️ The pin is LOAD-BEARING, not incidental. The check-in units configured
-    # in hosts/nas/default.nix reference prompt files that ship inside this
-    # input's package. A lock bump here usually means the prompts changed to
-    # match new config in this repo - the two move together. Reverting an
-    # uncommitted bump builds units that ask for prompts the package no longer
-    # has, and the check-ins die on their next fire. This is not hypothetical:
-    # it happened on 2026-09-30, when the reshaping deploy's uncommitted bump
-    # was backed out as "incidental" and both check-ins went dead for it.
-    automations = {
-      url = "git+ssh://git@github.com/angusb93/automations";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -39,9 +14,6 @@
       nixpkgs,
       nix-darwin,
       nix-homebrew,
-      # TEMPORARY PIN - read the comment on its input before touching.
-      nixpkgs-approved,
-      automations,
       ...
     }:
     let
@@ -377,18 +349,6 @@
 
             };
           }
-        ];
-      };
-
-      # Build the NAS flake using:
-      # $ nixos-rebuild switch --sudo --flake .#nas
-      nixosConfigurations."nas" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        # For hosts/nas/qbittorrent.nix's approved-version pin.
-        specialArgs.nixpkgsApproved = nixpkgs-approved;
-        modules = [
-          ./hosts/nas
-          automations.nixosModules.telegram-agent
         ];
       };
     };

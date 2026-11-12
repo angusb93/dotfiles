@@ -270,7 +270,7 @@ Without credit a key can only reach `:free` models.
 `paseo` supervises the agent CLIs on morty - `pi` and `claude-code` - and gives the phone, desktop and web clients a way to drive them.
 It ships no agent of its own; it launches whatever is on `PATH`.
 
-The daemon is a user service declared in `nix/hosts/nas/default.nix`, listening on `127.0.0.1:6767` only.
+The daemon is a user service declared in the `homelab` repo (`modules/agents/paseo.nix`), listening on `127.0.0.1:6767` only.
 It is reached through pairing rather than an open port:
 
 ```bash

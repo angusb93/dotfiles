@@ -7,7 +7,9 @@ configure a machine imperatively - always change the source and re-apply.
 
 - **Installing a program?** Add it to the Nix flake (`nix/`), not `brew install`
   / `npm i -g` / a manual download. `darwin-rebuild switch --flake ~/dotfiles/nix#macbook`
-  (or `nixos-rebuild ... #nas`) applies it.
+  applies it. The NAS (morty) is not configured here - its NixOS config lives
+  in the separate `homelab` repo; only its stowed shell/editor/agent config
+  comes from this one.
 - **Adding/editing a config file?** Put it in the matching stow package here and
   let `stow` symlink it into place - don't hand-edit the file under `$HOME`. New
   packages that target `$HOME` (rather than `~/.config`) must be wired into
@@ -23,7 +25,7 @@ This repo is **public** - never commit secrets (keys, tokens, `known_hosts`).
 Use `sops-nix` for anything sensitive; gitignore the rest.
 
 ## Build/Lint/Test Commands
-- **Nix formatting**: `fd -e nix -E hardware-configuration.nix -x nixfmt` (the `nixfmt` binary is already RFC-style; passing it a directory is deprecated, hence `fd -x`, and the generated hardware config is left alone)
+- **Nix formatting**: `fd -e nix -x nixfmt` (the `nixfmt` binary is already RFC-style; passing it a directory is deprecated, hence `fd -x`)
 - **Nix linting**: `statix check .` (rule exclusions live in `statix.toml`)
 - **Lua formatting**: `stylua .` (format Lua config files, 2-space indent, 120 char width)
 - **System rebuild**: `darwin-rebuild switch --flake ~/dotfiles/nix#macbook`
