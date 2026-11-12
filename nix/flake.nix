@@ -147,6 +147,7 @@
             # macOS / system
             pkgs.aerospace
             pkgs.claude-code
+            pkgs.codex
             pkgs.desktoppr
             pkgs.ffmpeg
             pkgs.m1ddc
