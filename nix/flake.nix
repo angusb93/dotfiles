@@ -130,6 +130,7 @@
             pkgs.tenv
 
             # Apps
+            pkgs.chatgpt
             pkgs.gcalcli
             # Gmail backup. The nightly pull runs on morty, but the OAuth dance
             # has to happen where there is a browser, and that is here.
@@ -221,7 +222,6 @@
             ];
             casks = [
               "ghostty"
-              "chatgpt"
               "logi-options+"
               "figma"
               "spotify"
