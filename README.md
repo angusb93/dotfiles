@@ -25,6 +25,11 @@ macOS development environment managed with Nix, nix-darwin, and GNU Stow.
 
 `nix/flake.nix` declares everything installed on the machine — CLI tools, GUI apps, and macOS system defaults (dock, trackpad, key repeat, etc.). Running `darwin-rebuild switch` applies the full system state.
 
+Morty's NixOS system configuration lives separately in `~/homelab`. Rebuild it
+with `nixos-rebuild switch --sudo --flake ~/homelab#morty`. The old dotfiles
+`#nas` target is retired; this repository still supplies Morty's stowed user
+configuration.
+
 ### Stow manages dotfiles
 
 Each top-level directory (e.g. `nvim/`, `tmux/`, `zshrc/`) is a stow package. `install.sh` symlinks them into `~/.config` or `$HOME` as appropriate. The repo lives at `~/dotfiles` and `install.sh` is safe to re-run at any time.

@@ -1,9 +1,15 @@
 # Agent Guidelines for Dotfiles Repository
 
-## Golden rule: this repo is the source of truth
+## Golden rule: use the owning repository
 
-Every machine's configuration is declared here and applied from here. Never
-configure a machine imperatively - always change the source and re-apply.
+This repo owns macOS system configuration and shared user dotfiles. Never
+configure a machine imperatively - change the source in its owning repo.
+
+Morty's NixOS system configuration, services and packages belong to
+`~/homelab`. Read its `AGENTS.md` and deploy with
+`nixos-rebuild switch --sudo --flake ~/homelab#morty`. Never rebuild morty
+from a historical `~/dotfiles/nix#nas` checkout: it replaces the whole system
+and can remove services added in homelab.
 
 - **Installing a program?** Add it to the Nix flake (`nix/`), not `brew install`
   / `npm i -g` / a manual download. `darwin-rebuild switch --flake ~/dotfiles/nix#macbook`
