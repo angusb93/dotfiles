@@ -23,8 +23,13 @@ knock it down.
 
 **Structure**
 
-- Open with the problem in one line, then dump the current state as a bare
-  aligned list of facts before arguing anything.
+- Open by greeting the room and saying what he is working on and that he wants
+  their take, before any state or argument.
+  "Hey guys, I'm working on deposits for dreamDEX and theres a few things I want
+  to iron out. This is the current state, what do you guys think?"
+  This matters most when posting into another team's channel: it reads as
+  someone asking for input, not someone filing a request.
+- Then dump the current state as plain dot points before arguing anything.
   State first, opinion second.
 - Argue by elimination, out loud.
   "From this we know we want to kill stg and beta. So we can forget about them."
@@ -49,7 +54,7 @@ knock it down.
   wont, thats), mild profanity ("if shit is broken", "#yolo mode"), the odd
   typo left in. Ships the message rather than buffing it.
 - Short paragraphs of plain prose. No bullet-point decks, no headings, no bold.
-  Aligned `key = value` lists only when enumerating concrete state.
+  Dot points only when enumerating concrete state, never `key = value` lists.
 - Acknowledges the cost of his own proposal instead of selling past it.
   "Thats true this is major baggage".
 
